@@ -1,1 +1,0 @@
-cmake -DPMM_STRICT_MODE=OFF -B build --fresh
