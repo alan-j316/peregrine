@@ -491,6 +491,11 @@ namespace pmm
         ///       the required while loop.
         constexpr size_t getLargestBlockSize() noexcept;
 
+        /// @brief Allocate memory and update the telemetry if telemetry is ON for the allocator.
+        /// @note The method is separated to reduce code duplication when using MT and non-MT pathways.
+        constexpr void* allocateAndUpdateTelemetry(BitmapIndices& index, size_t size, size_t alignment,
+                                                   size_t metadataSize) noexcept;
+
 
 
 

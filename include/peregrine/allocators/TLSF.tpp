@@ -63,7 +63,7 @@ namespace pmm
           _flBitmap{ tlsf._flBitmap },
           _telemetry{ tlsf._telemetry },
           _mutex{ mt::getMutex<MultithreadingPolicy>() }
-          /// TODO: Update after looking into mutex update, maybe delete move ctor?
+    /// TODO: Update after looking into mutex update, maybe delete move ctor?
     {
         std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));
         std::move(tlsf._slBitmap.begin(), tlsf._slBitmap.end(), _slBitmap.begin());
@@ -155,12 +155,25 @@ namespace pmm
         // For allocating memory we need to find the FL and SL indices.
         auto index = mappingSearch(requiredSize);
 
-        // Multithreading TODO: Add test
+        // Multithreading
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return allocateAndUpdateTelemetry(index, size, alignment, metadataSize);
         }
+        else
+        {
+            return allocateAndUpdateTelemetry(index, size, alignment, metadataSize);
+        }
+    }
 
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::
+        allocateAndUpdateTelemetry(BitmapIndices& index, const size_t size, const size_t alignment,
+                                   const size_t metadataSize) noexcept
+    {
         auto freeBlock = searchSuitableBlock(index);
 
         if constexpr (SafeMode == SafeModePolicy::Safe)
