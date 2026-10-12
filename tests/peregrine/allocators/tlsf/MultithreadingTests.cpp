@@ -15,7 +15,6 @@
 #include <peregrine/allocators/TLSF.h>
 #include <peregrine/utils/Constants.h>
 #include <random>
-#include <shlwapi.h>
 #include <thread>
 #include <vector>
 
@@ -31,18 +30,19 @@ namespace
                   pmm::mt::MTPolicy::SpinLock>
             tlsf{ SIZE };
     };
+
+
+    // Random number generation helper
+    int genRandom()
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+
+        std::uniform_int_distribution dist;
+
+        return dist(gen);
+    }
 } // namespace
-
-
-static int genRandom()
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    std::uniform_int_distribution dist;
-
-    return dist(gen);
-}
 
 
 TEST_F(InternallyManagedTLSF_MTTests, Malloc_CanAllocateConcurrently)

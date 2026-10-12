@@ -1,8 +1,9 @@
-include_guard()
+set(PEREGRINE_MEM_TARGET "PeregrineMemory${PEREGRINE_INTERNAL_TARGET_SUFFIX}")
 
-add_library(PeregrineMemory OBJECT Memory.h)
-target_compile_features(PeregrineMemory PUBLIC cxx_std_20)
-set_target_properties(PeregrineMemory PROPERTIES LINKER_LANGUAGE CXX)
+add_library(${PEREGRINE_MEM_TARGET} STATIC Memory.h)
+target_compile_features(${PEREGRINE_MEM_TARGET} PUBLIC cxx_std_20)
+set_target_properties(${PEREGRINE_MEM_TARGET} PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(${PEREGRINE_MEM_TARGET} PRIVATE ${PEREGRINE_LIB_ROOT_DIR})
 
 if (PMM_CURRENT_PLATFORM STREQUAL "Windows")
     list(APPEND SOURCE_FILES WinMemory.cpp)
@@ -38,5 +39,5 @@ elseif (PMM_CURRENT_PLATFORM STREQUAL "Switch")
 endif ()
 
 target_sources(
-        PeregrineMemory PRIVATE ${SOURCE_FILES}
+        ${PEREGRINE_MEM_TARGET} PRIVATE ${SOURCE_FILES}
 )
