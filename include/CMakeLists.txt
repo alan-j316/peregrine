@@ -15,10 +15,11 @@ add_subdirectory(peregrine/telemetry)
 add_subdirectory(peregrine/allocators)
 
 target_include_directories(
-        ${PEREGRINE_LIB_NAME}
-        INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${PEREGRINE_LIB_NAME} INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include>
 )
+
 
 target_link_libraries(
         ${PEREGRINE_LIB_NAME} INTERFACE

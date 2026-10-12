@@ -10,7 +10,7 @@ target_compile_features(UtilsTests PUBLIC cxx_std_20)
 
 target_include_directories(
         UtilsTests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 

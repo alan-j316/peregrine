@@ -9,7 +9,7 @@ target_sources(
 
 target_link_libraries(
         Demo PRIVATE
-        Peregrine
+        Peregrine::Peregrine
         ${PROJECT_NAME}-StrictWarnings
 
         imgui

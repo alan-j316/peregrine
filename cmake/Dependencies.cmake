@@ -7,6 +7,7 @@ set(VENDORS_DIR "Vendors")
 # https://wiki.libsdl.org/SDL3/README-cmake
 set(SDL_SHARED OFF CACHE BOOL "Build shared library" FORCE)
 set(SDL_STATIC ON CACHE BOOL "Build static library" FORCE)
+set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE) # Turn off werror for google benchmark
 # Build SDL3_image as a static lib
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build SDL3_image shared" FORCE)
 # Enable these if necessary as some of them have extra dependencies like nasm and perl

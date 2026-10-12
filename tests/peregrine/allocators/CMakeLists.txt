@@ -29,6 +29,11 @@ target_sources(
         tlsf/MultithreadingTests.cpp
 
         TempArenaTests.cpp
+
+        # Headers
+        pool/PoolTestSetup.h
+        stack/StackTestSetup.h
+        tlsf/TLSFTestSetup.h
 )
 
 # Disable padded warning for Mock.h
@@ -36,7 +41,7 @@ target_compile_options(AllocatorTests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd4324>
 
 target_include_directories(
         AllocatorTests PRIVATE
-        ${ROOT_TEST_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 target_link_libraries(
@@ -61,7 +66,7 @@ target_sources(
 
 target_include_directories(
         AllocatorDeathTests PRIVATE
-        ${ROOT_TEST_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 target_link_libraries(
