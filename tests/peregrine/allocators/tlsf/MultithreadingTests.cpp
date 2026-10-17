@@ -316,13 +316,6 @@ TEST_F(InternallyManagedTLSF_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptIn
         EXPECT_EQ(spanCount, allocations[i].size())
             << "Test variables out-of-sync. Expected: " << spanCount << " Got: " << allocations[i].size() << '\n';
 
-        // const auto& expected = spans[i];
-        // const auto& actual   = allocations[i];
-        // // for (size_t j = 0; j < spanCount; ++j)
-        // // {
-        // //     EXPECT_EQ(expected[j], actual[j]);
-        // // }
-        //
         EXPECT_TRUE(std::equal(spans[i].begin(), spans[i].end(), allocations[i].begin(), allocations[i].end()));
     }
 }
@@ -362,6 +355,115 @@ TEST_F(InternallyManagedTLSF_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalS
 
             // Free the block
             tlsf.mfree(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near tlsf size allocation to ensure that all the blocks are freed
+    const auto block = tlsf.malloc(SIZE - 4_KB);
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
+
+TEST_F(InternallyManagedTLSF_MTTests, Free_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+    constexpr size_t numAllocations = 2700;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<std::thread> threads;
+    std::vector<Vec4*> allocations;
+
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            tlsf.free(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near tlsf size allocation to ensure that all the blocks are freed
+    const auto block = tlsf.malloc(SIZE - 4_KB);
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
+
+TEST_F(InternallyManagedTLSF_MTTests, FreeV_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t spanCount      = 16;
+    using SpanType                  = int32_t;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<std::thread> threads;
+    std::vector<std::span<SpanType>> allocations;
+    std::vector<std::array<SpanType, spanCount>> spans;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.allocV<SpanType>(spanCount));
+    }
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto span = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            tlsf.freeV(span);
         }
     };
 
