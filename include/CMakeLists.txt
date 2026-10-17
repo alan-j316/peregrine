@@ -24,8 +24,8 @@ target_include_directories(
 target_link_libraries(
         ${PEREGRINE_LIB_NAME} INTERFACE
         ${PROJECT_NAME}-StrictWarnings # Remove to tests only
-        ${PEREGRINE_ALLOCATOR_TARGET}
-        ${PEREGRINE_MEM_TARGET}
-        ${PEREGRINE_TELEMETRY_TARGET}
-        ${PEREGRINE_UTILS_TARGET}
+        ${PEREGRINE_LIB_NAME}::Internal::Allocators
+        ${PEREGRINE_LIB_NAME}::Internal::Memory
+        ${PEREGRINE_LIB_NAME}::Internal::Telemetry
+        ${PEREGRINE_LIB_NAME}::Internal::Utils
 )

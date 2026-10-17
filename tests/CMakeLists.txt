@@ -45,21 +45,27 @@ add_subdirectory(peregrine/memory)
 
 target_link_libraries(
         PeregrineTests PRIVATE
-        PeregrineTestSetup
 
+        # Intermediates
         AllocatorTests
         TelemetryTests
         UtilsTests
         MemoryTests
+
+        # Setup
+        PeregrineTestSetup
 )
 
 
 target_link_libraries(
         PeregrineDeathTests PRIVATE
-        PeregrineTestSetup
 
+        # Intermediates
         AllocatorDeathTests
         MemoryDeathTests
+
+        # Setup
+        PeregrineTestSetup
 )
 
 include(GoogleTest)

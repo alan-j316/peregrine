@@ -14,6 +14,8 @@ add_library(
         TLSF.h
         TLSF.tpp
 )
+add_library(${PEREGRINE_LIB_NAME}::Internal::Allocators ALIAS ${PEREGRINE_ALLOCATOR_TARGET})
+
 target_compile_features(${PEREGRINE_ALLOCATOR_TARGET} INTERFACE cxx_std_20)
 set_target_properties(${PEREGRINE_ALLOCATOR_TARGET} PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(${PEREGRINE_ALLOCATOR_TARGET} INTERFACE ${PEREGRINE_LIB_ROOT_DIR})
