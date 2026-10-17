@@ -326,3 +326,59 @@ TEST_F(InternallyManagedTLSF_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptIn
         EXPECT_TRUE(std::equal(spans[i].begin(), spans[i].end(), allocations[i].begin(), allocations[i].end()));
     }
 }
+
+
+TEST_F(InternallyManagedTLSF_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.malloc(allocSize));
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            tlsf.mfree(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near tlsf size allocation to ensure that all the blocks are freed
+    const auto block = tlsf.malloc(SIZE - 4_KB);
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}

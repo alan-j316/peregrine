@@ -497,6 +497,10 @@ namespace pmm
                                                    size_t metadataSize) noexcept;
 
 
+        /// @brief Free a block of memory and update the telemetry if enabled.
+        constexpr void freeAndUpdateTelemetry(void* block) noexcept;
+
+
 
 
 #ifdef ENABLE_PMM_TESTS

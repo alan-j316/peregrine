@@ -245,6 +245,66 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode,
+                                   MultithreadingPolicy>::freeAndUpdateTelemetry(void* block) noexcept
+    {
+        // prev_offset := sizeof(block) - padding(block) - sizeof(size_t)
+        // [[Header][...][size_t]] + [[Header][padding][HeaderOffset][block....]] =COALESCED=> [[Header][....]]
+        // ^             ^            ^                              ^
+        // |             |            |                              |
+        // start       offset   block - headerOffset               block
+        // <--- PREV BLK SIZE --->   <------------ CURRENT BLK SIZE ------------>
+        // We need to offset the block to the header's base which is the real real starting address of the block.
+        // since all mergePrevious, mergeNext, and mappingInsert expects the block to start at Header
+
+        // NOTE: Since we use header offset for telemetry as well, we need to cache the value, rather than a
+        //       pointer to the value, since the insert block can change the block structure.
+        //       A similar case applies to the header as value, requiring us to store the header structure itself
+        //       since the merging can coalesce the block, corrupting the original request size.
+        const HeaderOffset_t headerOffset =
+            *reinterpret_cast<HeaderOffset_t*>(static_cast<uint8_t*>(block) - sizeof(HeaderOffset_t));
+
+        block = static_cast<uint8_t*>(block) - headerOffset;
+        // ONLY USED FOR TELEMETRY
+        [[maybe_unused]] const auto currentBlockSize = static_cast<Header*>(block)->getSize();
+
+        block       = mergePrevious(static_cast<uint8_t*>(block));
+        block       = mergeNext(static_cast<uint8_t*>(block));
+        auto header = static_cast<Header*>(block);
+
+        insertBlock(static_cast<uint8_t*>(block), header->getSize());
+
+        // Mark the next block's prevFree.
+        // If this is not the final block, then we can mark the next block's prevFreeBlock as true.
+        // The currently freed block is considered non-final if and only if the current block with its size leaves
+        // enough space for at least a header.
+        if (reinterpret_cast<uintptr_t>(block) + header->getSize() + sizeof(Header) <
+            reinterpret_cast<uintptr_t>(_buffer) + _size)
+        {
+            // [CurrentHeader][Block Space...][Footer] [NextBlockHeader]
+            const auto nextBlockAddress = static_cast<uint8_t*>(block) + header->getSize();
+            // Mark the next block header's isPrevFree flag
+            const auto nextHeader = reinterpret_cast<Header*>(nextBlockAddress);
+            nextHeader->markPrevFree();
+            // Write the size current block to the footer.
+            const auto footer = reinterpret_cast<size_t*>(nextBlockAddress - sizeof(size_t));
+            *footer           = header->getSize();
+        }
+
+
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            // [Header][Padding][HeaderOffset][Usable Memory]
+            // <=================== Size ===================>
+            // <=======HEADER OFFSET=========><===REQ SIZE==>
+            const auto reqSize = currentBlockSize - headerOffset;
+            _telemetry.decUsage(reqSize, headerOffset);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
     template <typename T, typename... Args>
     PMM_INLINE T* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
     {
@@ -323,55 +383,14 @@ namespace pmm
                 return;
             }
         }
-        // prev_offset := sizeof(block) - padding(block) - sizeof(size_t)
-        // [[Header][...][size_t]] + [[Header][padding][HeaderOffset][block....]] =COALESCED=> [[Header][....]]
-        // ^             ^            ^                              ^
-        // |             |            |                              |
-        // start       offset   block - headerOffset               block
-        // <--- PREV BLK SIZE --->   <------------ CURRENT BLK SIZE ------------>
-        // We need to offset the block to the header's base which is the real real starting address of the block.
-        // since all mergePrevious, mergeNext, and mappingInsert expects the block to start at Header
-
-        // NOTE: Since we use header offset for telemetry as well, we need to cache the value, rather than a
-        //       pointer to the value, since the insert block can change the block structure.
-        //       A similar case applies to the header as value, requiring us to store the header structure itself
-        //       since the merging can coalesce the block, corrupting the original request size.
-        const HeaderOffset_t headerOffset =
-            *reinterpret_cast<HeaderOffset_t*>(static_cast<uint8_t*>(block) - sizeof(HeaderOffset_t));
-
-        block = static_cast<uint8_t*>(block) - headerOffset;
-        // ONLY USED FOR TELEMETRY
-        [[maybe_unused]] const auto currentBlockSize = static_cast<Header*>(block)->getSize();
-
-        block       = mergePrevious(static_cast<uint8_t*>(block));
-        block       = mergeNext(static_cast<uint8_t*>(block));
-        auto header = static_cast<Header*>(block);
-
-        insertBlock(static_cast<uint8_t*>(block), header->getSize());
-
-        // Mark the next block's prevFree.
-        // If this is not the final block, then we can mark the next block's prevFreeBlock as true.
-        // The currently freed block is considered non-final if and only if the current block with its size leaves
-        // enough space for at least a header.
-        if (reinterpret_cast<uintptr_t>(block) + header->getSize() + sizeof(Header) <
-            reinterpret_cast<uintptr_t>(_buffer) + _size)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            // [CurrentHeader][Block Space...][Footer] [NextBlockHeader]
-            const auto nextBlockAddress = static_cast<uint8_t*>(block) + header->getSize();
-            // Mark the next block header's isPrevFree flag
-            const auto nextHeader = reinterpret_cast<Header*>(nextBlockAddress);
-            nextHeader->markPrevFree();
-            // Write the size current block to the footer.
-            const auto footer = reinterpret_cast<size_t*>(nextBlockAddress - sizeof(size_t));
-            *footer           = header->getSize();
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            freeAndUpdateTelemetry(block);
         }
-        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        else
         {
-            // [Header][Padding][HeaderOffset][Usable Memory]
-            // <=================== Size ===================>
-            // <=======HEADER OFFSET=========><===REQ SIZE==>
-            const auto reqSize = currentBlockSize - headerOffset;
-            _telemetry.decUsage(reqSize, headerOffset);
+            freeAndUpdateTelemetry(block);
         }
     }
 
