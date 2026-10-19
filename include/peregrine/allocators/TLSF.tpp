@@ -610,7 +610,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr typename TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
     TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingInsert(size_t blockSize) noexcept
     {
         // The allocator always hands out memory in 64-byte chunks.
@@ -636,7 +636,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr typename TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
     TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingSearch(size_t blockSize) noexcept
     {
         // When allocating a block, we typically round to the next nearest bucket,
@@ -659,7 +659,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr typename TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSFFreeNode*
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSFFreeNode*
     TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::searchSuitableBlock(
         BitmapIndices& index) const noexcept
     {
@@ -766,7 +766,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr typename TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Header* TLSF<
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Header* TLSF<
         MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getHeader(TLSFFreeNode* node) noexcept
     {
         // Note: Header is placed below the free node.
