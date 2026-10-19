@@ -18,6 +18,7 @@
 #include <thread>
 #include <vector>
 
+
 namespace
 {
     using namespace pmm::constants;
@@ -37,9 +38,7 @@ namespace
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-
         std::uniform_int_distribution dist;
-
         return dist(gen);
     }
 } // namespace
@@ -79,7 +78,6 @@ TEST_F(InternallyManagedTLSF_MTTests, Malloc_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
-
 
 TEST_F(InternallyManagedTLSF_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptInternalState)
 {
@@ -135,7 +133,6 @@ TEST_F(InternallyManagedTLSF_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptIn
     }
 }
 
-
 TEST_F(InternallyManagedTLSF_MTTests, Alloc_CanAllocateConcurrently)
 {
     constexpr size_t numAllocations = 2700;
@@ -169,7 +166,6 @@ TEST_F(InternallyManagedTLSF_MTTests, Alloc_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
-
 
 TEST_F(InternallyManagedTLSF_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInternalState)
 {
@@ -222,7 +218,6 @@ TEST_F(InternallyManagedTLSF_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     }
 }
 
-
 TEST_F(InternallyManagedTLSF_MTTests, AllocV_CanAllocateConcurrently)
 {
     constexpr size_t numAllocations = 1420;
@@ -258,7 +253,6 @@ TEST_F(InternallyManagedTLSF_MTTests, AllocV_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
-
 
 TEST_F(InternallyManagedTLSF_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptInternalState)
 {

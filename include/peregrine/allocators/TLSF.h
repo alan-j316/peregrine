@@ -493,12 +493,12 @@ namespace pmm
 
         /// @brief Allocate memory and update the telemetry if telemetry is ON for the allocator.
         /// @note The method is separated to reduce code duplication when using MT and non-MT pathways.
-        constexpr void* allocateAndUpdateTelemetry(BitmapIndices& index, size_t size, size_t alignment,
-                                                   size_t metadataSize) noexcept;
+        constexpr void* _allocInternal(BitmapIndices& index, size_t size, size_t alignment,
+                                       size_t metadataSize) noexcept;
 
 
         /// @brief Free a block of memory and update the telemetry if enabled.
-        constexpr void freeAndUpdateTelemetry(void* block) noexcept;
+        constexpr void _freeInternal(void* block) noexcept;
 
 
 

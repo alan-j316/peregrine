@@ -159,20 +159,19 @@ namespace pmm
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
-            return allocateAndUpdateTelemetry(index, size, alignment, metadataSize);
+            return _allocInternal(index, size, alignment, metadataSize);
         }
         else
         {
-            return allocateAndUpdateTelemetry(index, size, alignment, metadataSize);
+            return _allocInternal(index, size, alignment, metadataSize);
         }
     }
 
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::
-        allocateAndUpdateTelemetry(BitmapIndices& index, const size_t size, const size_t alignment,
-                                   const size_t metadataSize) noexcept
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_allocInternal(
+        BitmapIndices& index, const size_t size, const size_t alignment, const size_t metadataSize) noexcept
     {
         auto freeBlock = searchSuitableBlock(index);
 
@@ -245,8 +244,8 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode,
-                                   MultithreadingPolicy>::freeAndUpdateTelemetry(void* block) noexcept
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_freeInternal(
+        void* block) noexcept
     {
         // prev_offset := sizeof(block) - padding(block) - sizeof(size_t)
         // [[Header][...][size_t]] + [[Header][padding][HeaderOffset][block....]] =COALESCED=> [[Header][....]]
@@ -386,11 +385,11 @@ namespace pmm
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
-            freeAndUpdateTelemetry(block);
+            _freeInternal(block);
         }
         else
         {
-            freeAndUpdateTelemetry(block);
+            _freeInternal(block);
         }
     }
 
