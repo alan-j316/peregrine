@@ -219,10 +219,26 @@ namespace pmm
         // If there is more free space than split threshold, split and store that memory
         if (sizeLeft >= SPLIT_SIZE_THRESHOLD)
         {
-            /// The remaining block starts where the allocated block ends
             auto remainingBlockStart = basePtr + usedSize;
             insertBlock(remainingBlockStart, sizeLeft);
+            // Update the current header's previous block as used
+            reinterpret_cast<Header*>(remainingBlockStart)->markPrevUsed(); // TODO: Check if necessary
+
+            // Update the footer
+            const auto blockEnd = remainingBlockStart + sizeLeft;
+            const auto footer   = reinterpret_cast<size_t*>(blockEnd - sizeof(size_t));
+            *footer             = sizeLeft;
         }
+        else
+        {
+            // If the entire block is used, then mark the next block's previous flag as used.
+            const auto nextBlock = basePtr + usedSize;
+            if (nextBlock + sizeof(Header) < _buffer + _size)
+            {
+                reinterpret_cast<Header*>(nextBlock)->markPrevUsed();
+            }
+        }
+
 
         //                Offset
         //                  ↓
@@ -338,6 +354,19 @@ namespace pmm
                 // Insert the block
                 const auto newFreeBlockAddress = baseAddress + newBlockSize;
                 insertBlock(newFreeBlockAddress, sizeDiff);
+
+                // Mark previous block as used
+                reinterpret_cast<Header*>(newFreeBlockAddress)->markPrevUsed();
+
+                // Update footer and mark next block's prev flag as free
+                const auto nextBlockAddress = newFreeBlockAddress + sizeDiff;
+                const auto footer           = reinterpret_cast<size_t*>(nextBlockAddress - sizeof(size_t));
+                *footer                     = sizeDiff;
+                if (nextBlockAddress + sizeof(Header) < _buffer + _size)
+                {
+                    reinterpret_cast<Header*>(nextBlockAddress)->markPrevFree();
+                }
+
                 // We need to update the usage metrics in telemetry since the resize has decreased the block size
                 if constexpr (TelemetryPolicy == TelPolicy::Enabled)
                 {
@@ -374,10 +403,26 @@ namespace pmm
                     {
                         // Insert the remaining block
                         insertBlock(nextBlockBase + sizeDiff, nextBlockHeader->getSize() - sizeDiff);
+
+                        // [      Handed to User     ][        Footer]
+                        // [Next Block Base][sizeDiff][Remaining Size] [Another block start]
+                        // Update the free block's footer
+                        const auto freeBlockEnd = nextBlockBase + sizeDiff + remainingSize;
+                        const auto footer       = reinterpret_cast<size_t*>(freeBlockEnd - sizeof(size_t));
+                        *footer                 = remainingSize;
                     }
                     else
                     {
                         adjustedNewSize += remainingSize;
+                        // Since the adjacent free block is fully consumed, mark the next block prev free as used
+                        // [Block to Resize][Next Block][Adjacent Block]
+                        //                              |
+                        //                            Mark prev flag as used
+                        const auto nextBlockStart = nextBlockBase + nextBlockHeader->getSize();
+                        if (nextBlockStart + sizeof(Header) < _buffer + _size)
+                        {
+                            reinterpret_cast<Header*>(nextBlockStart)->markPrevUsed();
+                        }
                     }
                     currentBlockHeader->setSize(adjustedNewSize);
                     if constexpr (TelemetryPolicy == TelPolicy::Enabled)
@@ -390,7 +435,7 @@ namespace pmm
             }
         }
 
-        // NOTE: Internal variants of free and malloc is used to prevent deadlocks
+        // NOTE: Internal variant of free and malloc is used to prevent deadlocks
         // [Block][Another Used Block]...[Free Memory]
         auto index              = mappingSearch(newSize);
         const auto metadataSize = sizeof(Header) + sizeof(HeaderOffset_t);
@@ -717,7 +762,7 @@ namespace pmm
         MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getHeader(TLSFFreeNode* node) noexcept
     {
         // Note: Header is placed below the free node.
-        return reinterpret_cast<Header*>(reinterpret_cast<uint8_t*>(node) - sizeof(TLSFFreeNode));
+        return reinterpret_cast<Header*>(reinterpret_cast<uint8_t*>(node) - sizeof(Header));
     }
 
 
@@ -815,6 +860,12 @@ namespace pmm
         // or its the only node so, reassign freelist head to the block next node.
         {
             _freeList[index.flIndex][index.slIndex] = block->next;
+        }
+
+
+        if (block->next != nullptr)
+        {
+            block->next->prev = block->prev;
         }
 
         // Reset the sl flag if sl bucket is empty

@@ -479,6 +479,7 @@ TEST_F(InternallyManagedTLSF_MTTests, FreeV_ConcurrentFreesDoNotCorruptInternalS
     EXPECT_NE(nullptr, block);
 }
 
+
 TEST_F(InternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
 {
     constexpr size_t numAllocations = 1420;
@@ -488,8 +489,6 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
-    std::atomic_int counter;
-    std::mutex mutex;
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -525,6 +524,7 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
     }
 }
 
+
 TEST_F(InternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
 {
     constexpr size_t numAllocations = 1420;
@@ -533,8 +533,6 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
-    std::atomic_int counter;
-    std::mutex mutex;
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -570,6 +568,7 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
     }
 }
 
+
 TEST_F(InternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
 {
     constexpr size_t numAllocations = 700;
@@ -579,8 +578,6 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
-    // std::atomic_int counter;
-    // std::mutex mutex;
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
