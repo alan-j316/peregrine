@@ -592,7 +592,15 @@ namespace pmm
             _telemetry.resetTelemetry();
         }
         // Insert the block
-        insertBlock(_buffer, _size);
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            insertBlock(_buffer, _size);
+        }
+        else
+        {
+            insertBlock(_buffer, _size);
+        }
     }
 
 
