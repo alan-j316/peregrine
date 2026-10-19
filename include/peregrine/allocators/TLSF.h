@@ -384,10 +384,10 @@ namespace pmm
 
 
     private:
-        uint8_t* _buffer;
-        size_t _size, _usedSize;
-        Bitmask_t _flBitmap;                      /// First level bitmap
         std::array<Bitmask_t, FL_SIZE> _slBitmap; /// Second Level Bitmaps
+        size_t _size, _usedSize;
+        Bitmask_t _flBitmap; /// First level bitmap
+        uint8_t* _buffer;
 
         TLSFFreeNode* _freeList[FL_SIZE][SL_SIZE]; /// Free-list
 
@@ -493,12 +493,14 @@ namespace pmm
 
         /// @brief Allocate memory and update the telemetry if telemetry is ON for the allocator.
         /// @note The method is separated to reduce code duplication when using MT and non-MT pathways.
-        constexpr void* _allocInternal(BitmapIndices& index, size_t size, size_t alignment,
-                                       size_t metadataSize) noexcept;
-
+        constexpr void* _mallocInternal(BitmapIndices& index, size_t size, size_t alignment,
+                                        size_t metadataSize) noexcept;
 
         /// @brief Free a block of memory and update the telemetry if enabled.
         constexpr void _freeInternal(void* block) noexcept;
+
+        /// @brief Resize a block of memory and update the telemetry if enabled.
+        constexpr void* _resizeInternal(void* block, size_t oldSize, size_t newSize, size_t alignment) noexcept;
 
 
 

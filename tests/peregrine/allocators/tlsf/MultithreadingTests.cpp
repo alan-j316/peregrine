@@ -478,3 +478,140 @@ TEST_F(InternallyManagedTLSF_MTTests, FreeV_ConcurrentFreesDoNotCorruptInternalS
     // Ensure that the expected number of allocations match the counter
     EXPECT_NE(nullptr, block);
 }
+
+TEST_F(InternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    std::atomic_int counter;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = tlsf.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+TEST_F(InternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    std::atomic_int counter;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = tlsf.resize(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+TEST_F(InternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    // std::atomic_int counter;
+    // std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(tlsf.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = tlsf.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}

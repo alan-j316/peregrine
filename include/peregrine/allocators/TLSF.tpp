@@ -21,11 +21,11 @@ namespace pmm
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
         uint8_t* buffer, const size_t memorySize) noexcept
         requires(MemoryPolicy == MemPolicy::External)
-        : _buffer{ buffer },
+        : _slBitmap{},
           _size{ memorySize },
           _usedSize{ 0 },
           _flBitmap{ 0 },
-          _slBitmap{},
+          _buffer{ buffer },
           _telemetry(memorySize),
           _mutex{ mt::getMutex<MultithreadingPolicy>() }
     {
@@ -40,11 +40,11 @@ namespace pmm
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
         const size_t allocatorSize) noexcept
         requires(MemoryPolicy == MemPolicy::Internal)
-        : _buffer{ static_cast<uint8_t*>(memAlloc(allocatorSize)) },
+        : _slBitmap{},
           _size{ allocatorSize },
           _usedSize{ 0 },
           _flBitmap{ 0 },
-          _slBitmap{},
+          _buffer{ static_cast<uint8_t*>(memAlloc(allocatorSize)) },
           _freeList{},
           _telemetry(allocatorSize),
           _mutex{ mt::getMutex<MultithreadingPolicy>() }
@@ -57,10 +57,10 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(TLSF&& tlsf) noexcept
-        : _buffer{ std::exchange(tlsf._buffer, nullptr) },
-          _size{ tlsf._size },
+        : _size{ tlsf._size },
           _usedSize{ tlsf._usedSize },
           _flBitmap{ tlsf._flBitmap },
+          _buffer{ std::exchange(tlsf._buffer, nullptr) },
           _telemetry{ tlsf._telemetry },
           _mutex{ mt::getMutex<MultithreadingPolicy>() }
     /// TODO: Update after looking into mutex update, maybe delete move ctor?
@@ -117,11 +117,13 @@ namespace pmm
         const noexcept
     { return _size; }
 
+
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr size_t TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::usedSize()
         const noexcept
     { return _usedSize; }
+
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
@@ -159,18 +161,18 @@ namespace pmm
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
-            return _allocInternal(index, size, alignment, metadataSize);
+            return _mallocInternal(index, size, alignment, metadataSize);
         }
         else
         {
-            return _allocInternal(index, size, alignment, metadataSize);
+            return _mallocInternal(index, size, alignment, metadataSize);
         }
     }
 
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_allocInternal(
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mallocInternal(
         BitmapIndices& index, const size_t size, const size_t alignment, const size_t metadataSize) noexcept
     {
         auto freeBlock = searchSuitableBlock(index);
@@ -304,6 +306,110 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_resizeInternal(
+        void* block, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+    {
+        // ARCH NOTE: While we can move memory if resize requires alignment, owing to code cleanliness and
+        //            and memmove taking O(n) like memcpy, we have decided to fallback to new allocation
+        //            if the resize requires a new alignment.
+        const auto startAddress       = static_cast<uint8_t*>(block);
+        const auto currentOffset      = *reinterpret_cast<HeaderOffset_t*>(startAddress - sizeof(HeaderOffset_t));
+        const auto baseAddress        = startAddress - currentOffset;
+        const auto currentBlockHeader = reinterpret_cast<Header*>(startAddress - currentOffset);
+        const auto sizeDiff           = oldSize > newSize ? oldSize - newSize : newSize - oldSize;
+        const auto misalignment       = reinterpret_cast<uintptr_t>(block) & (alignment - 1);
+        // If the new size is smaller, but we can't carve out a free block or if the newSize is larger but the
+        // block has enough space to accommodate size difference(since sometimes we can leave extra space if
+        // the space is below minimum split threshold) then, we just return the original block.
+        if (misalignment == 0)
+        {
+            if ((newSize <= oldSize && sizeDiff < SPLIT_SIZE_THRESHOLD) ||
+                (newSize > oldSize && currentBlockHeader->getSize() >= newSize))
+            {
+                return block;
+            }
+            else if (newSize < oldSize)
+            {
+                // If the new block is smaller we can update the header and store the cleaved block
+                // Update the header
+                const auto newBlockSize = currentBlockHeader->getSize() - sizeDiff;
+                currentBlockHeader->setSize(newBlockSize);
+
+                // Insert the block
+                const auto newFreeBlockAddress = baseAddress + newBlockSize;
+                insertBlock(newFreeBlockAddress, sizeDiff);
+                // We need to update the usage metrics in telemetry since the resize has decreased the block size
+                if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+                {
+                    // Metadata size is not decreased since we are only inserting the block left after
+                    // splitting, and that block doesn't have any allocated metadata space.
+                    _telemetry.decPayloadUsage(sizeDiff);
+                    // We need to update the min usage as well since the memory is resized to a smaller size
+                    _telemetry.updateMinUsage(newSize, currentOffset);
+                }
+                return block;
+            }
+            else
+            {
+                // When resizing to a larger size there are two possibilities
+                // 1. If the allocation is latest or if the adjacent buffer is free,
+                //    we can carve out the requirement difference from it
+                // 2. Adjacent block is used, then, we can free the old memory and
+                //    return a new address(default fallback)
+                // Note: As TLSF guarantees coalesce we can assume that if the next block doesn't have
+                //       enough space to cover the size difference, so the block after nextBlock will be
+                //       used and we need to allocate a new buffer(default fallback).
+                const auto nextBlockBase   = baseAddress + currentBlockHeader->getSize();
+                const auto nextBlockHeader = reinterpret_cast<Header*>(nextBlockBase);
+                if (nextBlockHeader->isFree() && nextBlockHeader->getSize() >= sizeDiff)
+                {
+                    // [Block][Free Memory]
+                    // [Expanded Block][Free Memory]
+                    const auto freeNode = reinterpret_cast<TLSFFreeNode*>(nextBlockBase + sizeof(Header));
+                    unlinkNode(freeNode);
+
+                    size_t adjustedNewSize = currentBlockHeader->getSize() + sizeDiff;
+                    if (const size_t remainingSize = nextBlockHeader->getSize() - sizeDiff;
+                        remainingSize >= SPLIT_SIZE_THRESHOLD)
+                    {
+                        // Insert the remaining block
+                        insertBlock(nextBlockBase + sizeDiff, nextBlockHeader->getSize() - sizeDiff);
+                    }
+                    else
+                    {
+                        adjustedNewSize += remainingSize;
+                    }
+                    currentBlockHeader->setSize(adjustedNewSize);
+                    if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+                    {
+                        _telemetry.incPayloadUsage(sizeDiff);
+                        _telemetry.updatePeakUsage(newSize, currentOffset);
+                    }
+                    return block;
+                }
+            }
+        }
+
+        // NOTE: Internal variants of free and malloc is used to prevent deadlocks
+        // [Block][Another Used Block]...[Free Memory]
+        auto index              = mappingSearch(newSize);
+        const auto metadataSize = sizeof(Header) + sizeof(HeaderOffset_t);
+        const auto newMemory    = _mallocInternal(index, newSize, alignment, metadataSize);
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (newMemory == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        std::memcpy(newMemory, block, std::min(oldSize, newSize));
+        _freeInternal(block);
+        return newMemory;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
     template <typename T, typename... Args>
     PMM_INLINE T* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
     {
@@ -412,99 +518,15 @@ namespace pmm
                 return nullptr;
             }
         }
-
-        // ARCH NOTE: While we can move memory if resize requires alignment, owing to code cleanliness and
-        //            and memmove taking O(n) like memcpy, we have decided to fallback to new allocation
-        //            if the resize requires a new alignment.
-        const auto startAddress       = static_cast<uint8_t*>(block);
-        const auto currentOffset      = *reinterpret_cast<HeaderOffset_t*>(startAddress - sizeof(HeaderOffset_t));
-        const auto baseAddress        = startAddress - currentOffset;
-        const auto currentBlockHeader = reinterpret_cast<Header*>(startAddress - currentOffset);
-        const auto sizeDiff           = oldSize > newSize ? oldSize - newSize : newSize - oldSize;
-        const auto misalignment       = reinterpret_cast<uintptr_t>(block) & alignment - 1;
-        // If the new size is smaller, but we can't carve out a free block or if the newSize is larger but the
-        // block has enough space to accommodate size difference(since sometimes we can leave extra space if
-        // the space is below minimum split threshold) then, we just return the original block.
-        if (misalignment == 0)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            if ((newSize <= oldSize && sizeDiff < SPLIT_SIZE_THRESHOLD) ||
-                (newSize > oldSize && currentBlockHeader->getSize() >= newSize))
-            {
-                return block;
-            }
-            else if (newSize < oldSize)
-            {
-                // If the new block is smaller we can update the header and store the cleaved block
-                // Update the header
-                currentBlockHeader->setSize(currentBlockHeader->getSize() - sizeDiff);
-
-                // Insert the block
-                const auto newFreeBlockAddress = baseAddress + currentBlockHeader->getSize() - sizeDiff;
-                insertBlock(newFreeBlockAddress, sizeDiff);
-                // We need to update the usage metrics in telemetry since the resize has decreased the block size
-                if constexpr (TelemetryPolicy == TelPolicy::Enabled)
-                {
-                    // Metadata size is not decreased since we are only inserting the block left after
-                    // splitting, and that block doesn't have any allocated metadata space.
-                    _telemetry.decPayloadUsage(sizeDiff);
-                    // We need to update the min usage as well since the memory is resized to a smaller size
-                    _telemetry.updateMinUsage(newSize, currentOffset);
-                }
-                return block;
-            }
-            else
-            {
-                // When resizing to a larger size there are two possibilities
-                // 1. If the allocation is latest or if the adjacent buffer is free,
-                //    we can carve out the requirement difference from it
-                // 2. Adjacent block is used, then, we can free the old memory and
-                //    return a new address(default fallback)
-                // Note: As TLSF guarantees coalesce we can assume that if the next block doesn't have
-                //       enough space to cover the size difference, so the block after nextBlock will be
-                //       used and we need to allocate a new buffer(default fallback).
-                const auto nextBlockBase   = baseAddress + currentBlockHeader->getSize();
-                const auto nextBlockHeader = reinterpret_cast<Header*>(nextBlockBase);
-                if (nextBlockHeader->isFree() && nextBlockHeader->getSize() >= sizeDiff)
-                {
-                    // [Block][Free Memory]
-                    // [Expanded Block][Free Memory]
-                    const auto freeNode = reinterpret_cast<TLSFFreeNode*>(nextBlockBase + sizeof(Header));
-                    unlinkNode(freeNode);
-
-                    size_t adjustedNewSize = currentBlockHeader->getSize() + sizeDiff;
-                    if (const size_t remainingSize = nextBlockHeader->getSize() - sizeDiff;
-                        remainingSize >= SPLIT_SIZE_THRESHOLD)
-                    {
-                        // Insert the remaining block
-                        insertBlock(nextBlockBase + sizeDiff, nextBlockHeader->getSize() - sizeDiff);
-                    }
-                    else
-                    {
-                        adjustedNewSize += remainingSize;
-                    }
-                    currentBlockHeader->setSize(adjustedNewSize);
-                    if constexpr (TelemetryPolicy == TelPolicy::Enabled)
-                    {
-                        _telemetry.incPayloadUsage(sizeDiff);
-                        _telemetry.updatePeakUsage(newSize, currentOffset);
-                    }
-                    return block;
-                }
-            }
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _resizeInternal(block, oldSize, newSize, alignment);
         }
-
-        // [Block][Another Used Block]...[Free Memory]
-        const auto newMemory = malloc(newSize, alignment);
-        if constexpr (SafeMode == SafeModePolicy::Safe)
+        else
         {
-            if (newMemory == nullptr)
-            {
-                return nullptr;
-            }
+            return _resizeInternal(block, oldSize, newSize, alignment);
         }
-        std::memcpy(newMemory, block, std::min(oldSize, newSize));
-        mfree(block);
-        return newMemory;
     }
 
 
