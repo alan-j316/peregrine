@@ -619,7 +619,7 @@ namespace pmm
         // round up it up to 64-bytes in safe mode.
         BitmapIndices indices;
         // Round the block to split threshold size, since that is our minimum size.
-        blockSize = std::max(SPLIT_SIZE_THRESHOLD, blockSize);
+        blockSize = std::max<size_t>(SPLIT_SIZE_THRESHOLD, blockSize);
         // The flIndex can be found using floor(log_2(size)) and fls(First Last Set)
         // can be used to get the value using bit manipulation.
         const auto rawFL = utils::fls(blockSize);
@@ -650,7 +650,7 @@ namespace pmm
         // which when divided by block width 1041/16 yields 65 which when subtracted from our bucket size(2^6 or 64)
         // gets us 1, which is the [1040, 1056) sl bucket.
         // Round block size to be at least 2^L to prevent shifting math errors.
-        blockSize = std::max(1ULL << L, blockSize);
+        blockSize = std::max<size_t>(1ULL << L, blockSize);
         blockSize = blockSize + (1ULL << (utils::fls(blockSize) - L)) - 1;
         // Since after rounding its pretty much the same as mapping insert.
         return mappingInsert(blockSize);
