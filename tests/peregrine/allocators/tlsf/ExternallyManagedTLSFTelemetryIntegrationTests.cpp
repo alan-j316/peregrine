@@ -273,9 +273,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleMalloc_UpdatesMin
     const auto offset4            = *reinterpret_cast<Offset_t*>(mem4 - sizeof(Offset_t));
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedMinMetadataUsage = std::min({ offset1, offset2, offset3, offset4 });
+    const auto expectedMinMetadataUsage = std::min<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedMinBufferUsage =
-        std::min({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
+        std::min<size_t>({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedMinBufferUsage, tel.getMinBufferUsage());
@@ -297,9 +297,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleMalloc_UpdatesPea
     const auto offset4            = *reinterpret_cast<Offset_t*>(mem4 - sizeof(Offset_t));
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedPeakMetadataUsage = std::max({ offset1, offset2, offset3, offset4 });
+    const auto expectedPeakMetadataUsage = std::max<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedPeakBufferUsage =
-        std::max({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
+        std::max<size_t>({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedPeakBufferUsage, tel.getPeakBufferUsage());
@@ -351,11 +351,11 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleAlloc_UpdatesTele
         const auto offset = *reinterpret_cast<Offset_t*>(reinterpret_cast<uint8_t*>(allocation) - sizeof(Offset_t));
         curMetadataUsage += offset;
 
-        minMetadataUsage  = std::min(minMetadataUsage, static_cast<size_t>(offset));
-        peakMetadataUsage = std::max(peakMetadataUsage, static_cast<size_t>(offset));
+        minMetadataUsage  = std::min<size_t>(minMetadataUsage, static_cast<size_t>(offset));
+        peakMetadataUsage = std::max<size_t>(peakMetadataUsage, static_cast<size_t>(offset));
 
-        minBufferUsage  = std::min(minBufferUsage, minPayloadUsage + offset);
-        peakBufferUsage = std::max(peakBufferUsage, peakPayloadUsage + offset);
+        minBufferUsage  = std::min<size_t>(minBufferUsage, minPayloadUsage + offset);
+        peakBufferUsage = std::max<size_t>(peakBufferUsage, peakPayloadUsage + offset);
     }
     curBufferUsage = curMetadataUsage + curPayloadUsage;
 
@@ -406,11 +406,11 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleAllocV_UpdatesTel
             *reinterpret_cast<Offset_t*>(reinterpret_cast<uint8_t*>(allocation.data()) - sizeof(Offset_t));
         curMetadataUsage += offset;
 
-        minMetadataUsage  = std::min(minMetadataUsage, static_cast<size_t>(offset));
-        peakMetadataUsage = std::max(peakMetadataUsage, static_cast<size_t>(offset));
+        minMetadataUsage  = std::min<size_t>(minMetadataUsage, static_cast<size_t>(offset));
+        peakMetadataUsage = std::max<size_t>(peakMetadataUsage, static_cast<size_t>(offset));
 
-        minBufferUsage  = std::min(minBufferUsage, minPayloadUsage + offset);
-        peakBufferUsage = std::max(peakBufferUsage, peakPayloadUsage + offset);
+        minBufferUsage  = std::min<size_t>(minBufferUsage, minPayloadUsage + offset);
+        peakBufferUsage = std::max<size_t>(peakBufferUsage, peakPayloadUsage + offset);
     }
     curBufferUsage = curMetadataUsage + curPayloadUsage;
 
@@ -497,9 +497,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, AscendingMFree_DoesNotUpd
     tlsf.mfree(mem3);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedMinMetadataUsage = std::min({ offset1, offset2, offset3, offset4 });
+    const auto expectedMinMetadataUsage = std::min<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedMinBufferUsage =
-        std::min({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
+        std::min<size_t>({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedMinBufferUsage, tel.getMinBufferUsage());
@@ -527,9 +527,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, AscendingMFree_DoesNotUpd
     tlsf.mfree(mem3);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedPeakMetadataUsage = std::max({ offset1, offset2, offset3, offset4 });
+    const auto expectedPeakMetadataUsage = std::max<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedPeakBufferUsage =
-        std::max({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
+        std::max<size_t>({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedPeakBufferUsage, tel.getPeakBufferUsage());
@@ -562,7 +562,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, AscendingMFree_UpdatesFre
     //       1. The largest block since allocations ended
     //       2. One block size of the freed allocations(due to coalescing)
     const auto freedBlockSizes = 512 + offset1 + 1_KB + offset2 + 1_MB + offset3;
-    const auto largest         = std::max(tlsfSize - totalUsedBuffer, freedBlockSizes);
+    const auto largest         = std::max<size_t>(tlsfSize - totalUsedBuffer, freedBlockSizes);
     EXPECT_EQ(largest, tel.getLargestFreeBlockSize());
     EXPECT_EQ(2, tel.getFreeBlockCount());
 }
@@ -628,9 +628,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, DescendingMFree_DoesNotUp
     tlsf.mfree(mem1);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedMinMetadataUsage = std::min({ offset1, offset2, offset3, offset4 });
+    const auto expectedMinMetadataUsage = std::min<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedMinBufferUsage =
-        std::min({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
+        std::min<size_t>({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedMinBufferUsage, tel.getMinBufferUsage());
@@ -658,9 +658,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, DescendingMFree_DoesNotUp
     tlsf.mfree(mem1);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedPeakMetadataUsage = std::max({ offset1, offset2, offset3, offset4 });
+    const auto expectedPeakMetadataUsage = std::max<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedPeakBufferUsage =
-        std::max({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
+        std::max<size_t>({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedPeakBufferUsage, tel.getPeakBufferUsage());
@@ -693,7 +693,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, DescendingMFree_UpdatesFr
     //       1. The largest block since allocations ended
     //       2. One block size of the freed allocations(due to coalescing)
     const auto freedBlockSizes = 512 + offset1 + 1_KB + offset2 + 1_MB + offset3;
-    const auto largest         = std::max(tlsfSize - totalUsedBuffer, freedBlockSizes);
+    const auto largest         = std::max<size_t>(tlsfSize - totalUsedBuffer, freedBlockSizes);
     EXPECT_EQ(largest, tel.getLargestFreeBlockSize());
     EXPECT_EQ(2, tel.getFreeBlockCount());
 }
@@ -758,9 +758,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, RandomOrderMFree_DoesNotU
     tlsf.mfree(mem2);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedMinMetadataUsage = std::min({ offset1, offset2, offset3, offset4 });
+    const auto expectedMinMetadataUsage = std::min<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedMinBufferUsage =
-        std::min({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
+        std::min<size_t>({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedMinBufferUsage, tel.getMinBufferUsage());
@@ -787,9 +787,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, RandomOrderMFree_DoesNotU
     tlsf.mfree(mem2);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedPeakMetadataUsage = std::max({ offset1, offset2, offset3, offset4 });
+    const auto expectedPeakMetadataUsage = std::max<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedPeakBufferUsage =
-        std::max({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
+        std::max<size_t>({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedPeakBufferUsage, tel.getPeakBufferUsage());
@@ -821,7 +821,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, RandomOrderMFree_UpdatesF
     //       1. The largest block since allocations ended
     //       2. One block size of the freed allocations(due to coalescing)
     const auto freedBlockSizes = 512 + offset1 + 1_KB + offset2 + 1_MB + offset3;
-    const auto largest         = std::max(tlsfSize - totalUsedBuffer, freedBlockSizes);
+    const auto largest         = std::max<size_t>(tlsfSize - totalUsedBuffer, freedBlockSizes);
     EXPECT_EQ(largest, tel.getLargestFreeBlockSize());
     EXPECT_EQ(2, tel.getFreeBlockCount());
 }
@@ -921,9 +921,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, FreeingAllAllocations_Doe
     tlsf.mfree(mem4);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedMinMetadataUsage = std::min({ offset1, offset2, offset3, offset4 });
+    const auto expectedMinMetadataUsage = std::min<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedMinBufferUsage =
-        std::min({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
+        std::min<size_t>({ minPayloadSize + offset1, 1_KB + offset2, 1_MB + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedMinBufferUsage, tel.getMinBufferUsage());
@@ -950,9 +950,9 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, FreeingAllAllocations_Doe
     tlsf.mfree(mem4);
 
     // Since we request a large alignment with mem1, we can guarantee a diff buffer usage
-    const auto expectedPeakMetadataUsage = std::max({ offset1, offset2, offset3, offset4 });
+    const auto expectedPeakMetadataUsage = std::max<size_t>({ offset1, offset2, offset3, offset4 });
     const auto expectedPeakBufferUsage =
-        std::max({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
+        std::max<size_t>({ 512ull + offset1, 1_KB + offset2, maxPayloadSize + offset3, 256_KB + offset4 });
 
     const auto& tel = tlsf.getTelemetry();
     EXPECT_EQ(expectedPeakBufferUsage, tel.getPeakBufferUsage());
@@ -978,11 +978,11 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleFree_UpdatesTelem
     for (const auto allocation : allocations)
     {
         const auto offset = *reinterpret_cast<Offset_t*>(reinterpret_cast<uint8_t*>(allocation) - sizeof(Offset_t));
-        minMetadataUsage  = std::min(minMetadataUsage, static_cast<size_t>(offset));
-        peakMetadataUsage = std::max(peakMetadataUsage, static_cast<size_t>(offset));
+        minMetadataUsage  = std::min<size_t>(minMetadataUsage, static_cast<size_t>(offset));
+        peakMetadataUsage = std::max<size_t>(peakMetadataUsage, static_cast<size_t>(offset));
 
-        minBufferUsage  = std::min(minBufferUsage, minPayloadUsage + offset);
-        peakBufferUsage = std::max(peakBufferUsage, peakPayloadUsage + offset);
+        minBufferUsage  = std::min<size_t>(minBufferUsage, minPayloadUsage + offset);
+        peakBufferUsage = std::max<size_t>(peakBufferUsage, peakPayloadUsage + offset);
     }
 
     /// Free everything except the first allocation
@@ -1042,11 +1042,11 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, MultipleFreeV_UpdatesTele
         const auto offset =
             *reinterpret_cast<Offset_t*>(reinterpret_cast<uint8_t*>(allocation.data()) - sizeof(Offset_t));
 
-        minMetadataUsage  = std::min(minMetadataUsage, static_cast<size_t>(offset));
-        peakMetadataUsage = std::max(peakMetadataUsage, static_cast<size_t>(offset));
+        minMetadataUsage  = std::min<size_t>(minMetadataUsage, static_cast<size_t>(offset));
+        peakMetadataUsage = std::max<size_t>(peakMetadataUsage, static_cast<size_t>(offset));
 
-        minBufferUsage  = std::min(minBufferUsage, minPayloadUsage + offset);
-        peakBufferUsage = std::max(peakBufferUsage, peakPayloadUsage + offset);
+        minBufferUsage  = std::min<size_t>(minBufferUsage, minPayloadUsage + offset);
+        peakBufferUsage = std::max<size_t>(peakBufferUsage, peakPayloadUsage + offset);
     }
 
     /// Free everything except the first allocation
@@ -1432,7 +1432,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests,
     mem               = static_cast<uint8_t*>(tlsf.resize(mem, size, newSize));
     const auto offset = reinterpret_cast<Offset_t*>(mem - sizeof(Offset_t));
 
-    const auto minMetadataUsage = std::min(static_cast<size_t>(*offset), initialMinMetadataUsage);
+    const auto minMetadataUsage = std::min<size_t>(static_cast<size_t>(*offset), initialMinMetadataUsage);
 
     EXPECT_EQ(initialMinBufferUsage, tel.getMinBufferUsage());
     EXPECT_EQ(minMetadataUsage, tel.getMinMetadataUsage());
@@ -1452,7 +1452,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests, ResizeToLargerSize_Latest
     mem               = static_cast<uint8_t*>(tlsf.resize(mem, size, newSize));
     const auto offset = reinterpret_cast<Offset_t*>(mem - sizeof(Offset_t));
 
-    const auto peakMetadataUsage = std::max(static_cast<size_t>(*offset), initialPeakMetadataUsage);
+    const auto peakMetadataUsage = std::max<size_t>(static_cast<size_t>(*offset), initialPeakMetadataUsage);
 
     EXPECT_EQ(newSize + *offset, tel.getPeakBufferUsage());
     EXPECT_EQ(peakMetadataUsage, tel.getPeakMetadataUsage());
@@ -1573,7 +1573,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests,
     mem               = static_cast<uint8_t*>(tlsf.resize(mem, size, newSize));
     const auto offset = reinterpret_cast<Offset_t*>(mem - sizeof(Offset_t));
 
-    const auto minMetadataUsage = std::min(static_cast<size_t>(*offset), initialMinMetadataUsage);
+    const auto minMetadataUsage = std::min<size_t>(static_cast<size_t>(*offset), initialMinMetadataUsage);
 
     // NOTE: Min metadata usage must not update in a ideal situation, i.e,
     //       the padding requirement for both the allocations are the same.
@@ -1603,7 +1603,7 @@ TEST_F(ExternallyManagedTLSFTelemetryIntegrationTests,
     mem               = static_cast<uint8_t*>(tlsf.resize(mem, size, newSize));
     const auto offset = reinterpret_cast<Offset_t*>(mem - sizeof(Offset_t));
 
-    const auto peakMetadataUsage = std::max(static_cast<size_t>(*offset), initialPeakMetadataUsage);
+    const auto peakMetadataUsage = std::max<size_t>(static_cast<size_t>(*offset), initialPeakMetadataUsage);
 
     EXPECT_EQ(newSize + *offset, tel.getPeakBufferUsage());
     EXPECT_EQ(peakMetadataUsage, tel.getPeakMetadataUsage());
