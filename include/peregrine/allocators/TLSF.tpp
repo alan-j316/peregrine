@@ -247,7 +247,7 @@ namespace pmm
         // Add the offset after adding the padding
         const auto offsetAmount = metadataSize + padding;
         const auto offset       = reinterpret_cast<HeaderOffset_t*>(basePtr + sizeof(Header) + padding);
-        *offset                 = offsetAmount;
+        *offset                 = static_cast<HeaderOffset_t>(offsetAmount);
         // We only need to offset the memory by the size of header offset and padding as header is prepopulated before
         // the "freeBlock".
         const auto memoryStart = basePtr + metadataSize + padding;
@@ -610,8 +610,8 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
-    TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingInsert(size_t blockSize) noexcept
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingInsert(size_t blockSize) noexcept
     {
         // The allocator always hands out memory in 64-byte chunks.
         // And the minimum chunk size we can insert into the freelist is 64-bytes
@@ -636,8 +636,8 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices
-    TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingSearch(size_t blockSize) noexcept
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingSearch(size_t blockSize) noexcept
     {
         // When allocating a block, we typically round to the next nearest bucket,
         // To make it work we need to add an offset of 2^(log_2(r) - L) - 1 which
@@ -659,9 +659,9 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSFFreeNode*
-    TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::searchSuitableBlock(
-        BitmapIndices& index) const noexcept
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSFFreeNode* TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::searchSuitableBlock(BitmapIndices& index)
+        const noexcept
     {
         // For finding the suitable block we first get the SL-bitmask for the given fl index and
         // mask out all the values that are less than our sl index.
@@ -780,7 +780,6 @@ namespace pmm
     constexpr uint8_t* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mergePrevious(
         uint8_t* block) noexcept
     {
-
         const Header* header     = reinterpret_cast<Header*>(block);
         size_t currentHeaderSize = header->getSize(); // Get size gives the entire block size.
         if (header->isPrevFree())
