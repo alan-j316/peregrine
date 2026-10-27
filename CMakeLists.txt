@@ -61,11 +61,9 @@ if (PMM_TESTS)
 endif ()
 
 if (PMM_DEMO)
+    # TODO: Fully remove demo app
     message(STATUS "Demo applications are enabled")
-    add_subdirectory(apps/math)
-    add_subdirectory(apps/asteroids)
     add_subdirectory(apps/demo)
-    add_subdirectory(apps/pong)
 endif ()
 
 if (PMM_BENCHMARK)
