@@ -27,7 +27,7 @@ namespace pmm
           _flBitmap{ 0 },
           _buffer{ buffer },
           _telemetry(memorySize),
-          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+          _mutex{ }
     {
         PMM_ASSERT_MSG(buffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
         PMM_ASSERT_MSG(memorySize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
@@ -47,7 +47,7 @@ namespace pmm
           _buffer{ static_cast<uint8_t*>(memAlloc(allocatorSize)) },
           _freeList{},
           _telemetry(allocatorSize),
-          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+          _mutex{ }
     {
         PMM_ASSERT_MSG(allocatorSize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
         clear();
@@ -62,7 +62,7 @@ namespace pmm
           _flBitmap{ tlsf._flBitmap },
           _buffer{ std::exchange(tlsf._buffer, nullptr) },
           _telemetry{ tlsf._telemetry },
-          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+          _mutex{ }
     /// TODO: Update after looking into mutex update, maybe delete move ctor?
     {
         std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));

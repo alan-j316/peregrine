@@ -82,19 +82,6 @@ namespace pmm::mt
     template <MTPolicy Policy>
     using Mutex_t = std::conditional_t<Policy == MTPolicy::SpinLock, SpinLock, DummySpinLock>;
 
-    template <MTPolicy Policy>
-    [[nodiscard]] constexpr Mutex_t<Policy> getMutex() noexcept
-    {
-        if constexpr (Policy == MTPolicy::SpinLock)
-        {
-            return SpinLock();
-        }
-        else
-        {
-            return DummySpinLock();
-        }
-    }
-
 
     /// @brief Concept defining a simple mutex with functionalities for locking and unlocking.
     template <typename T>
