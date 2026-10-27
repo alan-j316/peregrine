@@ -10,9 +10,6 @@
  */
 
 
-#include <concepts>
-
-
 namespace pmm
 {
     /**
@@ -20,140 +17,40 @@ namespace pmm
      * @{
      */
 
-
     /**************************************
-     *                                    *
      *            STACK TYPES             *
-     *                                    *
      **************************************/
 
-    namespace stack
+    /// @brief Stack allocator type.
+    enum class StackPolicy : uint8_t
     {
-        /**
-         * @brief Concept defining requirements for different stack types.
-         */
-        template <typename T>
-        concept StackType = requires(T policy) {
-            // Member variables
-            { T::getTypeIndex() } -> std::same_as<std::size_t>;
-        };
-
-
-        /**
-         * @brief Stack with minimal header footprint, but it may not define absolute stack behavior.
-         *
-         * @relatedalso Strict
-         */
-        struct Loose
-        {
-            static std::size_t getTypeIndex() { return 1; }
-        };
-
-
-        /**
-         * @brief Stack with full LIFO compliance, using more memory than @ref stack::Loose.
-         *
-         * @note The foolproofness of the policy are implementation dependant.
-         *       For example: free(void*) may or may not check for `nullptr` depending on whether
-         *       assertions or conditionals are used.
-         *
-         * @relatedalso Loose
-         */
-        struct Strict
-        {
-            static std::size_t getTypeIndex() { return 2; }
-        };
-
-    } // namespace stack
-
-
-
-    /**************************************
-     *                                    *
-     *          MEMORY OWNERSHIP          *
-     *                                    *
-     **************************************/
-
-    /**
-     * @brief Concept defining the requirements for a memory ownership strategy.
-     *
-     * @relatedalso ManagedMemory
-     * @relatedalso UnmanagedMemory
-     */
-    template <typename Strategy>
-    concept MemoryStrategy = requires {
-        { Strategy::getId() } -> std::same_as<std::size_t>;
+        Loose, /// Stack with minimal memory footprint.
+        Strict /// Stack with full LIFO compliance. Uses more memory than @ref StackPolicy::Loose.
     };
 
 
-    /**
-     * @brief Memory strategy indicating that the allocator owns the memory.
-     *        The allocator handles allocation/deallocation; users cannot directly free it.
-     *
-     * @relatedalso UnmanagedMemory
-     */
-    struct ManagedMemory
+    /// @brief Allocator Telemetry configuration.
+    enum class TelPolicy : uint8_t
     {
-        static constexpr std::size_t getId() noexcept { return 1; }
+        Enabled,
+        Disabled
     };
 
 
-    /**
-     * @brief Memory strategy indicating that the memory is shared with or managed by the user.
-     *        The allocator does not own the memory life cycle; the user must ensure its validity.
-     *
-     * @relatedalso ManagedMemory
-     */
-    struct UnmanagedMemory
+    /// @brief Allocator memory ownership configuration.
+    enum class MemPolicy : uint8_t
     {
-        static constexpr std::size_t getId() noexcept { return 2; }
+        Internal, ///< Memory buffer is owned by the allocator. Lifecycle is managed by allocator.
+        External  ///< Memory buffer needs to be provided by used.
     };
 
 
-
-    /**************************************
-     *                                    *
-     *             TELEMETRY              *
-     *                                    *
-     **************************************/
-
-    namespace telemetry
+    /// @brief Allocator safety policy configuration.
+    enum class SafeModePolicy : uint8_t
     {
-
-        /**
-         * @brief Concept defining the requirements for telemetry.
-         *
-         * @relatedalso Enabled
-         * @relatedalso Disabled
-         */
-        template <typename T>
-        concept TelemetryPolicy = requires(T) {
-            { T::getPolicyName() } -> std::same_as<std::string>;
-        };
-
-
-        /**
-         * @brief Telemetry policy indicating that the telemetry is enabled and managed by the allocator.
-         *
-         * @relatedalso Disabled
-         */
-        struct Enabled
-        {
-            static constexpr std::string getPolicyName() noexcept { return "Telemetry Enabled"; }
-        };
-
-
-        /**
-         * @brief Telemetry policy indicating that telemetry is disabled.
-         *
-         * @relatedalso Enabled
-         */
-        struct Disabled
-        {
-            static constexpr std::string getPolicyName() noexcept { return "No Telemetry"; }
-        };
-
-    } // namespace telemetry
+        Safe,  ///< Policy for safe allocator. Recommended for allocations/deallocation where validation is required.
+        Unsafe ///< Policy for unsafe allocator. Faster due to lack of safe guardrails like nullptr checking.
+    };
 
     /** @} */
 

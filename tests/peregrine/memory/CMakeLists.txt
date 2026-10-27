@@ -26,7 +26,7 @@ target_compile_features(MemoryDeathTests PRIVATE cxx_std_20)
 
 target_include_directories(
         MemoryDeathTests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 

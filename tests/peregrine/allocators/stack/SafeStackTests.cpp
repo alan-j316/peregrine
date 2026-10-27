@@ -32,7 +32,8 @@ namespace
     {
     public:
         size_t stackSize{ 2_KB };
-        pmm::Stack<pmm::stack::Loose, pmm::ManagedMemory, pmm::telemetry::Enabled, true> stack{ stackSize };
+        pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Safe>
+            stack{ stackSize };
     };
 
 
@@ -44,7 +45,8 @@ namespace
     public:
         size_t stackSize{ 2_KB };
         uint8_t* buffer = new uint8_t[stackSize];
-        pmm::Stack<pmm::stack::Loose, pmm::UnmanagedMemory, pmm::telemetry::Enabled, true> stack{ buffer, stackSize };
+        pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Safe>
+            stack{ buffer, stackSize };
 
     protected:
         void TearDown() override { delete[] buffer; }
@@ -58,7 +60,8 @@ namespace
     {
     public:
         size_t stackSize{ 2_KB };
-        pmm::Stack<pmm::stack::Strict, pmm::ManagedMemory, pmm::telemetry::Enabled, true> stack{ stackSize };
+        pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Safe>
+            stack{ stackSize };
     };
 
 
@@ -70,7 +73,8 @@ namespace
     public:
         size_t stackSize{ 2_KB };
         uint8_t* buffer = new uint8_t[stackSize];
-        pmm::Stack<pmm::stack::Strict, pmm::UnmanagedMemory, pmm::telemetry::Enabled, true> stack{ buffer, stackSize };
+        pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Safe>
+            stack{ buffer, stackSize };
 
     protected:
         void TearDown() override { delete[] buffer; }
@@ -682,7 +686,6 @@ TEST_F(ManagedStrictSafeStackTests, Resize_PriorToLatestsAllocation_FullStackRet
     [[maybe_unused]] const auto firstAllocation = stack.allocBytes(firstAllocSize);
     [[maybe_unused]] const auto nearFullSize =
         stack.allocBytes(stackSize - (firstAllocSize + alignof(void*) + 2 * sizeof(pmm::StrictStackHeader)));
-    std::cout << "First: " << firstAllocation << " Near Full Size: " << nearFullSize << "\n";
     [[maybe_unused]] const auto resize = stack.resize(firstAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
 }

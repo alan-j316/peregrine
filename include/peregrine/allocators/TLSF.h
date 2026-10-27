@@ -1,0 +1,590 @@
+#pragma once
+/**
+ * @file TLSF.h
+ * @author Alan Abraham P Kochumon
+ * @date Created on: September 07, 2026
+ *
+ * @brief Constant Time Dynamic Memory Allocator using TLSF(Two Level Segregated Fit).
+ *
+ * @details http://www.gii.upv.es/tlsf/
+ *
+ * @copyright Copyright (c) 2026 Alan Abraham P Kochumon
+ */
+
+
+#include "Policy.h"
+#include "peregrine/telemetry/TLSFTelemetry.h"
+#include "peregrine/utils/Bit.h"
+#include "peregrine/utils/Multithreading.h"
+#include "peregrine/utils/Preprocessors.h"
+
+#include <array>
+
+
+namespace pmm
+{
+    /**
+     * @brief Constant time dynamic memory allocator(Two Level Segregated Fit).
+     *
+     * @tparam MemoryPolicy         Memory management type. See @ref pmm::MemPolicy.
+     * @tparam TelemetryPolicy      Policy indicating whether or not telemetry is enabled for this allocator.
+     *                              See @ref pmm::TelPolicy. Disabled by default.
+     * @tparam SafeMode             Policy dictating the safety of this allocator. When in safe mode, certain actions
+     *                              like `nullptr` resize or free are handled gracefully, in *Release Mode*. Assertions
+     *                              acts as safety value in both mode, given *Debug Mode* is enabled. Disabled by
+     *                              default to prevent any performance stalls incurred by conditional checks.
+     * @tparam MultithreadingPolicy Policy hinting whether the instance can handle multithreading safety.
+     *                              Default: @ref mt::MTPolicy::NoMTPolicy.
+     */
+    template <MemPolicy MemoryPolicy = MemPolicy::Internal, TelPolicy TelemetryPolicy = TelPolicy::Disabled,
+              SafeModePolicy SafeMode = SafeModePolicy::Unsafe, mt::MTPolicy MultithreadingPolicy = mt::MTPolicy::NoMT>
+    class TLSF
+    {
+    public:
+        /// TLSF Block Header
+        struct Header
+        {
+
+            /**
+             * @note Flag bits are stored in the MSB(Most Significant Bits) since we don't anticipate the allocator
+             *       being used with sizes in the 2^62 - 2^64 range and most modern hardware doesn't implement beyond
+             *       memory address lines.
+             *       Moreover, the allocator can suffer from corruption if they are stored in LSB, like when allocating
+             *       an odd size, the FREE BIT can get overridden.
+             */
+            size_t sizeWithFlags; /// The size of the memory block with 2 LSB used for flags.
+            size_t padding;       /// Padding requirements. Unused when the block is free.
+
+            /// Number of bits reserved for flags.
+            static constexpr size_t RESERVED_FLAG_BIT_COUNT = 2;
+            static constexpr size_t FLAG_BIT_SHIFT          = (sizeof(size_t) * 8) - RESERVED_FLAG_BIT_COUNT; // 62
+            /// Mask for manipulating the free bit.
+            static constexpr size_t MASK_FREE = 1ULL << FLAG_BIT_SHIFT;
+            /// Mask for manipulating the free bit for previous memory address.
+            static constexpr size_t MASK_PREV_FREE = 2ULL << FLAG_BIT_SHIFT;
+            /// Mask for all flag bits.
+            static constexpr size_t MASK_FLAGS = MASK_FREE | MASK_PREV_FREE;
+            /// Mask for getting the true block size.
+            static constexpr size_t MASK_SIZE = ~MASK_FLAGS;
+
+            /// Bit manipulator for marking this block as free.
+            static constexpr size_t FREE_MAN_BIT = 1ULL << FLAG_BIT_SHIFT; // 0b0100...0000
+            /// Bit manipulator for marking this block as used.
+            static constexpr size_t USED_MAN_BIT = ~FREE_MAN_BIT; // 0b1011...1111
+            /// Bit manipulator for marking previous block as free.
+            static constexpr size_t PREV_FREE_MAN_BIT = 2ULL << FLAG_BIT_SHIFT; // 0b1000...0000
+            /// Bit manipulator for marking previous block as used.
+            static constexpr size_t PREV_USED_MAN_BIT = ~PREV_FREE_MAN_BIT; // 0b0111...1111
+
+
+            /// Return whether the current block is free.
+            [[nodiscard]] PMM_INLINE constexpr bool isFree() const noexcept
+            { return (sizeWithFlags & MASK_FREE) == MASK_FREE; }
+            /// Return whether the previous block is free.
+            [[nodiscard]] PMM_INLINE constexpr bool isPrevFree() const noexcept
+            {
+                // Previous block is free if bit before MSB is 01
+                return (sizeWithFlags & MASK_PREV_FREE) == MASK_PREV_FREE;
+            }
+            /// Return the true size of the block.
+            [[nodiscard]] PMM_INLINE constexpr size_t getSize() const noexcept { return sizeWithFlags & MASK_SIZE; }
+
+            /// Set the size of the block to @p size.
+            PMM_INLINE constexpr void setSize(const size_t size) noexcept
+            { sizeWithFlags = size | (sizeWithFlags & MASK_FLAGS); }
+
+            /// Mark the block as free.
+            PMM_INLINE constexpr void markFree() noexcept
+            {
+                // To mark a block as free we need to turn on the LSB
+                // so we just or the sizeWithFlag with 1
+                sizeWithFlags |= FREE_MAN_BIT;
+            }
+            /// Mark the block as used.
+            PMM_INLINE constexpr void markUsed() noexcept
+            {
+                // To mark a block as used we need to turn off the LSB
+                // so we and it the binary equivalent of 0b1111...1110
+                sizeWithFlags &= USED_MAN_BIT;
+            }
+
+            /// Mark the block previous as free.
+            /// @note This doesn't manipulate the previous memory address, but only updates
+            ///       internal state of current block.
+            PMM_INLINE constexpr void markPrevFree() noexcept
+            {
+                // We can't directly manipulate the free bits so we need to mask that bit and update it to
+                // 1 such that 0bxxxx...xxxx0x | 0b0000...000010 -> 0bxxxx...xxxx1x
+                sizeWithFlags |= PREV_FREE_MAN_BIT;
+            }
+
+            /// Mark the block as used.
+            /// @note This doesn't manipulate the previous memory address, but only updates
+            ///       internal state of current block.
+            PMM_INLINE constexpr void markPrevUsed() noexcept
+            {
+                // We can't directly manipulate the free bits so we need to mask that bit and update it to
+                // 1 such that 0bxxxx...xxxx1x & 0b1111...111101 -> 0bxxxx...xxxx0x
+                sizeWithFlags &= PREV_USED_MAN_BIT;
+            }
+        };
+
+        /// Internal doubly linked list node used for storing memory blocks of similar size in the
+        /// same FL_SL bitmask.
+        struct TLSFFreeNode
+        {
+            TLSFFreeNode* prev{ nullptr };
+            TLSFFreeNode* next{ nullptr };
+        };
+
+        using Bitmask_t      = uint64_t; /// Data type used for bitmasks
+        using HeaderOffset_t = uint32_t; /// Offset used for headers.
+        /// The offset used for LSB(Least Significant Bit) of FL.
+        /// Since we are using an offset of 64, which means that our initial SL indices start
+        /// at [64, 128) rather than [1, 2).
+        static constexpr size_t FL_OFFSET = 6;
+        /// 2^L gives the number of buckets, which in our case is 64 since we are using a uint64_t per
+        /// SL bucket.
+        static constexpr size_t L = 6;
+
+        static constexpr size_t FL_SIZE              = sizeof(Bitmask_t) * 8; // 64-bytes
+        static constexpr size_t SL_SIZE              = 1 << L;                // 2^L = 64 slots per FL
+        static constexpr size_t SPLIT_SIZE_THRESHOLD = 1ULL << FL_OFFSET;     // 64-bytes
+
+
+        /**
+         * @brief Create a TLSF allocator with user managed memory.
+         *
+         * @param[in] buffer     The buffer to use for allocations.
+         * @param[in] memorySize The size of the buffer, which will also acts as the allocator's size.
+         *
+         * @remarks API specialized for @ref pmm::UnmanagedMemory.
+         */
+        constexpr TLSF(uint8_t* buffer, size_t memorySize) noexcept
+            requires(MemoryPolicy == MemPolicy::External);
+
+
+        /**
+         * @brief Create a TLSF allocator with internally managed memory.
+         *
+         * @param[in] allocatorSize The size of the allocator's size.
+         *                      Will not be the true usable size due internal paddings
+         *                      for headers and alignment.
+         *
+         * @remarks API specialized for @ref pmm::ManagedMemory.
+         */
+        explicit constexpr TLSF(size_t allocatorSize) noexcept
+            requires(MemoryPolicy == MemPolicy::Internal);
+
+
+        /**
+         * @brief Copying is strictly prohibited to prevent double-free crashes.
+         * @note Use std::move() to transfer ownership of the TLSF allocator.
+         */
+        constexpr TLSF(const TLSF&) = delete;
+
+
+        /**
+         * @brief Copying is strictly prohibited to prevent double-free crashes.
+         * @note Use std::move() to transfer ownership of the TLSF allocator.
+         */
+        constexpr TLSF& operator=(const TLSF&) = delete;
+
+
+        /**
+         * @brief Transfer a TLSF allocator's memory to a this object.
+         *
+         * @param[in,out] tlsf The TLSF allocator to move into this object.
+         */
+        constexpr TLSF(TLSF&& tlsf) noexcept;
+
+
+        /**
+         * @brief Transfer a TLSF allocator's memory to this object.
+         *
+         * @warning This will delete any buffers held by the allocator on the left hand side of the assingment.
+         *
+         * @param[in,out] tlsf The TLSF allocataor to move into this object.
+         *
+         * @return The current TLSF allocator instance.
+         */
+        constexpr TLSF& operator=(TLSF&& tlsf) noexcept;
+
+
+        /**
+         * @brief TLSF Destructor.
+         *
+         * @note TODO: For clearing the TLSF allocator use @ref clear or
+         *       use @ref free to free individual allocations.
+         *
+         * @warning Will not free the backing buffer since it is managed by the user.
+         *
+         * @remarks API specialized for @ref pmm::UnmanagedMemory.
+         */
+        constexpr ~TLSF() noexcept
+            requires(MemoryPolicy == MemPolicy::External)
+        = default;
+
+
+        /**
+         * @brief TLSF Destructor. Frees the internal buffer.
+         *
+         * @note TODO: For clearing the TLSF allocator use @ref clear or
+         *       use @ref free to free individual allocations.
+         *
+         * @remarks API specialized for @ref pmm::ManagedMemory.
+         */
+        constexpr ~TLSF() noexcept
+            requires(MemoryPolicy == MemPolicy::Internal);
+
+
+        /// Get the size of the allocator in bytes.
+        constexpr size_t size() const noexcept;
+
+        /// Get the amount of memory in use in bytes.
+        constexpr size_t usedSize() const noexcept;
+
+        /// Get the amount of free memory in bytes.
+        constexpr size_t freeSize() const noexcept;
+
+        /**
+         * @brief Allocate a block of memory.
+         *
+         * @param size      The size of memory to allocate.
+         * @param alignment The alignment of the memory block.
+         *                  Default: 8-bytes (sizeof(void*) on a 64-bit machine).
+         *
+         * @relatedalso alloc
+         * @relatedalso allocV
+         */
+        [[nodiscard]] constexpr void* malloc(size_t size, size_t alignment = sizeof(void*)) noexcept;
+
+
+        /**
+         * @brief Allocate an object of type @p T in the stack and initialize it with @p args.
+         *
+         * @note The object will be aligned to the default alignment of @p T.
+         * @note T must be aligned to a power of 2.
+         *
+         * @tparam T    The type of object to allocate.
+         * @tparam Args The type of arguments to instantiate the object.
+         *
+         * @param[in] args      The arguments to instantiate the object.
+         *
+         * @return A reference to the allocated memory.
+         *
+         * @relatedalso malloc
+         * @relatedalso allocV
+         */
+        template <typename T, typename... Args>
+        [[nodiscard]] T* alloc(Args... args) noexcept;
+
+
+        /**
+         * @brief Allocate a contiguous memory block for an array of @p count objects.
+         *
+         * @note This function allocates raw, uninitialized memory aligned to type @p T.
+         *       Object constructors are NOT called automatically. You must manually construct
+         *       the objects in the returned memory (e.g., using placement-new or `std::uninitialized_fill`).
+         * @note T must be aligned to a power of 2.
+         *
+         * @tparam T The type of object to allocate.
+         *
+         * @param[in] count The total number of contiguous elements requested.
+         *
+         * @return A `std::span<T>` viewing the allocated memory block.
+         *         Returns an empty span (`.empty() == true`) if the Stack lacks sufficient capacity.
+         *
+         * @relatedalso malloc
+         * @relatedalso alloc
+         */
+        template <typename T>
+        [[nodiscard]] std::span<T> allocV(std::size_t count) noexcept;
+
+
+        /**
+         * @brief Free a memory block.
+         *
+         * @note Use @ref free to free object allocated with @ref alloc.
+         *
+         * @param[in] block The block to free.
+         *
+         * @relatedalso free
+         * @relatedalso clear
+         */
+        constexpr void mfree(void* block) noexcept;
+
+
+        /**
+         * @brief Safely free memory allocated with @ref alloc<T>.
+         *
+         * @note Destructor is called for non-trivially destructible types.
+         * @note Use @ref mfree to free raw memory allocated with @ref malloc.
+         *
+         * @tparam T  The data type of the memory pointer.
+         *
+         * @param[in] ptr The object pointer to free.
+         *
+         * @return A boolean status indicating whether the free was valid.
+         *         **Validation is available ONLY for SafePool in Release Mode**
+         *
+         * @relatedalso mfree
+         * @relatedalso clear
+         */
+        template <typename T>
+        void free(T* ptr) noexcept;
+
+
+        /**
+         * @brief Safely free memory allocated with @ref allocV<T>.
+         *
+         * @note Destructor is called for non-trivially destructible types.
+         * @note Use @ref mfree to free raw memory allocated with @ref malloc.
+         *
+         * @tparam T  The data type of the memory pointer.
+         *
+         * @return A boolean status indicating whether the free was valid.
+         *         **Validation is available ONLY for SafePool in Release Mode**
+         *
+         * @param[in] vector The collection of objects to free.
+         *
+         * @relatedalso free
+         * @relatedalso mfree
+         * @relatedalso clear
+         */
+        template <typename T>
+        void freeV(std::span<T> vector) noexcept;
+
+
+        /**
+         * @brief Resize a block of memory to a new size.
+         *
+         * @note Resize is a slow method due to potential branch mispredictions
+         *       and must be used judiciously.
+         *
+         * @param block     The starting memory address of the memory.
+         * @param oldSize   The originally allocated size of the block.
+         * @param newSize   The size to resize to.
+         * @param alignment The new alignment.
+         */
+        [[nodiscard]] constexpr void* resize(void* block, size_t oldSize, size_t newSize,
+                                             size_t alignment = sizeof(void*)) noexcept;
+
+
+        /// @brief Invalidates and resets all allocations made by TLSF.
+        constexpr void clear() noexcept;
+
+
+        /// @brief Get the telemetry instance associated with this allocator.
+        /// @note When TelPolicy is set to disabled this will return a DummyTelemetry
+        ///       which will not yield any useful information.
+        [[nodiscard]] constexpr const TLSFTelemetry_t<TelemetryPolicy>& getTelemetry() const noexcept
+        { return _telemetry; }
+
+
+
+    private:
+        std::array<Bitmask_t, FL_SIZE> _slBitmap; /// Second Level Bitmaps
+        size_t _size, _usedSize;
+        Bitmask_t _flBitmap; /// First level bitmap
+        uint8_t* _buffer;
+
+        TLSFFreeNode* _freeList[FL_SIZE][SL_SIZE]; /// Free-list
+
+        PMM_NO_UNIQUE_ADDR TLSFTelemetry_t<TelemetryPolicy> _telemetry;
+        PMM_NO_UNIQUE_ADDR mt::Mutex_t<MultithreadingPolicy> _mutex;
+
+        /// Structure used for exchanging bit mask indices internally.
+        struct BitmapIndices
+        {
+            Bitmask_t flIndex{}, slIndex{};
+        };
+
+
+        /**
+         * @brief Get the FL and SL index for the given @p blockSize.
+         *
+         * @param[in] blockSize The block to search a match for.
+         * @return The FL, and SL index for the rounded block size.
+         */
+        static constexpr BitmapIndices mappingInsert(size_t blockSize) noexcept;
+
+
+        /**
+         * @brief Get the FL and SL index for the given @p blockSize, rounded to the nearest sl-block range.
+         *
+         * @code
+         * // FL: 3 [512, 1024)  SL: [1000, 1008), [1008, 1016), [1016, 1024)
+         * // FL: 4 [1024, 2048) SL: [1024, 1040), [1040, 1056)...
+         * mappingSearch(1015); // {.fl = 3, .sl = 62} since the block is rounded to 1016.
+         * mappingSearch(1023); // {.fl = 4, .sl = 0} since the block is rounded to 1024.
+         * mappingSearch(1025); // {.fl = 4, .sl = 1} since the block is rounded to 1032.
+         * @endcode
+         *
+         * @param[in] blockSize The block to search a match for.
+         * @return The FL, and SL index for the rounded block size.
+         */
+        static constexpr BitmapIndices mappingSearch(size_t blockSize) noexcept;
+
+
+        /**
+         * @brief Get a pointer to the free block at @p index.
+         *
+         * @note The index will be updated if the given indices doesn't have any free blocks.
+         *
+         * @param[in,out] index The FL and SL index for searching the block.
+         *
+         * @return A FreeNode pointer to the block at the given index, or to the adjacent block
+         *         if the provided indices doesn't contain a free block.
+         */
+        constexpr TLSFFreeNode* searchSuitableBlock(BitmapIndices& index) const noexcept;
+
+        /**
+         * @brief Insert @p block into the freelist.
+         * @param[in] block     The memory block to insert.
+         * @param[in] blockSize The size of the block.
+         */
+        constexpr void insertBlock(uint8_t* block, size_t blockSize) noexcept;
+
+
+        /**
+         * @brief Get the header from a freenode.
+         *
+         * @param[in] node The node whose free node is to be found.
+         *
+         * @return A pointer to header.
+         */
+        static constexpr Header* getHeader(TLSFFreeNode* node) noexcept;
+
+
+        /**
+         * @brief Merge this block with previous block if it's free.
+         *
+         * @note The function expects the header to be placed at the start of @p block.
+         *
+         * @param block The block to join with the previous block.
+         *
+         * @return The starting address of the previous block if it's free.
+         * @return The given @p block address, otherwise.
+         */
+        constexpr uint8_t* mergePrevious(uint8_t* block) noexcept;
+
+        /**
+         * @brief Merge this block with its next block if it's free.
+         *
+         * @note The function expects the header to be placed at the start of @p block.
+         *
+         * @param block The block to join with the next block.
+         *
+         * @return The given @p block address.
+         */
+        constexpr uint8_t* mergeNext(uint8_t* block) noexcept;
+
+        /**
+         * @brief Unlinks the block from the FL/SL bitmask and reset the bitmasks.
+         * @param block The block to unlink.
+         */
+        constexpr void unlinkNode(TLSFFreeNode* block) noexcept;
+
+        /// @brief Get the largest free block size in the allocator freelist.
+        /// @note This is an approximation as iterating through the allocator is expensive due to
+        ///       the required while loop.
+        constexpr size_t getLargestBlockSize() noexcept;
+
+        /// @brief Allocate memory and update the telemetry if telemetry is ON for the allocator.
+        /// @note The method is separated to reduce code duplication when using MT and non-MT pathways.
+        constexpr void* _mallocInternal(BitmapIndices& index, size_t size, size_t alignment,
+                                        size_t metadataSize) noexcept;
+
+        /// @brief Free a block of memory and update the telemetry if enabled.
+        constexpr void _freeInternal(void* block) noexcept;
+
+        /// @brief Resize a block of memory and update the telemetry if enabled.
+        constexpr void* _resizeInternal(void* block, size_t oldSize, size_t newSize, size_t alignment) noexcept;
+
+
+
+
+#ifdef ENABLE_PMM_TESTS
+    // FRIEND TEST macros for verifying internal states
+    #include <gtest/gtest_prod.h>
+
+
+
+
+        FRIEND_TEST(InternallyManagedTLSFTests, Ctor_CreatesValidFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests, Ctor_SingleAllocation_FLBitmapIsSingleBit);
+        FRIEND_TEST(InternallyManagedTLSFTests, Ctor_SingleAllocation_SLBitmapHasOnlyOneNonZeroEntry);
+        FRIEND_TEST(InternallyManagedTLSFTests, Ctor_SingleAllocation_OnlySingleFreeListIsPopulated);
+        FRIEND_TEST(InternallyManagedTLSFTests, Ctor_WritesAppropriateHeaderToBuffer);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveCtor_ClearsMovedTLSFsInternalBuffer);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveCtor_MovesBufferIntoNewObject);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveAssign_ClearsMovedTLSF);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveAssign_MovesBufferIntoNewObject);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveAssign_SelfAssignmentReturnsTheSameTLSF);
+        FRIEND_TEST(InternallyManagedTLSFTests, MoveAssign_DeletingOriginalTLSFDoNotDeleteTheNewTLSFsMemory);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_NullsOutInitialBitmap);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_CreatesANewSingleBitmap);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_SingleAllocation_FLBitmapIsSingleBit);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_SingleAllocation_SLBitmapHasOnlyOneNonZeroEntry);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_SingleAllocation_OnlySingleFreeListIsPopulated);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_SingleAllocation_FreeListIsUpdatedAfterAllocation);
+        FRIEND_TEST(InternallyManagedTLSFTests, Malloc_WritesAppropriateHeaderToBuffer_AfterFirstAllocation);
+        /// Note: The resize tests is necessary for internal state mutation as the memory address returned from resize
+        ///       only changes in one instance(when the new size is larger).
+        FRIEND_TEST(InternallyManagedTLSFTests, Resize_SameSizeDoesNotUpdateFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffSmallerThanSplitThreshold_DoesNotUpdateFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffEqualToSplitThreshold_UpdatesFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffGreaterThanSplitThreshold_UpdatesFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests, Resize_NonLatestAllocation_LargerSizeUpdatesFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests, Resize_LatestAllocation_LargerSizeUpdatesFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests, Clear_ResetsFLAndSLBitmaps);
+        FRIEND_TEST(InternallyManagedTLSFTests, Clear_ResetsFreeList);
+
+        FRIEND_TEST(InternallyManagedTLSF_MappingInsertTests, ReturnsValidFLAndSLIndices);
+        FRIEND_TEST(InternallyManagedTLSF_MappingSearchTests, ReturnsValidFLAndSLIndices);
+
+
+        FRIEND_TEST(ExternallyManagedTLSFTests, Ctor_CreatesValidFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Ctor_SingleAllocation_FLBitmapIsSingleBit);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Ctor_SingleAllocation_SLBitmapHasOnlyOneNonZeroEntry);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Ctor_SingleAllocation_OnlySingleFreeListIsPopulated);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Ctor_WritesAppropriateHeaderToBuffer);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveCtor_ClearsMovedTLSFsInternalBuffer);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveCtor_MovesBufferIntoNewObject);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveAssign_ClearsMovedTLSF);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveAssign_MovesBufferIntoNewObject);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveAssign_SelfAssignmentReturnsTheSameTLSF);
+        FRIEND_TEST(ExternallyManagedTLSFTests, MoveAssign_DeletingOriginalTLSFDoNotDeleteTheNewTLSFsMemory);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_NullsOutInitialBitmap);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_CreatesANewSingleBitmap);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_SingleAllocation_FLBitmapIsSingleBit);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_SingleAllocation_SLBitmapHasOnlyOneNonZeroEntry);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_SingleAllocation_OnlySingleFreeListIsPopulated);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_SingleAllocation_FreeListIsUpdatedAfterAllocation);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Malloc_WritesAppropriateHeaderToBuffer_AfterFirstAllocation);
+        /// Note: The resize tests is necessary for internal state mutation as the memory address returned from resize
+        ///       only changes in one instance(when the new size is larger).
+        FRIEND_TEST(ExternallyManagedTLSFTests, Resize_SameSizeDoesNotUpdateFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffSmallerThanSplitThreshold_DoesNotUpdateFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffEqualToSplitThreshold_UpdatesFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests,
+                    Resize_ToSmallerSize_SizeDiffGreaterThanSplitThreshold_UpdatesFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Resize_NonLatestAllocation_LargerSizeUpdatesFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Resize_LatestAllocation_LargerSizeUpdatesFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Clear_ResetsFLAndSLBitmaps);
+        FRIEND_TEST(ExternallyManagedTLSFTests, Clear_ResetsFreeList);
+
+        FRIEND_TEST(ExternallyManagedTLSF_MappingInsertTests, ReturnsValidFLAndSLIndices);
+        FRIEND_TEST(ExternallyManagedTLSF_MappingSearchTests, ReturnsValidFLAndSLIndices);
+#endif
+    };
+
+} // namespace pmm
+
+#include "TLSF.tpp"

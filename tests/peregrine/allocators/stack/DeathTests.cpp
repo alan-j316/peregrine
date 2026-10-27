@@ -1,7 +1,7 @@
 /**
  * @file DeathTests.cpp
  * @author Alan Abraham P Kochumon
- * @date Created on: August 3, 2026
+ * @date Created on: August 03, 2026
  *
  * @brief Verifies stack allocators's assertions trigger correctly in DEBUG MODE.
  *
@@ -29,19 +29,19 @@ namespace
  **************************************/
 
 TEST(ManagedLooseStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Loose, pmm::ManagedMemory>(0)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal>(0)), ""); }
 
 
 TEST(UnmanagedLooseStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
 {
     const auto buffer = new uint8_t[512];
-    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Loose, pmm::UnmanagedMemory>(buffer, 0)), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>(buffer, 0)), "");
     delete[] buffer;
 }
 
 
 TEST(UnmanagedLooseStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Loose, pmm::UnmanagedMemory>(nullptr, 512)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>(nullptr, 512)), ""); }
 
 
 /**
@@ -70,7 +70,7 @@ TEST_F(LooseStackTests, Allocation_NearFullStack_TriggersAssertion)
 TEST_P(StackAlignmentNonPowersOfTwo, LooseStackAllocation_InFullStack_TriggersAssertion)
 {
     // Allocate a big chunk to fill the stack near capacity
-    pmm::Stack<pmm::stack::Loose> stack(5120);
+    pmm::Stack<pmm::StackPolicy::Loose> stack(5120);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, GetParam())), "");
 }
 
@@ -119,7 +119,7 @@ TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
     constexpr auto alignment = 8;
 
     const auto memory = static_cast<char*>(stack.allocBytes(size, alignment));
-    
+
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
 }
@@ -226,19 +226,19 @@ TEST_F(LooseStackTests, ResizeLast_FromZero_TriggersAssertion)
  **************************************/
 
 TEST(ManagedStrictStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Strict, pmm::ManagedMemory>(0)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal>(0)), ""); }
 
 
 TEST(UnmanagedStrictStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
 {
     const auto buffer = new uint8_t[512];
-    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Strict, pmm::UnmanagedMemory>(buffer, 0)), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(buffer, 0)), "");
     delete[] buffer;
 }
 
 
 TEST(UnmanagedStrictStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::stack::Strict, pmm::UnmanagedMemory>(nullptr, 512)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(nullptr, 512)), ""); }
 
 
 /**
@@ -267,7 +267,7 @@ TEST_F(StrictStackTests, Allocation_NearFullStack_TriggersAssertion)
 TEST_P(StackAlignmentNonPowersOfTwo, StrictStackAllocation_InFullStack_TriggersAssertion)
 {
     // Allocate a big chunk to fill the stack near capacity
-    pmm::Stack<pmm::stack::Strict> stack(5120);
+    pmm::Stack<pmm::StackPolicy::Strict> stack(5120);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, GetParam())), "");
 }
 
@@ -314,7 +314,7 @@ TEST_F(StrictStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion
 {
     constexpr auto size      = 512;
     constexpr auto alignment = 8;
-    const auto memory = static_cast<char*>(stack.allocBytes(size, alignment));
+    const auto memory        = static_cast<char*>(stack.allocBytes(size, alignment));
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
 }

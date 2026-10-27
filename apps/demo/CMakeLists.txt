@@ -9,8 +9,8 @@ target_sources(
 
 target_link_libraries(
         Demo PRIVATE
-        Peregrine
-        StrictWarnings
+        Peregrine::Peregrine
+        ${PROJECT_NAME}-StrictWarnings
 
         imgui
         SDL3::SDL3

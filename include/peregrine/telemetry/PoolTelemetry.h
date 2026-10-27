@@ -200,14 +200,14 @@ namespace pmm
      *
      * @tparam Policy Telemetry Policy used by the pool.
      */
-    template <telemetry::TelemetryPolicy Policy>
+    template <TelPolicy Policy>
     using PoolTelemetryType =
-        std::conditional_t<std::is_same_v<Policy, telemetry::Disabled>, DummyPoolTelemetry, PoolTelemetry>;
+        std::conditional_t<Policy == TelPolicy::Disabled, DummyPoolTelemetry, PoolTelemetry>;
 
 
 
     /**
-     * @brief Get a telemetry instance depending the telemetry policy in use by the target pool.
+     * @brief Get a telemetry instance depending on the telemetry policy in use by the target pool.
      *
      * @tparam Policy The Telemetry policy in use by the target pool.
      *
@@ -217,11 +217,11 @@ namespace pmm
      *
      * @return A pool telemetry instance suited for the telemetry policy.
      */
-    template <telemetry::TelemetryPolicy Policy>
+    template <TelPolicy Policy>
     constexpr PoolTelemetryType<Policy> getTelemetryInstance(const std::size_t poolSize, const std::size_t chunkSize,
                                                              const std::size_t alignment) noexcept
     {
-        if constexpr (std::same_as<Policy, telemetry::Disabled>)
+        if constexpr (Policy == TelPolicy::Disabled)
         {
             return DummyPoolTelemetry(poolSize, chunkSize, alignment);
         }

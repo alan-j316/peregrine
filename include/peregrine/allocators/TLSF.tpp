@@ -1,0 +1,911 @@
+#pragma once
+/**
+ * @file TLSF.tpp
+ * @author Alan Abraham P Kochumon
+ * @date Created on: September 08, 2026
+ *
+ * @brief Implmentation of member functions defined in TLSF.h
+ *
+ * @copyright Copyright (c) 2026 Alan Abraham P Kochumon
+ */
+
+#include "../memory/Memory.h"
+
+#include <cstring>
+#include <format>
+
+namespace pmm
+{
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
+        uint8_t* buffer, const size_t memorySize) noexcept
+        requires(MemoryPolicy == MemPolicy::External)
+        : _slBitmap{},
+          _size{ memorySize },
+          _usedSize{ 0 },
+          _flBitmap{ 0 },
+          _buffer{ buffer },
+          _telemetry(memorySize),
+          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+    {
+        PMM_ASSERT_MSG(buffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
+        PMM_ASSERT_MSG(memorySize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
+        clear();
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
+        const size_t allocatorSize) noexcept
+        requires(MemoryPolicy == MemPolicy::Internal)
+        : _slBitmap{},
+          _size{ allocatorSize },
+          _usedSize{ 0 },
+          _flBitmap{ 0 },
+          _buffer{ static_cast<uint8_t*>(memAlloc(allocatorSize)) },
+          _freeList{},
+          _telemetry(allocatorSize),
+          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+    {
+        PMM_ASSERT_MSG(allocatorSize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
+        clear();
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(TLSF&& tlsf) noexcept
+        : _size{ tlsf._size },
+          _usedSize{ tlsf._usedSize },
+          _flBitmap{ tlsf._flBitmap },
+          _buffer{ std::exchange(tlsf._buffer, nullptr) },
+          _telemetry{ tlsf._telemetry },
+          _mutex{ mt::getMutex<MultithreadingPolicy>() }
+    /// TODO: Update after looking into mutex update, maybe delete move ctor?
+    {
+        std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));
+        std::move(tlsf._slBitmap.begin(), tlsf._slBitmap.end(), _slBitmap.begin());
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>& TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::operator=(TLSF&& tlsf) noexcept
+    {
+        // If the memory is internally managed, we need to free it before moving over the other allocator's
+        // internal buffer.
+        if constexpr (MemoryPolicy == MemPolicy::Internal)
+        {
+            memFree(_buffer, _size);
+        }
+
+        if (this == &tlsf)
+        {
+            return *this;
+        }
+
+        _buffer    = std::exchange(tlsf._buffer, nullptr);
+        _size      = tlsf._size;
+        _usedSize  = tlsf._usedSize;
+        _flBitmap  = tlsf._flBitmap;
+        _telemetry = tlsf._telemetry;
+        std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));
+        std::move(tlsf._slBitmap.begin(), tlsf._slBitmap.end(), _slBitmap.begin());
+
+        return *this;
+    }
+
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::~TLSF() noexcept
+        requires(MemoryPolicy == MemPolicy::Internal)
+    { memFree(_buffer, _size); }
+
+
+    /**************************************
+     *             GETTERS                *
+     **************************************/
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr size_t TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::size()
+        const noexcept
+    { return _size; }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr size_t TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::usedSize()
+        const noexcept
+    { return _usedSize; }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr size_t TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeSize()
+        const noexcept
+    { return _size - _usedSize; }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
+        const size_t size, const size_t alignment) noexcept
+    {
+        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment > 1, "[TLSF]: Alignment must be a power of 2");
+        PMM_ASSERT_MSG(size > 0, "[TLSF]: Cannot allocate a zero sized block");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (!std::has_single_bit(alignment) || alignment < 2 || size < 1)
+            {
+                return nullptr;
+            }
+        }
+        // [Header][Padding][OffsetToHeader][Ptr* returned to user]
+        // The offset to header acts as a way for bidirectional access to header. From the base address,
+        // as well as from the pointer handed over to the user.
+
+        const auto metadataSize = sizeof(Header) + sizeof(HeaderOffset_t);
+        // We need to allocate space for the metadata, size and for the worst case alignment of alignment - 1
+        const auto requiredSize = metadataSize + (alignment - 1) + size;
+
+        // For allocating memory we need to find the FL and SL indices.
+        auto index = mappingSearch(requiredSize);
+
+        // Multithreading
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _mallocInternal(index, size, alignment, metadataSize);
+        }
+        else
+        {
+            return _mallocInternal(index, size, alignment, metadataSize);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mallocInternal(
+        BitmapIndices& index, const size_t size, const size_t alignment, const size_t metadataSize) noexcept
+    {
+        auto freeBlock = searchSuitableBlock(index);
+
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            // searchSuitable block ONLY return a nullptr in safe mode.
+            if (freeBlock == nullptr)
+            {
+                return nullptr;
+            }
+        }
+
+
+        // Unlink the free node from the bitmap
+        unlinkNode(freeBlock);
+
+        // For rewriting the header we need to get the free block's size.
+        // Write the header with the used size and padding.
+        // NOTE: Used size is the entire size of the block including padding and metadata.
+        Header* freeBlockHeader = getHeader(freeBlock);
+        const auto freeSize     = freeBlockHeader->getSize();
+        // Remove and insert the appropriate header and add calculate padding for the block.
+        // We need to calculate padding based on the address that is offset by the size of header and header offset.
+        // Calculation representation: [Header][HeaderOffset][Padding][Aligned Memory Ptr]
+        // But padding will be placed in the middle in real usage.
+        // [Header][Offset][Addr Start]
+        // |
+        // basePtr(points to the start of header)
+        auto basePtr            = reinterpret_cast<uint8_t*>(freeBlockHeader);
+        const auto misalignment = (reinterpret_cast<uintptr_t>(basePtr) + metadataSize) & (alignment - 1);
+        const auto padding      = alignment - misalignment;
+        // [Header][Padding][HeaderOffset][Aligned Memory Ptr(Returned to user)]
+        freeBlockHeader->markUsed();
+        freeBlockHeader->padding = padding;
+
+        // Since we know real padding right now we can use it.
+        auto usedSize       = size + metadataSize + padding;
+        const auto sizeLeft = freeSize - usedSize;
+        // If we don't carve out free block if it is smaller than threshold size, we need ot add it's size to used size.
+        usedSize += sizeLeft < SPLIT_SIZE_THRESHOLD ? sizeLeft : 0;
+        freeBlockHeader->setSize(usedSize);
+
+        // If there is more free space than split threshold, split and store that memory
+        if (sizeLeft >= SPLIT_SIZE_THRESHOLD)
+        {
+            auto remainingBlockStart = basePtr + usedSize;
+            insertBlock(remainingBlockStart, sizeLeft);
+            // Update the current header's previous block as used
+            reinterpret_cast<Header*>(remainingBlockStart)->markPrevUsed(); // TODO: Check if necessary
+
+            // Update the footer
+            const auto blockEnd = remainingBlockStart + sizeLeft;
+            const auto footer   = reinterpret_cast<size_t*>(blockEnd - sizeof(size_t));
+            *footer             = sizeLeft;
+        }
+        else
+        {
+            // If the entire block is used, then mark the next block's previous flag as used.
+            const auto nextBlock = basePtr + usedSize;
+            if (nextBlock + sizeof(Header) < _buffer + _size)
+            {
+                reinterpret_cast<Header*>(nextBlock)->markPrevUsed();
+            }
+        }
+
+
+        //                Offset
+        //                  ↓
+        // [Header][Padding][OffsetAmount][Address Returned to user]
+        // <------- OFFSET AMOUNT ------->
+        // Add the offset after adding the padding
+        const auto offsetAmount = metadataSize + padding;
+        const auto offset       = reinterpret_cast<HeaderOffset_t*>(basePtr + sizeof(Header) + padding);
+        *offset                 = static_cast<HeaderOffset_t>(offsetAmount);
+        // We only need to offset the memory by the size of header offset and padding as header is prepopulated before
+        // the "freeBlock".
+        const auto memoryStart = basePtr + metadataSize + padding;
+
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            _telemetry.incUsage(size, usedSize - size);
+        }
+        return memoryStart;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_freeInternal(
+        void* block) noexcept
+    {
+        // prev_offset := sizeof(block) - padding(block) - sizeof(size_t)
+        // [[Header][...][size_t]] + [[Header][padding][HeaderOffset][block....]] =COALESCED=> [[Header][....]]
+        // ^             ^            ^                              ^
+        // |             |            |                              |
+        // start       offset   block - headerOffset               block
+        // <--- PREV BLK SIZE --->   <------------ CURRENT BLK SIZE ------------>
+        // We need to offset the block to the header's base which is the real real starting address of the block.
+        // since all mergePrevious, mergeNext, and mappingInsert expects the block to start at Header
+
+        // NOTE: Since we use header offset for telemetry as well, we need to cache the value, rather than a
+        //       pointer to the value, since the insert block can change the block structure.
+        //       A similar case applies to the header as value, requiring us to store the header structure itself
+        //       since the merging can coalesce the block, corrupting the original request size.
+        const HeaderOffset_t headerOffset =
+            *reinterpret_cast<HeaderOffset_t*>(static_cast<uint8_t*>(block) - sizeof(HeaderOffset_t));
+
+        block = static_cast<uint8_t*>(block) - headerOffset;
+        // ONLY USED FOR TELEMETRY
+        [[maybe_unused]] const auto currentBlockSize = static_cast<Header*>(block)->getSize();
+
+        block       = mergePrevious(static_cast<uint8_t*>(block));
+        block       = mergeNext(static_cast<uint8_t*>(block));
+        auto header = static_cast<Header*>(block);
+
+        insertBlock(static_cast<uint8_t*>(block), header->getSize());
+
+        // Mark the next block's prevFree.
+        // If this is not the final block, then we can mark the next block's prevFreeBlock as true.
+        // The currently freed block is considered non-final if and only if the current block with its size leaves
+        // enough space for at least a header.
+        if (reinterpret_cast<uintptr_t>(block) + header->getSize() + sizeof(Header) <
+            reinterpret_cast<uintptr_t>(_buffer) + _size)
+        {
+            // [CurrentHeader][Block Space...][Footer] [NextBlockHeader]
+            const auto nextBlockAddress = static_cast<uint8_t*>(block) + header->getSize();
+            // Mark the next block header's isPrevFree flag
+            const auto nextHeader = reinterpret_cast<Header*>(nextBlockAddress);
+            nextHeader->markPrevFree();
+            // Write the size current block to the footer.
+            const auto footer = reinterpret_cast<size_t*>(nextBlockAddress - sizeof(size_t));
+            *footer           = header->getSize();
+        }
+
+
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            // [Header][Padding][HeaderOffset][Usable Memory]
+            // <=================== Size ===================>
+            // <=======HEADER OFFSET=========><===REQ SIZE==>
+            const auto reqSize = currentBlockSize - headerOffset;
+            _telemetry.decUsage(reqSize, headerOffset);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_resizeInternal(
+        void* block, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+    {
+        // ARCH NOTE: While we can move memory if resize requires alignment, owing to code cleanliness and
+        //            and memmove taking O(n) like memcpy, we have decided to fallback to new allocation
+        //            if the resize requires a new alignment.
+        const auto startAddress       = static_cast<uint8_t*>(block);
+        const auto currentOffset      = *reinterpret_cast<HeaderOffset_t*>(startAddress - sizeof(HeaderOffset_t));
+        const auto baseAddress        = startAddress - currentOffset;
+        const auto currentBlockHeader = reinterpret_cast<Header*>(startAddress - currentOffset);
+        const auto sizeDiff           = oldSize > newSize ? oldSize - newSize : newSize - oldSize;
+        const auto misalignment       = reinterpret_cast<uintptr_t>(block) & (alignment - 1);
+        // If the new size is smaller, but we can't carve out a free block or if the newSize is larger but the
+        // block has enough space to accommodate size difference(since sometimes we can leave extra space if
+        // the space is below minimum split threshold) then, we just return the original block.
+        if (misalignment == 0)
+        {
+            if ((newSize <= oldSize && sizeDiff < SPLIT_SIZE_THRESHOLD) ||
+                (newSize > oldSize && currentBlockHeader->getSize() >= newSize))
+            {
+                return block;
+            }
+            else if (newSize < oldSize)
+            {
+                // If the new block is smaller we can update the header and store the cleaved block
+                // Update the header
+                const auto newBlockSize = currentBlockHeader->getSize() - sizeDiff;
+                currentBlockHeader->setSize(newBlockSize);
+
+                // Insert the block
+                const auto newFreeBlockAddress = baseAddress + newBlockSize;
+                insertBlock(newFreeBlockAddress, sizeDiff);
+
+                // Mark previous block as used
+                reinterpret_cast<Header*>(newFreeBlockAddress)->markPrevUsed();
+
+                // Update footer and mark next block's prev flag as free
+                const auto nextBlockAddress = newFreeBlockAddress + sizeDiff;
+                const auto footer           = reinterpret_cast<size_t*>(nextBlockAddress - sizeof(size_t));
+                *footer                     = sizeDiff;
+                if (nextBlockAddress + sizeof(Header) < _buffer + _size)
+                {
+                    reinterpret_cast<Header*>(nextBlockAddress)->markPrevFree();
+                }
+
+                // We need to update the usage metrics in telemetry since the resize has decreased the block size
+                if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+                {
+                    // Metadata size is not decreased since we are only inserting the block left after
+                    // splitting, and that block doesn't have any allocated metadata space.
+                    _telemetry.decPayloadUsage(sizeDiff);
+                    // We need to update the min usage as well since the memory is resized to a smaller size
+                    _telemetry.updateMinUsage(newSize, currentOffset);
+                }
+                return block;
+            }
+            else
+            {
+                // When resizing to a larger size there are two possibilities
+                // 1. If the allocation is latest or if the adjacent buffer is free,
+                //    we can carve out the requirement difference from it
+                // 2. Adjacent block is used, then, we can free the old memory and
+                //    return a new address(default fallback)
+                // Note: As TLSF guarantees coalesce we can assume that if the next block doesn't have
+                //       enough space to cover the size difference, so the block after nextBlock will be
+                //       used and we need to allocate a new buffer(default fallback).
+                const auto nextBlockBase   = baseAddress + currentBlockHeader->getSize();
+                const auto nextBlockHeader = reinterpret_cast<Header*>(nextBlockBase);
+                if (nextBlockHeader->isFree() && nextBlockHeader->getSize() >= sizeDiff)
+                {
+                    // [Block][Free Memory]
+                    // [Expanded Block][Free Memory]
+                    const auto freeNode = reinterpret_cast<TLSFFreeNode*>(nextBlockBase + sizeof(Header));
+                    unlinkNode(freeNode);
+
+                    size_t adjustedNewSize = currentBlockHeader->getSize() + sizeDiff;
+                    if (const size_t remainingSize = nextBlockHeader->getSize() - sizeDiff;
+                        remainingSize >= SPLIT_SIZE_THRESHOLD)
+                    {
+                        // Insert the remaining block
+                        insertBlock(nextBlockBase + sizeDiff, nextBlockHeader->getSize() - sizeDiff);
+
+                        // [      Handed to User     ][        Footer]
+                        // [Next Block Base][sizeDiff][Remaining Size] [Another block start]
+                        // Update the free block's footer
+                        const auto freeBlockEnd = nextBlockBase + sizeDiff + remainingSize;
+                        const auto footer       = reinterpret_cast<size_t*>(freeBlockEnd - sizeof(size_t));
+                        *footer                 = remainingSize;
+                    }
+                    else
+                    {
+                        adjustedNewSize += remainingSize;
+                        // Since the adjacent free block is fully consumed, mark the next block prev free as used
+                        // [Block to Resize][Next Block][Adjacent Block]
+                        //                              |
+                        //                            Mark prev flag as used
+                        const auto nextBlockStart = nextBlockBase + nextBlockHeader->getSize();
+                        if (nextBlockStart + sizeof(Header) < _buffer + _size)
+                        {
+                            reinterpret_cast<Header*>(nextBlockStart)->markPrevUsed();
+                        }
+                    }
+                    currentBlockHeader->setSize(adjustedNewSize);
+                    if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+                    {
+                        _telemetry.incPayloadUsage(sizeDiff);
+                        _telemetry.updatePeakUsage(newSize, currentOffset);
+                    }
+                    return block;
+                }
+            }
+        }
+
+        // NOTE: Internal variant of free and malloc is used to prevent deadlocks
+        // [Block][Another Used Block]...[Free Memory]
+        auto index              = mappingSearch(newSize);
+        const auto metadataSize = sizeof(Header) + sizeof(HeaderOffset_t);
+        const auto newMemory    = _mallocInternal(index, newSize, alignment, metadataSize);
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (newMemory == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        std::memcpy(newMemory, block, std::min(oldSize, newSize));
+        _freeInternal(block);
+        return newMemory;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    template <typename T, typename... Args>
+    PMM_INLINE T* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
+    {
+        auto rawMemory = malloc(sizeof(T), alignof(T));
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (rawMemory == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        return new (rawMemory) T(std::forward<Args>(args)...);
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    template <typename T>
+    PMM_INLINE std::span<T> TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocV(
+        std::size_t count) noexcept
+    {
+        PMM_ASSERT_MSG(count > 0, "[TLSF]: Cannot allocate an array of size 0");
+        const auto rawMemory = static_cast<T*>(malloc(sizeof(T) * count, alignof(T)));
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (sizeof(T) * count > _size || count == 0 || rawMemory == nullptr)
+            {
+                return std::span<T>();
+            }
+        }
+        return std::span(rawMemory, count);
+    }
+
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    template <typename T>
+    PMM_INLINE void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::free(T* ptr) noexcept
+    {
+        if constexpr (!std::is_trivially_destructible_v<T>)
+        {
+            ptr->~T();
+        }
+        return mfree(ptr);
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    template <typename T>
+    PMM_INLINE void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeV(
+        std::span<T> vector) noexcept
+    {
+        if constexpr (!std::is_trivially_destructible_v<T>)
+        {
+            for (auto& item : vector)
+            {
+                item.~T();
+            }
+        }
+        mfree(vector.data());
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(
+        void* block) noexcept
+    {
+        PMM_ASSERT_MSG(block != nullptr, "Cannot free a nullptr");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (block == nullptr)
+            {
+                return;
+            }
+        }
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            _freeInternal(block);
+        }
+        else
+        {
+            _freeInternal(block);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
+        void* block, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+    {
+        PMM_ASSERT_MSG(block != nullptr && oldSize > 0,
+                       "[TLSF]: Cannot resize a nullptr or a zero sized block. Use `malloc` for creating a new block");
+        PMM_ASSERT_MSG(newSize > 0, "[TLSF]: Cannot resize to 0 bytes. Use `mfree` for freeing memory.");
+        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment > 1,
+                       "[TLSF]: Cannot resize to a non-power of 2 alignment");
+
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (block == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment) || alignment < 2)
+            {
+                return nullptr;
+            }
+        }
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _resizeInternal(block, oldSize, newSize, alignment);
+        }
+        else
+        {
+            return _resizeInternal(block, oldSize, newSize, alignment);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::clear() noexcept
+    {
+        // Clear the FL and SL bitmask
+        _flBitmap = 0;
+        std::memset(_slBitmap.data(), 0, _slBitmap.size() * sizeof(Bitmask_t));
+        // Clear the freelist
+        std::memset(_freeList, 0, sizeof(_freeList));
+        // Clear the buffer
+        std::memset(_buffer, 0, _size);
+        // If telemetry is enabled we must reset it before inserting the free block
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            _telemetry.resetTelemetry();
+        }
+        // Insert the block
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            insertBlock(_buffer, _size);
+        }
+        else
+        {
+            insertBlock(_buffer, _size);
+        }
+    }
+
+
+    /**************************************
+     *         INTERNAL HELPERS           *
+     **************************************/
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingInsert(size_t blockSize) noexcept
+    {
+        // The allocator always hands out memory in 64-byte chunks.
+        // And the minimum chunk size we can insert into the freelist is 64-bytes
+        // so, we assert that minimal value with debug asserts in unsafe mode or
+        // round up it up to 64-bytes in safe mode.
+        BitmapIndices indices;
+        // Round the block to split threshold size, since that is our minimum size.
+        blockSize = std::max(SPLIT_SIZE_THRESHOLD, blockSize);
+        // The flIndex can be found using floor(log_2(size)) and fls(First Last Set)
+        // can be used to get the value using bit manipulation.
+        const auto rawFL = utils::fls(blockSize);
+        // The flIndex that we want to use needs to be offset by our FL_OFFSET.
+        // This ensures that flIndex starts at FL_OFFSET(6 in our case) since going below that doesn't make sense for
+        // SL-array boundary which is also 2^6 or 64 buckets (since gap between
+        // the next lowest SL index is only 32, 32-64).
+        indices.flIndex = rawFL > FL_OFFSET ? (rawFL - FL_OFFSET) : 0;
+        // sl := (r right_shift (fl-L)) - 2^L
+        indices.slIndex = (blockSize >> (rawFL - L)) - (1 << L);
+        return indices;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::BitmapIndices TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mappingSearch(size_t blockSize) noexcept
+    {
+        // When allocating a block, we typically round to the next nearest bucket,
+        // To make it work we need to add an offset of 2^(log_2(r) - L) - 1 which
+        // cause the division in mapping insert to rounded fl/sl to the next block.
+        // SL: [1024, 1040), [1040, 1056)...
+        // Since the blockSize is not perfectly aligned to the bounds, we will expect it to be
+        // rounded to 1040 or have an sl index of 1. So we increment the block size by the sl block width - 1
+        // blockSize + (2^(10-6)) - 1 = blockSize + 15 (which will make the values round to [1040,1056) sl-index
+        // if the value is not 1024(1025->1040, 1026->1041...)
+        // which when divided by block width 1041/16 yields 65 which when subtracted from our bucket size(2^6 or 64)
+        // gets us 1, which is the [1040, 1056) sl bucket.
+        // Round block size to be at least 2^L to prevent shifting math errors.
+        blockSize = std::max(1ULL << L, blockSize);
+        blockSize = blockSize + (1ULL << (utils::fls(blockSize) - L)) - 1;
+        // Since after rounding its pretty much the same as mapping insert.
+        return mappingInsert(blockSize);
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSFFreeNode* TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::searchSuitableBlock(BitmapIndices& index)
+        const noexcept
+    {
+        // For finding the suitable block we first get the SL-bitmask for the given fl index and
+        // mask out all the values that are less than our sl index.
+        // Eg: _slBitmask[indices.flIndex] = 0010 1100, SL = 1, then
+        //     bitTemp = 0010 1100 & 1111 1111 << 1
+        //             = 0010 1100 & 1111 1110
+        //             = 0010 1100
+        // Then, we use ffs(bitTemp) to get the non-empty SL, ie 2 in our case.
+        // But if our SL index returns a zero, we mask out of flBitmap and get the ffs of that.
+        // Eg: _flIndex = 0010 1100, and our FL = 1, then bitmapTemp will return 0
+        // so we take 0010 1100 & 1111 1111 << 2(FL + 1, since our slBitmap at FL is empty)
+        //          = 0010 1100 & 1111 1100
+        //          = 0010 1100
+        //    newFL = ffs(00101100) which returns 2.
+        // and taking the ffs(_slBitmap[newFL]), gives the correct sl index since block are arranged in order.
+        auto bitmapTemp = _slBitmap[index.flIndex] & (~0ULL << index.slIndex);
+        size_t nonEmptyFL, nonEmptySL;
+        if (bitmapTemp != 0)
+        {
+            nonEmptyFL = index.flIndex;
+            nonEmptySL = utils::ffs(bitmapTemp);
+        }
+        else
+        {
+            bitmapTemp = _flBitmap & (~0ULL << (index.flIndex + 1));
+            PMM_ASSERT_MSG(bitmapTemp > 0, "Out of memory: No suitable FL bucket.");
+            if constexpr (SafeMode == SafeModePolicy::Safe)
+            {
+                if (bitmapTemp == 0)
+                {
+                    return nullptr;
+                }
+            }
+            nonEmptyFL = utils::ffs(bitmapTemp);
+            nonEmptySL = utils::ffs(_slBitmap[nonEmptyFL]);
+        }
+        // Out of range FL and SL index indicate that there is no memory left with
+        // that satisfies the FL and SL requirements.
+        PMM_ASSERT_MSG(
+            nonEmptyFL < FL_SIZE && nonEmptySL < SL_SIZE,
+            std::format(
+                "FL and/or SL indices out-of-range.\nProvided\n\tFL: {} and SL: {}.\nDeduced\n\tFL: {} and SL: {}.\n",
+                index.flIndex, index.slIndex, nonEmptyFL, nonEmptySL)
+                .c_str());
+
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (nonEmptyFL >= FL_SIZE && nonEmptySL >= SL_SIZE)
+            {
+                return nullptr;
+            }
+        }
+
+        index.flIndex = nonEmptyFL;
+        index.slIndex = nonEmptySL;
+        return _freeList[nonEmptyFL][nonEmptySL];
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::insertBlock(
+        uint8_t* block, const size_t blockSize) noexcept
+    {
+        /// Since the function is internal this check is unnecessary but kept for safety.
+        PMM_ASSERT_MSG(block != nullptr && blockSize > 0, "Cannot insert a zero sized or nullptr block.");
+
+        // Get the FL and SL index
+        auto index = mappingInsert(blockSize);
+
+        // Insert the freenode
+        //                       ____________________________
+        //                      |                            |
+        // FreeList = [[Header][FreeNode][....] <=> [Header][FreeNode][....]]
+        // [FL][SL] = nullptr(START) <- existingNode* -> nullptr(END)
+        //            nullptr(START) <- freeNode* <=> existingNode* -> nullptr(END)
+        TLSFFreeNode* freeNode     = reinterpret_cast<TLSFFreeNode*>(block + sizeof(Header));
+        TLSFFreeNode* existingNode = _freeList[index.flIndex][index.slIndex];
+        freeNode->prev             = nullptr; // Can have garbage values so we need to assign nullptr.
+        freeNode->next             = existingNode;
+        if (existingNode != nullptr)
+        {
+            existingNode->prev = freeNode;
+        }
+        _freeList[index.flIndex][index.slIndex] = freeNode;
+
+        // Update the FL and SL bitmasks
+        _flBitmap |= 1ULL << index.flIndex;
+        _slBitmap[index.flIndex] |= 1ULL << index.slIndex;
+
+        // Update the Header of the free node
+        Header* header = getHeader(freeNode);
+        header->setSize(blockSize);
+        header->markFree();
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            _telemetry.incFreeBlockCount();
+            _telemetry.updateLargestFreeBlockSize(getLargestBlockSize());
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Header* TLSF<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getHeader(TLSFFreeNode* node) noexcept
+    {
+        // Note: Header is placed below the free node.
+        return reinterpret_cast<Header*>(reinterpret_cast<uint8_t*>(node) - sizeof(Header));
+    }
+
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    constexpr uint8_t* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mergePrevious(
+        uint8_t* block) noexcept
+    {
+        const Header* header     = reinterpret_cast<Header*>(block);
+        size_t currentHeaderSize = header->getSize(); // Get size gives the entire block size.
+        if (header->isPrevFree())
+        {
+            // Get the previous block's size from it's footer.
+            const size_t* prevBlockSize = reinterpret_cast<size_t*>(block - sizeof(size_t));
+
+            // Get the start of previous header.
+            // The previous block ends at this blocks header so subtracting that from previous block's size
+            // gives the starting address of
+            uint8_t* prevStartAddress = block - *prevBlockSize;
+
+            // Unlink next node
+            // [Header][FreeNode]
+            TLSFFreeNode* prevFreeNode = reinterpret_cast<TLSFFreeNode*>(prevStartAddress + sizeof(Header));
+            unlinkNode(prevFreeNode);
+
+            // Write the new header
+            Header* newHeader = reinterpret_cast<Header*>(prevStartAddress);
+            // The new header is the previous free block's header so we can query and story its size
+            const auto prevHeaderSize = newHeader->getSize();
+            newHeader->setSize(prevHeaderSize + currentHeaderSize);
+            newHeader->markFree();
+
+            // return the start address
+            return prevStartAddress;
+        }
+        else
+        {
+            return block;
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr uint8_t* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mergeNext(
+        uint8_t* block) noexcept
+    {
+        // To merge with the next block we need to check if the next block is free
+        // Access the next block's header
+        Header* currentHeader = reinterpret_cast<Header*>(block);
+        // Bounds checking to ensure that we are not trying to access invalid memory in beyond
+        // our application's addressable space.
+        // We can't also the the boundary byte.
+        Header* nextHeader = block + currentHeader->getSize() >= _buffer + _size
+            ? nullptr
+            : reinterpret_cast<Header*>(block + currentHeader->getSize());
+        // Coalesce current and next blocks if next block is free.
+        if (nextHeader != nullptr && nextHeader->isFree())
+        {
+            // Unlink next node
+            // [Header][FreeNode]
+            TLSFFreeNode* nextFreeNode =
+                reinterpret_cast<TLSFFreeNode*>(reinterpret_cast<uint8_t*>(nextHeader) + sizeof(Header));
+            unlinkNode(nextFreeNode);
+
+            // Unify the header
+            // Since our current header is where our new header will be we can overwrite the values
+            // to include the new size as well, and reset the padding to zero
+            currentHeader->setSize(currentHeader->getSize() + nextHeader->getSize());
+            currentHeader->markFree();
+            currentHeader->padding = 0;
+        }
+
+        return block;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    constexpr void TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::unlinkNode(
+        TLSFFreeNode* block) noexcept
+    {
+        const auto header = getHeader(block);
+        const auto index  = mappingInsert(header->getSize());
+        // If the node has a previous link, update it's next node to the current block next node
+        // essentially removing this block.
+        if (block->prev != nullptr)
+        {
+            block->prev->next = block->next;
+        }
+        else
+        // If there is no previous node then this could mean either the current block is the first node
+        // or its the only node so, reassign freelist head to the block next node.
+        {
+            _freeList[index.flIndex][index.slIndex] = block->next;
+        }
+
+
+        if (block->next != nullptr)
+        {
+            block->next->prev = block->prev;
+        }
+
+        // Reset the sl flag if sl bucket is empty
+        const auto newSL = _slBitmap[index.flIndex] & ~(1ULL << index.slIndex);
+        // Ternary will get translated into a single cmovcc instruction so no branching.
+        _slBitmap[index.flIndex] =
+            _freeList[index.flIndex][index.slIndex] == nullptr ? newSL : _slBitmap[index.flIndex];
+        const auto newFL = _flBitmap & ~(1ULL << index.flIndex);
+        _flBitmap        = _slBitmap[index.flIndex] == 0 ? newFL : _flBitmap;
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            _telemetry.decFreeBlockCount();
+            // An _flBitmap of 0 will cause a crash to due the invalid indexing.
+            // To prevent this we need to set the largest block size to 0 if _flIndex is zero.
+            const auto largestFreeBlock = _flBitmap == 0 ? 0 : getLargestBlockSize();
+            _telemetry.updateLargestFreeBlockSize(largestFreeBlock);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr size_t TLSF<MemoryPolicy, TelemetryPolicy, SafeMode,
+                                     MultithreadingPolicy>::getLargestBlockSize() noexcept
+    { // To get the largest block in the allocator
+        // we need to find the largest fl and sl index.
+        // Then for a accurate block size, we need to loop through the list but it can cause branch mispredictions
+        // which can make the allocator so, so we approximate the largest block by querying the first header.
+        const auto fl      = utils::fls(_flBitmap);
+        const auto sl      = utils::fls(_slBitmap[fl]);
+        TLSFFreeNode* node = _freeList[fl][sl];
+        return node == nullptr ? 0 : getHeader(node)->getSize();
+    }
+
+
+} // namespace pmm

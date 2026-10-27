@@ -12,7 +12,9 @@
             },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {
-                    "hostOS": ["Windows"]
+                    "hostOS": [
+                        "Windows"
+                    ]
                 }
             },
             "cacheVariables": {
@@ -43,7 +45,8 @@
                 "CMAKE_CXX_COMPILER": "cl",
                 "CMAKE_C_COMPILER": "cl"
             }
-        },        {
+        },
+        {
             "name": "Clang-Debug",
             "displayName": "Clang Debug",
             "inherits": "base-windows",

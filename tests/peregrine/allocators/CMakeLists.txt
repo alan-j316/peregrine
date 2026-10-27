@@ -5,18 +5,35 @@ add_library(AllocatorTests OBJECT)
 target_sources(
         AllocatorTests
         PRIVATE
+
         arena/ManagedArenaTests.cpp
         arena/UnmanagedArenaTests.cpp
         arena/SafeArenaTests.cpp
+
         stack/LooseStackTests.cpp
         stack/StrictStackTests.cpp
         stack/StackMemoryManagementTests.cpp
         stack/TelemetryIntegrationTests.cpp
         stack/SafeStackTests.cpp
+
         pool/AllocatorTests.cpp
         pool/TelemetryIntegrationTests.cpp
         pool/SafePoolTests.cpp
+
+        tlsf/HeaderTests.cpp
+        tlsf/InternallyManagedTLSFTests.cpp
+        tlsf/InternallyManagedTLSFTelemetryIntegrationTests.cpp
+        tlsf/ExternallyManagedTLSFTests.cpp
+        tlsf/ExternallyManagedTLSFTelemetryIntegrationTests.cpp
+        tlsf/SafeModeTests.cpp
+        tlsf/MultithreadingTests.cpp
+
         TempArenaTests.cpp
+
+        # Headers
+        pool/PoolTestSetup.h
+        stack/StackTestSetup.h
+        tlsf/TLSFTestSetup.h
 )
 
 # Disable padded warning for Mock.h
@@ -24,7 +41,7 @@ target_compile_options(AllocatorTests PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/wd4324>
 
 target_include_directories(
         AllocatorTests PRIVATE
-        ${ROOT_TEST_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 target_link_libraries(
@@ -44,11 +61,12 @@ target_sources(
         pool/DeathTests.cpp
         stack/DeathTests.cpp
         arena/DeathTests.cpp
+        tlsf/DeathTests.cpp
 )
 
 target_include_directories(
         AllocatorDeathTests PRIVATE
-        ${ROOT_TEST_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 target_link_libraries(

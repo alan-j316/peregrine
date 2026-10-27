@@ -7,11 +7,12 @@ target_sources(
         ArenaTelemetryTests.cpp
         StackTelemetryTests.cpp
         PoolTelemetryTests.cpp
+        TLSFTelemetryTests.cpp
 )
 
 target_include_directories(
         TelemetryTests PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${PEREGRINE_TEST_ROOT_DIR}/include
 )
 
 

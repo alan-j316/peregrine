@@ -12,7 +12,7 @@
  */
 
 
-#include "../allocators/Policy.h"
+#include "peregrine/allocators/Policy.h"
 
 namespace pmm
 {
@@ -133,12 +133,14 @@ namespace pmm
     {
         [[nodiscard]] explicit constexpr DummyArenaTelemetry(size_t) noexcept {}
         constexpr void logAllocationUsage(size_t) noexcept {}
+        constexpr void logPaddingUsage(size_t) noexcept {}
         constexpr void logMinUsage(size_t) noexcept {}
         constexpr void logPeakUsage(size_t) noexcept {}
         constexpr void resetCurrentUsage() noexcept {}
         constexpr void resetTelemetry() noexcept {}
         [[nodiscard]] constexpr size_t getArenaSize() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getFreeSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getTotalPadding() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getUsedSize() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getMinUsage() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getPeakUsage() const noexcept { return 0; }
@@ -150,24 +152,23 @@ namespace pmm
      *
      * @tparam Policy Telemetry Policy used by the arena.
      */
-    template <telemetry::TelemetryPolicy Policy>
-    using ArenaTelemetryType =
-        std::conditional_t<std::is_same_v<Policy, telemetry::Disabled>, DummyArenaTelemetry, ArenaTelemetry>;
+    template <TelPolicy Policy>
+    using ArenaTelemetryType = std::conditional_t<Policy == TelPolicy::Disabled, DummyArenaTelemetry, ArenaTelemetry>;
 
 
     /**
-     * @brief Get a telemetry instance depending the telemetry policy in use by the target arena.
+     * @brief Get a telemetry instance depending on the telemetry policy in use by the target arena.
      *
      * @tparam Policy The Telemetry policy in use by the target arena.
      *
      * @param[in] arenaSize  The size of the Arena.
      *
-     * @return A arena telemetry instance suited for the telemetry policy.
+     * @return An arena telemetry instance suited for the telemetry policy.
      */
-    template <telemetry::TelemetryPolicy Policy>
+    template <TelPolicy Policy>
     constexpr ArenaTelemetryType<Policy> getTelemetryInstance(const std::size_t arenaSize) noexcept
     {
-        if constexpr (std::same_as<Policy, telemetry::Disabled>)
+        if constexpr (Policy == TelPolicy::Disabled)
         {
             return DummyArenaTelemetry(arenaSize);
         }
@@ -176,7 +177,6 @@ namespace pmm
             return ArenaTelemetry(arenaSize);
         }
     }
-
 
     /** @} */
 
