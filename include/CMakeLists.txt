@@ -13,6 +13,7 @@ add_subdirectory(peregrine/utils)
 add_subdirectory(peregrine/memory)
 add_subdirectory(peregrine/telemetry)
 add_subdirectory(peregrine/allocators)
+add_subdirectory(peregrine/core)
 
 target_include_directories(
         ${PEREGRINE_LIB_NAME} INTERFACE
@@ -28,4 +29,5 @@ target_link_libraries(
         ${PEREGRINE_LIB_NAME}::Internal::Memory
         ${PEREGRINE_LIB_NAME}::Internal::Telemetry
         ${PEREGRINE_LIB_NAME}::Internal::Utils
+        ${PEREGRINE_LIB_NAME}::Internal::Core
 )
