@@ -13,6 +13,7 @@
 #include "peregrine/allocators/Pool.h"
 #include "peregrine/allocators/Stack.h"
 #include "peregrine/allocators/TLSF.h"
+#include "peregrine/core/Alias.h"
 
 #include <cstdint>
 
@@ -20,6 +21,25 @@ namespace pmm
 {
     using AllocateTag = uint32_t;
 
+
+
+
+    struct MemoryManagerConfig
+    {
+
+        // TODO:
+    };
+
+    constexpr MemoryManagerConfig DefaultMemoryManagerConfig{};
+
+    /// Multithreadable memory manager.
+    /// @tparam TelemetryPolicy Telemetry policy used by the memory manager. Enabled by default.
+    ///                         Enabling Telemetry can consume more memory and can have a mild impact on performance.
+    /// @tparam MemoryPolicy    Dictates whether the buffer is supplied externally or owned internally.
+    ///                         Internally managed by default.
+    /// @tparam Config          The configuration for the memory manager.
+    template <TelPolicy TelemetryPolicy = TelPolicy::Enabled, MemPolicy MemoryPolicy = MemPolicy::Internal,
+              MemoryManagerConfig Config = DefaultMemoryManagerConfig>
     class MemoryManager
     {
 

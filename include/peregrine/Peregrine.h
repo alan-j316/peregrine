@@ -15,6 +15,7 @@
 #include "allocators/Stack.h"
 #include "allocators/TLSF.h"
 #include "allocators/TempArena.h"
+#include "core/Alias.h"
 #include "core/MemoryManager.h"
 #include "memory/Memory.h"
 #include "telemetry/ArenaTelemetry.h"

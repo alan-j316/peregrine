@@ -2,6 +2,7 @@ set(PEREGRINE_CORE_TARGET "PeregrineCore-${PEREGRINE_INTERNAL_TARGET_SUFFIX}")
 
 add_library(
         ${PEREGRINE_CORE_TARGET} INTERFACE
+        Alias.h
         MemoryManager.h
         MemoryManager.tpp
 )

@@ -30,6 +30,7 @@ target_sources(
 
         TempArenaTests.cpp
 
+        core/AliasTests.cpp
         core/MemoryManagerTests.cpp
 
         # Headers
