@@ -43,22 +43,24 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocBytes(const std::size_t bytes,
-                                                                         const std::size_t alignment) const noexcept
-    { return targetArena->allocBytes(bytes, alignment); }
+    PMM_INLINE void* TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocBytes(
+        const std::size_t bytes, const std::size_t alignment) const noexcept
+    { return targetArena->malloc(bytes, alignment); }
 
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     template <typename T, typename... Args>
-    PMM_INLINE constexpr T* TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
+    PMM_INLINE constexpr T* TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(
+        Args... args) noexcept
     { return targetArena->template alloc<T>(args...); }
 
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     template <typename T>
-    PMM_INLINE constexpr std::span<T> TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocV(const std::size_t count) noexcept
+    PMM_INLINE constexpr std::span<T> TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocV(
+        const std::size_t count) noexcept
     { return targetArena->template allocV<T>(count); }
 
 

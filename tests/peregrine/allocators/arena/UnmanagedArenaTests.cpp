@@ -59,7 +59,8 @@ namespace
          *        Arena, we can check if it is trivially destructible to ensure memory is freed in the arena in
          * unmanaged mode and opposite otherwise.
          */
-        static_assert(std::is_trivially_destructible_v<pmm::Arena<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> == true);
+        static_assert(std::is_trivially_destructible_v<pmm::Arena<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> ==
+                      true);
     } // namespace static_tests
 
 } // namespace
@@ -120,8 +121,8 @@ TEST_F(UnmanagedArenaTests, MoveCtor_CopiesAttributesToNewObject)
 
 TEST_F(UnmanagedArenaTests, MoveCtor_MovesTelemetry)
 {
-    static_cast<void>(arena.allocBytes(120));
-    static_cast<void>(arena.allocBytes(240));
+    static_cast<void>(arena.malloc(120));
+    static_cast<void>(arena.malloc(240));
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry = arena.getTelemetry();
@@ -140,7 +141,7 @@ TEST_F(UnmanagedArenaTests, MoveAssign_CopiesAttributesToNewObject)
 {
     const auto buffer2              = new uint8_t[256];
     constexpr auto sampleAllocation = 50;
-    static_cast<void>(arena.allocBytes(sampleAllocation));
+    static_cast<void>(arena.malloc(sampleAllocation));
     pmm::Arena<pmm::MemPolicy::External, pmm::TelPolicy::Enabled> arena2(buffer2, 256);
 
     arena2 = std::move(arena);
@@ -155,8 +156,8 @@ TEST_F(UnmanagedArenaTests, MoveAssign_CopiesAttributesToNewObject)
 TEST_F(UnmanagedArenaTests, MoveAssign_MovesTelemetry)
 {
     const auto buffer2 = new uint8_t[256];
-    static_cast<void>(arena.allocBytes(120));
-    static_cast<void>(arena.allocBytes(240));
+    static_cast<void>(arena.malloc(120));
+    static_cast<void>(arena.malloc(240));
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry = arena.getTelemetry();
@@ -180,60 +181,60 @@ TEST_F(UnmanagedArenaTests, MoveAssign_MovesTelemetry)
  **************************************/
 
 /**
- * @test Verify that allocBytes returns an address aligned to sizeof(void*) bytes
+ * @test Verify that malloc returns an address aligned to sizeof(void*) bytes
  *       given no alignment was passed-in.
  */
-TEST_F(UnmanagedArenaTests, AllocBytes_Returns8ByteAlignedAddressByDefault)
+TEST_F(UnmanagedArenaTests, Malloc_Returns8ByteAlignedAddressByDefault)
 {
     // Misalign bytes to 2
-    [[maybe_unused]] void* misalignedBytes = arena.allocBytes(2, 2);
+    [[maybe_unused]] void* misalignedBytes = arena.malloc(2, 2);
 
-    void* bytes = arena.allocBytes(8);
+    void* bytes = arena.malloc(8);
 
     const auto address = reinterpret_cast<uintptr_t>(bytes);
     EXPECT_EQ(0, address % sizeof(void*));
 }
 
 
-TEST_F(UnmanagedArenaTests, AllocBytes_ReturnsProvidedByteAlignedAddress)
+TEST_F(UnmanagedArenaTests, Malloc_ReturnsProvidedByteAlignedAddress)
 {
     constexpr auto byteAlignment = 32;
-    void* bytes                  = arena.allocBytes(128, byteAlignment);
+    void* bytes                  = arena.malloc(128, byteAlignment);
 
     const auto address = reinterpret_cast<uintptr_t>(bytes);
     EXPECT_EQ(0, address % byteAlignment);
 }
 
 
-TEST_F(UnmanagedArenaTests, AllocBytes_ReturnsNonNullPtrWhenAllocatingMemoryLessThanArenaSize)
+TEST_F(UnmanagedArenaTests, Malloc_ReturnsNonNullPtrWhenAllocatingMemoryLessThanArenaSize)
 {
-    void* bytes = arena.allocBytes(256);
+    void* bytes = arena.malloc(256);
 
     EXPECT_NE(nullptr, bytes);
 }
 
 
-TEST_F(UnmanagedArenaTests, AllocBytes_ReturnsNonNullPtrWhenAllocatingMemoryEqualArenaSize)
+TEST_F(UnmanagedArenaTests, Malloc_ReturnsNonNullPtrWhenAllocatingMemoryEqualArenaSize)
 {
     // 7 is used as a worst case aligned requirement which is 8-bytes by default
     // on a 64-bit machine
-    void* bytes = arena.allocBytes(arenaSize - 7);
+    void* bytes = arena.malloc(arenaSize - 7);
 
     EXPECT_NE(nullptr, bytes);
 }
 
 
-TEST_F(UnmanagedArenaTests, AllocBytes_SubsequentAllocationDoNotCorruptMemory)
+TEST_F(UnmanagedArenaTests, Malloc_SubsequentAllocationDoNotCorruptMemory)
 {
     constexpr auto bufferLength = 8;
     // Given two contiguous block of memory allocated back to back
-    const auto firstAlloc = static_cast<int*>(arena.allocBytes(bufferLength * sizeof(int)));
+    const auto firstAlloc = static_cast<int*>(arena.malloc(bufferLength * sizeof(int)));
     for (std::size_t i = 0; i < bufferLength; ++i)
     {
         firstAlloc[i] = static_cast<int>(i + 5);
     }
 
-    const auto secondAlloc = static_cast<int*>(arena.allocBytes(bufferLength * sizeof(int)));
+    const auto secondAlloc = static_cast<int*>(arena.malloc(bufferLength * sizeof(int)));
     for (std::size_t i = 0; i < bufferLength; ++i)
     {
         secondAlloc[i] = static_cast<int>(i + 7);
@@ -247,14 +248,14 @@ TEST_F(UnmanagedArenaTests, AllocBytes_SubsequentAllocationDoNotCorruptMemory)
     }
 }
 
-TEST_F(UnmanagedArenaTests, AllocBytes_UpdatesTelemetry)
+TEST_F(UnmanagedArenaTests, Malloc_UpdatesTelemetry)
 {
     constexpr std::size_t byte1 = 20, byte2 = 56, byte3 = 128;
 
     // Allocate a 2 byte alignment forcing a misalignment to 2 bytes
-    static_cast<void>(arena.allocBytes(byte1));
-    static_cast<void>(arena.allocBytes(byte2));
-    static_cast<void>(arena.allocBytes(byte3));
+    static_cast<void>(arena.malloc(byte1));
+    static_cast<void>(arena.malloc(byte2));
+    static_cast<void>(arena.malloc(byte3));
 
     constexpr std::size_t expectedMinUsage  = byte1;
     constexpr std::size_t expectedPeakUsage = byte3;
@@ -285,7 +286,7 @@ TEST_F(UnmanagedArenaTests, Alloc_AllocatesAnObjectInTheArena)
 TEST_F(UnmanagedArenaTests, Alloc_AlignsToTargetAlignment)
 {
     // Allocate a 2 byte alignment forcing a misalignment to 2 bytes
-    static_cast<void>(arena.allocBytes(2, 2));
+    static_cast<void>(arena.malloc(2, 2));
 
     constexpr auto expectedAlignment = alignof(Vec4);
     [[maybe_unused]] const auto vec  = arena.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f);
@@ -401,9 +402,9 @@ TEST_F(UnmanagedArenaTests, AllocV_UpdatesTelemetry)
 TEST_F(UnmanagedArenaTests, Resize_NewSizeSmallerThanOldSizeReturnsSameAddress)
 {
     constexpr auto byteSize   = 128;
-    const auto firstByteChunk = arena.allocBytes(byteSize);
+    const auto firstByteChunk = arena.malloc(byteSize);
     // Additional allocation
-    [[maybe_unused]] const auto secondByteChunk = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto secondByteChunk = arena.malloc(byteSize);
 
     const auto data = arena.resize(firstByteChunk, byteSize, byteSize / 2, alignof(void*));
 
@@ -417,7 +418,7 @@ TEST_F(UnmanagedArenaTests, Resize_LatestAllocationOnlyResizeByOffsetDifference)
     constexpr auto newByteSize = byteSize * 2;
 
     // Allocate the chunk
-    const auto firstByteChunk = arena.allocBytes(byteSize);
+    const auto firstByteChunk = arena.malloc(byteSize);
     [[maybe_unused]] const auto data =
         static_cast<int*>(arena.resize(firstByteChunk, byteSize, newByteSize, alignof(int)));
     // Resize it
@@ -446,8 +447,8 @@ TEST_F(UnmanagedArenaTests, Resize_AllocationPriorToLatestAllocationReturnNewBuf
     constexpr auto byteSize    = 128;
     constexpr auto newByteSize = byteSize * 2;
 
-    const auto firstByteChunk                   = arena.allocBytes(byteSize);
-    [[maybe_unused]] const auto secondByteChunk = arena.allocBytes(byteSize);
+    const auto firstByteChunk                   = arena.malloc(byteSize);
+    [[maybe_unused]] const auto secondByteChunk = arena.malloc(byteSize);
 
     [[maybe_unused]] const auto data = arena.resize(firstByteChunk, byteSize, newByteSize, alignof(void*));
 
@@ -463,7 +464,7 @@ TEST_F(UnmanagedArenaTests, Resize_AllocationPriorToLatestAllocationCopiesOldDat
     constexpr auto newByteSize = byteSize * 2;
 
     // Allocate memory
-    const auto firstByteChunk = static_cast<int*>(arena.allocBytes(byteSize));
+    const auto firstByteChunk = static_cast<int*>(arena.malloc(byteSize));
     constexpr auto arraySize  = byteSize / sizeof(int);
 
     // Write some data to the allocated memory
@@ -473,7 +474,7 @@ TEST_F(UnmanagedArenaTests, Resize_AllocationPriorToLatestAllocationCopiesOldDat
     }
 
     // Allocate some more memory
-    [[maybe_unused]] const auto secondByteChunk = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto secondByteChunk = arena.malloc(byteSize);
 
     // Resize the first buffer
     const auto data = static_cast<int*>(arena.resize(firstByteChunk, byteSize, newByteSize, alignof(int)));
@@ -490,7 +491,7 @@ TEST_F(UnmanagedArenaTests, Resize_SameMemorySize_DoesNotUpdateTelemetry)
 {
     constexpr auto byteSize = 128;
 
-    const auto allocatedBytes = arena.allocBytes(byteSize);
+    const auto allocatedBytes = arena.malloc(byteSize);
 
     const auto oldUsage     = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage  = arena.getTelemetry().getMinUsage();
@@ -510,7 +511,7 @@ TEST_F(UnmanagedArenaTests, Resize_SmallerMemorySize_DoesNotUpdateTelemetry)
     constexpr auto byteSize    = 128;
     constexpr auto newByteSize = byteSize - 10;
 
-    const auto allocatedBytes = arena.allocBytes(byteSize);
+    const auto allocatedBytes = arena.malloc(byteSize);
 
     const auto oldUsage     = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage  = arena.getTelemetry().getMinUsage();
@@ -531,8 +532,8 @@ TEST_F(UnmanagedArenaTests, Resize_LatestAllocationResize_UpdatesTelemetry)
     constexpr auto byteDifference = 100;
     constexpr auto newByteSize    = byteSize + byteDifference;
 
-    [[maybe_unused]] const auto unusedBytes = arena.allocBytes(50);
-    const auto allocatedBytes               = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto unusedBytes = arena.malloc(50);
+    const auto allocatedBytes               = arena.malloc(byteSize);
 
     const auto oldUsage                      = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage                   = arena.getTelemetry().getMinUsage();
@@ -553,8 +554,8 @@ TEST_F(UnmanagedArenaTests, Resize_InBetweenAllocationResize_UpdatesTelemetry)
     constexpr auto byteDifference = 100;
     constexpr auto newByteSize    = byteSize + byteDifference;
 
-    const auto allocatedBytes               = arena.allocBytes(byteSize);
-    [[maybe_unused]] const auto unusedBytes = arena.allocBytes(50);
+    const auto allocatedBytes               = arena.malloc(byteSize);
+    [[maybe_unused]] const auto unusedBytes = arena.malloc(50);
 
     const auto oldUsage    = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage = arena.getTelemetry().getMinUsage();
@@ -571,14 +572,14 @@ TEST_F(UnmanagedArenaTests, Resize_InBetweenAllocationResize_UpdatesTelemetry)
 TEST_F(UnmanagedArenaTests, ResizeFast_NewSizeSmallerThanOldSizeReturnsNewBufferWithOldData)
 {
     constexpr auto byteSize   = 128;
-    const auto firstByteChunk = static_cast<size_t*>(arena.allocBytes(byteSize));
+    const auto firstByteChunk = static_cast<size_t*>(arena.malloc(byteSize));
     const auto dataCount      = byteSize / sizeof(size_t);
     for (size_t i = 0; i < dataCount; ++i)
     {
         firstByteChunk[i] = i + 11;
     }
     // Additional allocation
-    [[maybe_unused]] const auto secondByteChunk = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto secondByteChunk = arena.malloc(byteSize);
 
     const auto data = static_cast<size_t*>(arena.resizeFast(firstByteChunk, byteSize, byteSize / 2, alignof(void*)));
 
@@ -597,7 +598,7 @@ TEST_F(UnmanagedArenaTests, ResizeFast_LatestAllocationReturnsNewBufferWithOldDa
     constexpr auto newByteSize = byteSize * 2;
 
     // Allocate the chunk
-    const auto firstByteChunk = arena.allocBytes(byteSize);
+    const auto firstByteChunk = arena.malloc(byteSize);
     const auto data = static_cast<int*>(arena.resizeFast(firstByteChunk, byteSize, newByteSize, alignof(int)));
 
     // Resize it
@@ -625,14 +626,14 @@ TEST_F(UnmanagedArenaTests, ResizeFast_AllocationPriorToLatestAllocationReturnNe
     constexpr auto byteSize    = 128;
     constexpr auto newByteSize = byteSize * 2;
 
-    const auto firstByteChunk = static_cast<size_t*>(arena.allocBytes(byteSize));
+    const auto firstByteChunk = static_cast<size_t*>(arena.malloc(byteSize));
     const auto dataCount      = byteSize / sizeof(size_t);
     for (size_t i = 0; i < dataCount; ++i)
     {
         firstByteChunk[i] = i + 11;
     }
 
-    [[maybe_unused]] const auto secondByteChunk = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto secondByteChunk = arena.malloc(byteSize);
 
     const auto data = static_cast<size_t*>(arena.resizeFast(firstByteChunk, byteSize, newByteSize, alignof(size_t)));
 
@@ -648,7 +649,7 @@ TEST_F(UnmanagedArenaTests, ResizeFast_SameMemorySize_UpdatesTelemetry)
 {
     constexpr auto byteSize = 128;
 
-    const auto allocatedBytes = arena.allocBytes(byteSize);
+    const auto allocatedBytes = arena.malloc(byteSize);
 
     const auto oldUsage     = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage  = arena.getTelemetry().getMinUsage();
@@ -669,7 +670,7 @@ TEST_F(UnmanagedArenaTests, Resize_SmallerMemorySize_UpdatesTelemetry)
     constexpr auto byteSize    = 128;
     constexpr auto newByteSize = byteSize - 10;
 
-    const auto allocatedBytes = arena.allocBytes(byteSize);
+    const auto allocatedBytes = arena.malloc(byteSize);
 
     const auto oldUsage     = arena.getTelemetry().getUsedSize();
     const auto oldPeakUsage = arena.getTelemetry().getPeakUsage();
@@ -692,8 +693,8 @@ TEST_F(UnmanagedArenaTests, ResizeFast_LatestAllocationResize_UpdatesTelemetry)
     constexpr auto byteDifference = 100;
     constexpr auto newByteSize    = byteSize + byteDifference;
 
-    [[maybe_unused]] const auto unusedBytes = arena.allocBytes(50);
-    const auto allocatedBytes               = arena.allocBytes(byteSize);
+    [[maybe_unused]] const auto unusedBytes = arena.malloc(50);
+    const auto allocatedBytes               = arena.malloc(byteSize);
 
     const auto oldUsage                      = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage                   = arena.getTelemetry().getMinUsage();
@@ -715,8 +716,8 @@ TEST_F(UnmanagedArenaTests, ResizeFast_InBetweenAllocationResize_UpdatesTelemetr
     constexpr auto byteDifference = 100;
     constexpr auto newByteSize    = byteSize + byteDifference;
 
-    const auto allocatedBytes               = arena.allocBytes(byteSize);
-    [[maybe_unused]] const auto unusedBytes = arena.allocBytes(50);
+    const auto allocatedBytes               = arena.malloc(byteSize);
+    [[maybe_unused]] const auto unusedBytes = arena.malloc(50);
 
     const auto oldUsage    = arena.getTelemetry().getUsedSize();
     const auto oldMinUsage = arena.getTelemetry().getMinUsage();
@@ -875,15 +876,15 @@ namespace pmm
      * @test Verify that when allocation buffer using allocBytes, prevOffset is
      *       moved by relative to the allocated object's size.
      */
-    TEST_F(UnmanagedArenaTests, AllocBytes_MovesPrevOffset)
+    TEST_F(UnmanagedArenaTests, Malloc_MovesPrevOffset)
     {
         // Allocate a 2 byte alignment forcing a misalignment to 2 bytes
-        static_cast<void>(arena.allocBytes(2, 2));
+        static_cast<void>(arena.malloc(2, 2));
 
         // For testing using 128 byte alignment instead of the object's 16-byte natural alignment
         constexpr auto alignment           = 128;
         constexpr auto bufferSize          = 64;
-        [[maybe_unused]] const auto memory = arena.allocBytes(bufferSize, alignment);
+        [[maybe_unused]] const auto memory = arena.malloc(bufferSize, alignment);
 
         EXPECT_EQ(bufferSize, arena._offset - arena._prevOffset);
     }
@@ -896,7 +897,7 @@ namespace pmm
     TEST_F(UnmanagedArenaTests, Alloc_MovesPrevOffset)
     {
         // Allocate a 2 byte alignment forcing a misalignment to 2 bytes
-        static_cast<void>(arena.allocBytes(2, 2));
+        static_cast<void>(arena.malloc(2, 2));
 
         // For testing using 128 byte alignment instead of the object's 16-byte natural alignment
         [[maybe_unused]] const auto vec = arena.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f);
@@ -906,9 +907,9 @@ namespace pmm
 
 
 
-    TEST_F(UnmanagedArenaTests, AllocBytes_UpdatesTelemetryPadding)
+    TEST_F(UnmanagedArenaTests, Malloc_UpdatesTelemetryPadding)
     {
-        const auto allocation = arena.allocBytes(128, 128);
+        const auto allocation = arena.malloc(128, 128);
         const auto expectedPadding =
             reinterpret_cast<uintptr_t>(allocation) - reinterpret_cast<uintptr_t>(arena._buffer);
 
@@ -937,8 +938,8 @@ namespace pmm
 
     TEST_F(UnmanagedArenaTests, Clear_ResetsOffsetToZero)
     {
-        [[maybe_unused]] const auto chunkOne = arena.allocBytes(128);
-        [[maybe_unused]] const auto chunkTwo = arena.allocBytes(128);
+        [[maybe_unused]] const auto chunkOne = arena.malloc(128);
+        [[maybe_unused]] const auto chunkTwo = arena.malloc(128);
 
         // Initially expect offset and prevOffset are not zero
         EXPECT_NE(0, arena._offset);
@@ -958,9 +959,9 @@ namespace pmm
         constexpr std::size_t byte1 = 20, byte2 = 56, byte3 = 128;
 
         // Allocate a 2 byte alignment forcing a misalignment to 2 bytes
-        static_cast<void>(arena.allocBytes(byte1));
-        static_cast<void>(arena.allocBytes(byte2));
-        static_cast<void>(arena.allocBytes(byte3));
+        static_cast<void>(arena.malloc(byte1));
+        static_cast<void>(arena.malloc(byte2));
+        static_cast<void>(arena.malloc(byte3));
 
         constexpr std::size_t expectedMinUsage  = byte1;
         constexpr std::size_t expectedPeakUsage = byte3;
@@ -979,8 +980,8 @@ namespace pmm
         constexpr auto byteSize    = 128;
         constexpr auto newByteSize = byteSize * 2;
 
-        [[maybe_unused]] const auto firstByteChunk = arena.allocBytes(byteSize);
-        auto secondByteChunk                       = arena.allocBytes(byteSize);
+        [[maybe_unused]] const auto firstByteChunk = arena.malloc(byteSize);
+        auto secondByteChunk                       = arena.malloc(byteSize);
         const auto offsetBeforeResize              = arena._offset;
 
         [[maybe_unused]] const auto data = arena.resize(secondByteChunk, byteSize, newByteSize, alignof(void*));
@@ -995,8 +996,8 @@ namespace pmm
         constexpr auto byteSize    = 128;
         constexpr auto newByteSize = byteSize * 2;
 
-        [[maybe_unused]] const auto firstByteChunk = arena.allocBytes(byteSize);
-        const auto secondByteChunk                 = arena.allocBytes(byteSize);
+        [[maybe_unused]] const auto firstByteChunk = arena.malloc(byteSize);
+        const auto secondByteChunk                 = arena.malloc(byteSize);
         const auto offsetBeforeResize              = arena._offset;
         const auto expectedOffset                  = offsetBeforeResize + (newByteSize - byteSize);
 

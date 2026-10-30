@@ -55,18 +55,18 @@ namespace
 TEST(ManagedArenaCtorTests, ZeroArenaSize_TriggersAssertionInDebugMode)
 { EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Arena<pmm::MemPolicy::Internal>{ 0 }), ""); }
 
-TEST_F(ManagedArenaDeathTests, AllocBytes_ZeroSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(0)), ""); }
+TEST_F(ManagedArenaDeathTests, Malloc_ZeroSize_TriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(0)), ""); }
 
 
-TEST_F(ManagedArenaDeathTests, AllocBytes_SizeGreaterThanArenaSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(arenaSize + 1)), ""); }
+TEST_F(ManagedArenaDeathTests, Malloc_SizeGreaterThanArenaSize_TriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(arenaSize + 1)), ""); }
 
 
-TEST_P(ArenaAllocAlignmentTests, AllocBytes_UnevenAlignment_TriggersAssertionInDebugMode)
+TEST_P(ArenaAllocAlignmentTests, Malloc_UnevenAlignment_TriggersAssertionInDebugMode)
 {
     pmm::Arena arena(512);
-    EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(12, 12)), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(12, 12)), "");
 }
 
 
@@ -90,14 +90,14 @@ TEST_F(ManagedArenaDeathTests, Resize_ZeroOldSize_TriggersAssertionInDebugMode)
 
 TEST_F(ManagedArenaDeathTests, Resize_ZeroNewSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resize(memory, 16, 0)), "");
 }
 
 
 TEST_F(ManagedArenaDeathTests, Resize_LargerThanArenaSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resize(memory, 16, arenaSize + 1)), "");
 }
 
@@ -112,14 +112,14 @@ TEST_F(ManagedArenaDeathTests, ResizeFast_ZeroOldSize_TriggersAssertionInDebugMo
 
 TEST_F(ManagedArenaDeathTests, ResizeFast_ZeroNewSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resizeFast(memory, 16, 0)), "");
 }
 
 
 TEST_F(ManagedArenaDeathTests, ResizeFast_LargerThanArenaSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resizeFast(memory, 16, arenaSize + 1)), "");
 }
 
@@ -141,19 +141,19 @@ TEST(UnmanagedArenaCtorTests, NullptrForBackingBuffer_TriggersAssertionInDebugMo
 { EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Arena<pmm::MemPolicy::External>(nullptr, 512)), ""); }
 
 
-TEST_F(UnmanagedArenaDeathTests, AllocBytes_ZeroSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(0)), ""); }
+TEST_F(UnmanagedArenaDeathTests, Malloc_ZeroSize_TriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(0)), ""); }
 
 
-TEST_F(UnmanagedArenaDeathTests, AllocBytes_SizeGreaterThanArenaSize_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(arenaSize + 1)), ""); }
+TEST_F(UnmanagedArenaDeathTests, Malloc_SizeGreaterThanArenaSize_TriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(arenaSize + 1)), ""); }
 
 
-TEST_P(ArenaAllocAlignmentTests, UnmanagedArena_AllocBytes_UnevenAlignment_TriggersAssertionInDebugMode)
+TEST_P(ArenaAllocAlignmentTests, UnmanagedArena_Malloc_UnevenAlignment_TriggersAssertionInDebugMode)
 {
     const auto buffer = new uint8_t[512];
     pmm::Arena<pmm::MemPolicy::External> arena(buffer, 512);
-    EXPECT_DEBUG_DEATH(static_cast<void>(arena.allocBytes(12, 12)), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(arena.malloc(12, 12)), "");
     delete[] buffer;
 }
 
@@ -178,14 +178,14 @@ TEST_F(UnmanagedArenaDeathTests, Resize_ZeroOldSize_TriggersAssertionInDebugMode
 
 TEST_F(UnmanagedArenaDeathTests, Resize_ZeroNewSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resize(memory, 16, 0)), "");
 }
 
 
 TEST_F(UnmanagedArenaDeathTests, Resize_LargerThanArenaSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resize(memory, 16, arenaSize + 1)), "");
 }
 
@@ -200,14 +200,14 @@ TEST_F(UnmanagedArenaDeathTests, ResizeFast_ZeroOldSize_TriggersAssertionInDebug
 
 TEST_F(UnmanagedArenaDeathTests, ResizeFast_ZeroNewSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resizeFast(memory, 16, 0)), "");
 }
 
 
 TEST_F(UnmanagedArenaDeathTests, ResizeFast_LargerThanArenaSize_TriggersAssertionInDebugMode)
 {
-    const auto memory = arena.allocBytes(16);
+    const auto memory = arena.malloc(16);
     EXPECT_DEBUG_DEATH(static_cast<void>(arena.resizeFast(memory, 16, arenaSize + 1)), "");
 }
 

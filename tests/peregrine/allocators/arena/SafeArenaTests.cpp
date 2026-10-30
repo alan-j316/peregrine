@@ -8,6 +8,7 @@
  * @copyright Copyright (c) 2026 Alan Abraham P Kochumon
  */
 
+
 #ifndef ENABLE_PMM_DEATH_TESTS
 
     #include "Utils.h"
@@ -59,19 +60,19 @@ namespace
  *           MANAGED ARENA            *
  **************************************/
 
-TEST_F(ManagedSafeArenaTests, AllocBytes_AllocatingMemoryGreaterThanArenaSizeReturnsNullPtr)
+TEST_F(ManagedSafeArenaTests, Malloc_AllocatingMemoryGreaterThanArenaSizeReturnsNullPtr)
 {
-    void* bytes = arena.allocBytes(arenaSize + 1);
+    void* bytes = arena.malloc(arenaSize + 1);
     EXPECT_EQ(nullptr, bytes);
 }
 
 
-TEST_F(ManagedSafeArenaTests, AllocBytes_AllocatingInAFullArenaReturnsNullPtr)
+TEST_F(ManagedSafeArenaTests, Malloc_AllocatingInAFullArenaReturnsNullPtr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
-    const auto data = arena.allocBytes(24);
+    const auto data = arena.malloc(24);
     EXPECT_EQ(nullptr, data);
 }
 
@@ -79,7 +80,7 @@ TEST_F(ManagedSafeArenaTests, AllocBytes_AllocatingInAFullArenaReturnsNullPtr)
 TEST_F(ManagedSafeArenaTests, Alloc_AllocatingInAFullArenaReturnsNullPtr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
     const auto vec = arena.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f);
     EXPECT_EQ(nullptr, vec);
@@ -89,7 +90,7 @@ TEST_F(ManagedSafeArenaTests, Alloc_AllocatingInAFullArenaReturnsNullPtr)
 TEST_F(ManagedSafeArenaTests, AllocV_FullArenaReturnsEmptySpan)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
     const auto vec = arena.allocV<Vec4>(2);
 
@@ -111,7 +112,7 @@ TEST_F(ManagedSafeArenaTests, AllocV_ZeroCountReturnsEmptySpan)
 TEST_F(ManagedSafeArenaTests, Resize_ZeroNewSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 12, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -121,7 +122,7 @@ TEST_F(ManagedSafeArenaTests, Resize_ZeroNewSizeReturnsNullptr)
 TEST_F(ManagedSafeArenaTests, Resize_ZeroOldSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 0, 12);
 
     EXPECT_EQ(nullptr, resize);
@@ -131,7 +132,7 @@ TEST_F(ManagedSafeArenaTests, Resize_ZeroOldSizeReturnsNullptr)
 TEST_F(ManagedSafeArenaTests, Resize_ZeroAlignmentReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 12, 24, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -142,8 +143,8 @@ TEST_F(ManagedSafeArenaTests, Resize_LatestsAllocation_FullArenaReturnsNullptr)
 {
     // Use the full capacity
     constexpr auto firstAllocSize                = 32;
-    [[maybe_unused]] const auto nearFullSize     = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
-    [[maybe_unused]] const auto latestAllocation = arena.allocBytes(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize     = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto latestAllocation = arena.malloc(firstAllocSize);
 
     [[maybe_unused]] const auto resize = arena.resize(latestAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
@@ -154,8 +155,8 @@ TEST_F(ManagedSafeArenaTests, Resize_PriorToLatestsAllocation_FullArenaReturnsNu
 {
     // Use the full capacity
     constexpr auto firstAllocSize               = 32;
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(firstAllocSize);
-    [[maybe_unused]] const auto nearFullSize    = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize    = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
 }
@@ -164,7 +165,7 @@ TEST_F(ManagedSafeArenaTests, Resize_PriorToLatestsAllocation_FullArenaReturnsNu
 TEST_F(ManagedSafeArenaTests, ResizeFast_ZeroNewSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 12, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -174,7 +175,7 @@ TEST_F(ManagedSafeArenaTests, ResizeFast_ZeroNewSizeReturnsNullptr)
 TEST_F(ManagedSafeArenaTests, ResizeFast_ZeroOldSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 0, 12);
 
     EXPECT_EQ(nullptr, resize);
@@ -184,7 +185,7 @@ TEST_F(ManagedSafeArenaTests, ResizeFast_ZeroOldSizeReturnsNullptr)
 TEST_F(ManagedSafeArenaTests, ResizeFast_ZeroAlignmentReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 12, 24, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -195,8 +196,8 @@ TEST_F(ManagedSafeArenaTests, ResizeFast_LatestsAllocation_FullArenaReturnsNullp
 {
     // Use the full capacity
     constexpr auto firstAllocSize                = 32;
-    [[maybe_unused]] const auto nearFullSize     = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
-    [[maybe_unused]] const auto latestAllocation = arena.allocBytes(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize     = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto latestAllocation = arena.malloc(firstAllocSize);
 
     [[maybe_unused]] const auto resize = arena.resizeFast(latestAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
@@ -207,8 +208,8 @@ TEST_F(ManagedSafeArenaTests, ResizeFast_PriorToLatestsAllocation_FullArenaRetur
 {
     // Use the full capacity
     constexpr auto firstAllocSize               = 32;
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(firstAllocSize);
-    [[maybe_unused]] const auto nearFullSize    = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize    = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
     [[maybe_unused]] const auto resize = arena.resizeFast(firstAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
 }
@@ -219,19 +220,19 @@ TEST_F(ManagedSafeArenaTests, ResizeFast_PriorToLatestsAllocation_FullArenaRetur
  *          UNMANAGED ARENA           *
  **************************************/
 
-TEST_F(UnmanagedSafeArenaTests, AllocBytes_AllocatingMemoryGreaterThanArenaSizeReturnsNullPtr)
+TEST_F(UnmanagedSafeArenaTests, Malloc_AllocatingMemoryGreaterThanArenaSizeReturnsNullPtr)
 {
-    void* bytes = arena.allocBytes(arenaSize + 1);
+    void* bytes = arena.malloc(arenaSize + 1);
     EXPECT_EQ(nullptr, bytes);
 }
 
 
-TEST_F(UnmanagedSafeArenaTests, AllocBytes_AllocatingInAFullArenaReturnsNullPtr)
+TEST_F(UnmanagedSafeArenaTests, Malloc_AllocatingInAFullArenaReturnsNullPtr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
-    const auto data = arena.allocBytes(24);
+    const auto data = arena.malloc(24);
     EXPECT_EQ(nullptr, data);
 }
 
@@ -239,7 +240,7 @@ TEST_F(UnmanagedSafeArenaTests, AllocBytes_AllocatingInAFullArenaReturnsNullPtr)
 TEST_F(UnmanagedSafeArenaTests, Alloc_AllocatingInAFullArenaReturnsNullPtr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
     const auto vec = arena.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f);
     EXPECT_EQ(nullptr, vec);
@@ -249,7 +250,7 @@ TEST_F(UnmanagedSafeArenaTests, Alloc_AllocatingInAFullArenaReturnsNullPtr)
 TEST_F(UnmanagedSafeArenaTests, AllocV_FullArenaReturnsEmptySpan)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto fullSize = arena.allocBytes(arenaSize - (alignof(void*) - 1));
+    [[maybe_unused]] const auto fullSize = arena.malloc(arenaSize - (alignof(void*) - 1));
 
     const auto vec = arena.allocV<Vec4>(2);
 
@@ -270,7 +271,7 @@ TEST_F(UnmanagedSafeArenaTests, AllocV_ZeroCountReturnsEmptySpan)
 TEST_F(UnmanagedSafeArenaTests, Resize_ZeroNewSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 12, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -280,7 +281,7 @@ TEST_F(UnmanagedSafeArenaTests, Resize_ZeroNewSizeReturnsNullptr)
 TEST_F(UnmanagedSafeArenaTests, Resize_ZeroOldSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 0, 12);
 
     EXPECT_EQ(nullptr, resize);
@@ -290,7 +291,7 @@ TEST_F(UnmanagedSafeArenaTests, Resize_ZeroOldSizeReturnsNullptr)
 TEST_F(UnmanagedSafeArenaTests, Resize_ZeroAlignmentReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, 12, 24, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -301,8 +302,8 @@ TEST_F(UnmanagedSafeArenaTests, Resize_LatestsAllocation_FullArenaReturnsNullptr
 {
     // Use the full capacity
     constexpr auto firstAllocSize                = 32;
-    [[maybe_unused]] const auto nearFullSize     = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
-    [[maybe_unused]] const auto latestAllocation = arena.allocBytes(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize     = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto latestAllocation = arena.malloc(firstAllocSize);
 
     [[maybe_unused]] const auto resize = arena.resize(latestAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
@@ -313,8 +314,8 @@ TEST_F(UnmanagedSafeArenaTests, Resize_PriorToLatestsAllocation_FullArenaReturns
 {
     // Use the full capacity
     constexpr auto firstAllocSize               = 32;
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(firstAllocSize);
-    [[maybe_unused]] const auto nearFullSize    = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize    = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
     [[maybe_unused]] const auto resize          = arena.resize(firstAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
 }
@@ -323,7 +324,7 @@ TEST_F(UnmanagedSafeArenaTests, Resize_PriorToLatestsAllocation_FullArenaReturns
 TEST_F(UnmanagedSafeArenaTests, ResizeFast_ZeroNewSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 12, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -333,7 +334,7 @@ TEST_F(UnmanagedSafeArenaTests, ResizeFast_ZeroNewSizeReturnsNullptr)
 TEST_F(UnmanagedSafeArenaTests, ResizeFast_ZeroOldSizeReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 0, 12);
 
     EXPECT_EQ(nullptr, resize);
@@ -343,7 +344,7 @@ TEST_F(UnmanagedSafeArenaTests, ResizeFast_ZeroOldSizeReturnsNullptr)
 TEST_F(UnmanagedSafeArenaTests, ResizeFast_ZeroAlignmentReturnsNullptr)
 {
     // Use the full capacity
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(12);
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(12);
     [[maybe_unused]] const auto resize          = arena.resizeFast(firstAllocation, 12, 24, 0);
 
     EXPECT_EQ(nullptr, resize);
@@ -354,8 +355,8 @@ TEST_F(UnmanagedSafeArenaTests, ResizeFast_LatestsAllocation_FullArenaReturnsNul
 {
     // Use the full capacity
     constexpr auto firstAllocSize                = 32;
-    [[maybe_unused]] const auto nearFullSize     = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
-    [[maybe_unused]] const auto latestAllocation = arena.allocBytes(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize     = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto latestAllocation = arena.malloc(firstAllocSize);
 
     [[maybe_unused]] const auto resize = arena.resizeFast(latestAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
@@ -366,8 +367,8 @@ TEST_F(UnmanagedSafeArenaTests, ResizeFast_PriorToLatestsAllocation_FullArenaRet
 {
     // Use the full capacity
     constexpr auto firstAllocSize               = 32;
-    [[maybe_unused]] const auto firstAllocation = arena.allocBytes(firstAllocSize);
-    [[maybe_unused]] const auto nearFullSize    = arena.allocBytes(arenaSize - (firstAllocSize + alignof(void*) + 1));
+    [[maybe_unused]] const auto firstAllocation = arena.malloc(firstAllocSize);
+    [[maybe_unused]] const auto nearFullSize    = arena.malloc(arenaSize - (firstAllocSize + alignof(void*) + 1));
     [[maybe_unused]] const auto resize = arena.resizeFast(firstAllocation, firstAllocSize, firstAllocSize + 120);
     EXPECT_EQ(nullptr, resize);
 }

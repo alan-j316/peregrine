@@ -157,7 +157,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocBytes(
+    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
         const std::size_t sizeInBytes, const std::size_t alignment) noexcept
     {
         _alignForward(alignment);
@@ -187,7 +187,7 @@ namespace pmm
     PMM_INLINE T* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
     {
         // Allocate memory in the arena.
-        void* raw = allocBytes(sizeof(T), alignof(T));
+        void* raw = malloc(sizeof(T), alignof(T));
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (raw == nullptr)
@@ -216,7 +216,7 @@ namespace pmm
             }
         }
         // Allocate the raw memory and wrap it in a span
-        return std::span<T>(static_cast<T*>(allocBytes(sizeof(T) * count, alignof(T))), count);
+        return std::span<T>(static_cast<T*>(malloc(sizeof(T) * count, alignof(T))), count);
     }
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
@@ -298,7 +298,7 @@ namespace pmm
             }
         }
 
-        void* newLocation = allocBytes(newSize, alignment);
+        void* newLocation = malloc(newSize, alignment);
         memmove(newLocation, oldMemory, oldSize);
         return newLocation;
     }
@@ -322,7 +322,7 @@ namespace pmm
             }
         }
 
-        const auto newPtr = allocBytes(newSize, alignment);
+        const auto newPtr = malloc(newSize, alignment);
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (newPtr == nullptr)

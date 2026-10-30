@@ -53,8 +53,8 @@ TEST_F(TempArenaTests, SnapshotsArenaStateOnConstructor)
     constexpr auto firstAllocSize = 256, secondAllocSize = 128;
 
     // Allocate some memory in arena
-    static_cast<void>(this->_arena->allocBytes(firstAllocSize));
-    static_cast<void>(this->_arena->allocBytes(secondAllocSize));
+    static_cast<void>(this->_arena->malloc(firstAllocSize));
+    static_cast<void>(this->_arena->malloc(secondAllocSize));
 
     auto tArena = pmm::TempArena<>(this->_arena);
     EXPECT_EQ(firstAllocSize + secondAllocSize, tArena.currentOffset);
@@ -73,11 +73,11 @@ TEST_F(TempArenaTests, ArenaStateIsRestoredAfterTempArenaDeallocation)
     // is to allocate some bytes close to the arena capacity and ensuring it doesn't return a nullptr
     {
         auto tArena = pmm::TempArena(this->_arena);
-        static_cast<void>(tArena.targetArena->allocBytes(tArenaAllocSize));
+        static_cast<void>(tArena.targetArena->malloc(tArenaAllocSize));
     }
 
     // Subtracting 8 bytes of alignment just in case alignment results out-of-memory for arena
-    void* memory = this->_arena->allocBytes(this->_arenaSize - alignment);
+    void* memory = this->_arena->malloc(this->_arenaSize - alignment);
 
     EXPECT_NE(nullptr, memory);
 }
@@ -94,16 +94,16 @@ TEST_F(TempArenaTests, RewindsStateFreeingMemoryHeldByTempArena)
     // is to allocate some bytes close to the arena capacity and ensuring it doesn't return a nullptr
     {
         auto tArena1 = pmm::TempArena(this->_arena);
-        static_cast<void>(tArena1.targetArena->allocBytes(firstTArenaAllocSize));
+        static_cast<void>(tArena1.targetArena->malloc(firstTArenaAllocSize));
         {
             auto tArena2 = pmm::TempArena(this->_arena);
-            static_cast<void>(tArena2.targetArena->allocBytes(secondTArenaAllocSize));
+            static_cast<void>(tArena2.targetArena->malloc(secondTArenaAllocSize));
         }
 
         // Second arena should be free by now
         // So we could allocate arenaSize - firstArenaAllocSize bytes with a buffer of alignment
         // which shouldn't return a nullptr
-        void* memory = tArena1.targetArena->allocBytes(this->_arenaSize - firstTArenaAllocSize - alignment);
+        void* memory = tArena1.targetArena->malloc(this->_arenaSize - firstTArenaAllocSize - alignment);
         EXPECT_NE(nullptr, memory);
     }
 }

@@ -163,9 +163,9 @@ namespace pmm
         /**
          * @brief Allocate @p bytes of memory.
          *
-         * @param sizeInBytes     The memory in bytes to allocate from the Arena.
-         * @param alignment The alignment to use when allocating memory (in bytes).
-         *                  Defaults to sizeof(void*) which is 8 bytes in 64-bit machines.
+         * @param sizeInBytes The memory in bytes to allocate from the Arena.
+         * @param alignment   The alignment to use when allocating memory (in bytes).
+         *                    Defaults to sizeof(void*) which is 8 bytes in 64-bit machines.
          *
          * @warning Can cause internal fragmentation, when aligning ill-aligned values.
          * @warning Does not check for free space availability in *Release Mode*. // TODO
@@ -174,7 +174,7 @@ namespace pmm
          * @return A void pointer to the start of allocated memory or
          *         `nullptr` if the arena cannot allocate memory of requested size.
          */
-        [[nodiscard]] void* allocBytes(std::size_t sizeInBytes, std::size_t alignment = sizeof(void*)) noexcept;
+        [[nodiscard]] void* malloc(std::size_t sizeInBytes, std::size_t alignment = sizeof(void*)) noexcept;
 
 
         /**
@@ -275,12 +275,9 @@ namespace pmm
         /**
          * @brief [NO-OP] Byte memory cannot be individually freed in an arena.
          *
-         * @tparam T  The type of allocated object.
-         *
          * @param ptr The pointer to the allocated object.
          */
-        template <typename T>
-        void free(void* ptr) = delete;
+        void mfree(void* ptr) = delete;
 
 
         /**
@@ -337,9 +334,9 @@ namespace pmm
         FRIEND_TEST(ManagedArenaTests, MoveAssign_MovesBufferIntoNewObject);
         FRIEND_TEST(ManagedArenaTests, MoveAssign_SelfAssignmentReturnsTheSameArena);
         FRIEND_TEST(ManagedArenaTests, MoveAssign_DeletingOriginalArenaDoNotDeleteTheNewArenasMemory);
-        FRIEND_TEST(ManagedArenaTests, AllocBytes_MovesPrevOffset);
+        FRIEND_TEST(ManagedArenaTests, Malloc_MovesPrevOffset);
         FRIEND_TEST(ManagedArenaTests, Alloc_MovesPrevOffset);
-        FRIEND_TEST(ManagedArenaTests, AllocBytes_UpdatesTelemetryPadding);
+        FRIEND_TEST(ManagedArenaTests, Malloc_UpdatesTelemetryPadding);
         FRIEND_TEST(ManagedArenaTests, Alloc_UpdatesTelemetryPadding);
         FRIEND_TEST(ManagedArenaTests, AllocV_UpdatesTelemetryPadding);
         FRIEND_TEST(ManagedArenaTests, Resize_LatestAllocationResizeBuffer);
@@ -353,9 +350,9 @@ namespace pmm
         FRIEND_TEST(UnmanagedArenaTests, MoveAssign_MovesBufferIntoNewObject);
         FRIEND_TEST(UnmanagedArenaTests, MoveAssign_SelfAssignmentReturnsTheSameArena);
         FRIEND_TEST(UnmanagedArenaTests, MoveAssign_DeletingOriginalArenaDoNotDeleteTheNewArenasMemory);
-        FRIEND_TEST(UnmanagedArenaTests, AllocBytes_MovesPrevOffset);
+        FRIEND_TEST(UnmanagedArenaTests, Malloc_MovesPrevOffset);
         FRIEND_TEST(UnmanagedArenaTests, Alloc_MovesPrevOffset);
-        FRIEND_TEST(UnmanagedArenaTests, AllocBytes_UpdatesTelemetryPadding);
+        FRIEND_TEST(UnmanagedArenaTests, Malloc_UpdatesTelemetryPadding);
         FRIEND_TEST(UnmanagedArenaTests, Alloc_UpdatesTelemetryPadding);
         FRIEND_TEST(UnmanagedArenaTests, AllocV_UpdatesTelemetryPadding);
         FRIEND_TEST(UnmanagedArenaTests, Resize_LatestAllocationResizeBuffer);
