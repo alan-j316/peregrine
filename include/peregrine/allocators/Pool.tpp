@@ -141,7 +141,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocChunk() noexcept
+    PMM_INLINE void* Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc() noexcept
     {
         // Return the current head's address and move the head forward
         const auto node = _head;
@@ -169,7 +169,7 @@ namespace pmm
     {
         PMM_ASSERT_MSG(sizeof(T) <= _chunkSize,
                        std::format("Size of object({}) exceeds chunk size({})", sizeof(T), _chunkSize).c_str());
-        auto rawBuffer = allocChunk();
+        auto rawBuffer = malloc();
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (rawBuffer == nullptr)
@@ -183,7 +183,7 @@ namespace pmm
 
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeChunk(void* ptr) noexcept
+    PMM_INLINE bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(void* ptr) noexcept
     {
         PMM_ASSERT_MSG(ptr != nullptr, "Cannot free a nullptr");
         [[maybe_unused]] const auto minFreeAddr = _buffer + _initialAlignmentPadding;
@@ -218,7 +218,7 @@ namespace pmm
             ptr->~T();
         }
         // Free the memory
-        return freeChunk(ptr);
+        return mfree(ptr);
     }
 
 

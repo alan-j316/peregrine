@@ -42,7 +42,8 @@ namespace
     };
 
 
-    /// @brief Parameterized test fixture for @ref pmm::Pool<pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> base address and chunk size alignment.
+    /// @brief Parameterized test fixture for @ref pmm::Pool<pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> base
+    /// address and chunk size alignment.
     class PoolAllocatorAlignmentTests: public testing::TestWithParam<PoolAllocatorAlignmentParams>
     {};
     INSTANTIATE_TEST_SUITE_P(
@@ -64,8 +65,10 @@ namespace
          *        we can check if it is trivially destructible to ensure memory is freed in the pool in unmanaged mode
          *        and opposite otherwise.
          */
-        static_assert(std::is_trivially_destructible_v<pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> == true);
-        static_assert(std::is_trivially_destructible_v<pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> == true);
+        static_assert(std::is_trivially_destructible_v<pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> ==
+                      true);
+        static_assert(std::is_trivially_destructible_v<pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled>> ==
+                      true);
 
         /// @test Verify that manged pool frees buffer it allocates.
         static_assert(std::is_trivially_destructible_v<pmm::Pool<pmm::MemPolicy::Internal>> == false);
@@ -87,22 +90,22 @@ namespace
  *            MANAGED POOL            *
  **************************************/
 
-TEST_F(ManagedPoolAllocatorTests, AllocChunk_AllocatesDistinctBuffer)
+TEST_F(ManagedPoolAllocatorTests, Malloc_AllocatesDistinctBuffer)
 {
     constexpr auto expectedValue = 1230480231401234812;
-    const auto integer           = static_cast<size_t*>(pool.allocChunk());
+    const auto integer           = static_cast<size_t*>(pool.malloc());
     *integer                     = expectedValue;
     EXPECT_EQ(expectedValue, *integer);
 }
 
 
-TEST_F(ManagedPoolAllocatorTests, AllocChunk_CanAllocateMaximumPossibleChunkCountWithoutOverlap)
+TEST_F(ManagedPoolAllocatorTests, Malloc_CanAllocateMaximumPossibleChunkCountWithoutOverlap)
 {
     std::vector<size_t*> data;
 
     for (size_t i = 0; i < pool.getMaxAllocationCount(); ++i)
     {
-        const auto buffer = static_cast<size_t*>(pool.allocChunk());
+        const auto buffer = static_cast<size_t*>(pool.malloc());
         *buffer           = i * 11 + 37;
         data.push_back(buffer);
     }
@@ -131,7 +134,7 @@ TEST_F(ManagedPoolAllocatorTests, Alloc_AllocatesBufferOfSizeSize)
 }
 
 
-TEST_F(ManagedPoolAllocatorTests, FreeChunk_FreesBufferForNewerAllocations)
+TEST_F(ManagedPoolAllocatorTests, Mfree_FreesBufferForNewerAllocations)
 {
     std::vector<size_t*> data;
     // Allocate some buffer and fill it with data.
@@ -146,7 +149,7 @@ TEST_F(ManagedPoolAllocatorTests, FreeChunk_FreesBufferForNewerAllocations)
         // Data[i] stores the address so free the current chunk
         // free order shouldn't matter as we are using an internal freelist
         // rather than a strict structure like LIFO or FIFO
-        EXPECT_TRUE(pool.freeChunk(data[i]));
+        EXPECT_TRUE(pool.mfree(data[i]));
     }
 
     // clear the vector
@@ -221,8 +224,8 @@ TEST_F(ManagedPoolAllocatorTests, MoveCtor_CopiesAttributesToNewObject)
 
 TEST_F(ManagedPoolAllocatorTests, MoveCtor_MovesTelemetry)
 {
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry = pool.getTelemetry();
@@ -252,8 +255,8 @@ TEST_F(ManagedPoolAllocatorTests, MoveAssign_CopiesAttributesToNewObject)
 
 TEST_F(ManagedPoolAllocatorTests, MoveAssign_MovesTelemetry)
 {
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry = pool.getTelemetry();
@@ -273,22 +276,22 @@ TEST_F(ManagedPoolAllocatorTests, MoveAssign_MovesTelemetry)
  *           UNMANAGED POOL           *
  **************************************/
 
-TEST_F(UnmanagedPoolAllocatorTests, AllocChunk_AllocatesDistinctBuffer)
+TEST_F(UnmanagedPoolAllocatorTests, Malloc_AllocatesDistinctBuffer)
 {
     constexpr auto expectedValue = 1230480231401234812;
-    const auto integer           = static_cast<size_t*>(pool.allocChunk());
+    const auto integer           = static_cast<size_t*>(pool.malloc());
     *integer                     = expectedValue;
     EXPECT_EQ(expectedValue, *integer);
 }
 
 
-TEST_F(UnmanagedPoolAllocatorTests, AllocChunk_CanAllocateMaximumPossibleChunkCountWithoutOverlap)
+TEST_F(UnmanagedPoolAllocatorTests, Malloc_CanAllocateMaximumPossibleChunkCountWithoutOverlap)
 {
     std::vector<size_t*> data;
 
     for (size_t i = 0; i < pool.getMaxAllocationCount(); ++i)
     {
-        const auto chunk = static_cast<size_t*>(pool.allocChunk());
+        const auto chunk = static_cast<size_t*>(pool.malloc());
         *chunk           = i * 11 + 37;
         data.push_back(chunk);
     }
@@ -316,7 +319,7 @@ TEST_F(UnmanagedPoolAllocatorTests, Alloc_AllocatesBufferOfSizeSize)
 }
 
 
-TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_FreesBufferForNewerAllocations)
+TEST_F(UnmanagedPoolAllocatorTests, Mfree_FreesBufferForNewerAllocations)
 {
     std::vector<size_t*> data;
     // Allocate some buffer and fill it with data.
@@ -331,7 +334,7 @@ TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_FreesBufferForNewerAllocations)
         // Data[i] stores the address so free the current chunk
         // free order shouldn't matter as we are using an internal freelist
         // rather than a strict structure like LIFO or FIFO
-        EXPECT_TRUE(pool.freeChunk(data[i]));
+        EXPECT_TRUE(pool.mfree(data[i]));
     }
 
     // clear the vector
@@ -396,7 +399,7 @@ TEST_F(UnmanagedPoolAllocatorTests, Free_OnNonTrivialTypesCallsDtor)
 
 TEST_F(UnmanagedPoolAllocatorTests, MoveCtor_CopiesAttributesToNewObject)
 {
-    const auto prevAllocationCount                  = pool.getMaxAllocationCount();
+    const auto prevAllocationCount                                           = pool.getMaxAllocationCount();
     const pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled> pool2 = std::move(pool);
 
     EXPECT_EQ(prevAllocationCount, pool2.getMaxAllocationCount());
@@ -406,8 +409,8 @@ TEST_F(UnmanagedPoolAllocatorTests, MoveCtor_CopiesAttributesToNewObject)
 
 TEST_F(UnmanagedPoolAllocatorTests, MoveCtor_MovesTelemetry)
 {
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry = pool.getTelemetry();
@@ -439,8 +442,8 @@ TEST_F(UnmanagedPoolAllocatorTests, MoveAssign_CopiesAttributesToNewObject)
 
 TEST_F(UnmanagedPoolAllocatorTests, MoveAssign_MovesTelemetry)
 {
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     // Get the telemetry to ensure that the value is preserved when moving
     // DON'T get by reference as it will change internally
     const auto telemetry     = pool.getTelemetry();

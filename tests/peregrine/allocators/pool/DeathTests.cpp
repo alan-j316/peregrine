@@ -73,21 +73,21 @@ TEST_F(ManagedPoolAllocatorTests, Alloc_AllocatingObjectWithSizeGreaterThanChunk
 { EXPECT_DEBUG_DEATH(static_cast<void>(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f)), ""); }
 
 
-TEST_F(ManagedPoolAllocatorTests, FreeChunk_NullptrTriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(pool.freeChunk(nullptr), ""); }
+TEST_F(ManagedPoolAllocatorTests, Mfree_NullptrTriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(pool.mfree(nullptr), ""); }
 
 
 TEST_F(ManagedPoolAllocatorTests, Free_NullptrTriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(pool.freeChunk(nullptr), ""); }
+{ EXPECT_DEBUG_DEATH(pool.mfree(nullptr), ""); }
 
 
-TEST_F(ManagedPoolAllocatorTests, FreeChunk_GreaterThanMaxMemoryAddressTriggersAssertionInDebugMode)
+TEST_F(ManagedPoolAllocatorTests, Mfree_GreaterThanMaxMemoryAddressTriggersAssertionInDebugMode)
 {
     // Since we are arranging memory from back to front
     // the first allocation holds the largest allocation memory address
     // so we can try to free 1 + last address which should trigger assertion
-    const auto lastAddressChunk = reinterpret_cast<uintptr_t>(pool.allocChunk());
-    EXPECT_DEBUG_DEATH(pool.freeChunk(reinterpret_cast<void*>(lastAddressChunk + 1)), "");
+    const auto lastAddressChunk = reinterpret_cast<uintptr_t>(pool.malloc());
+    EXPECT_DEBUG_DEATH(pool.mfree(reinterpret_cast<void*>(lastAddressChunk + 1)), "");
 }
 
 
@@ -98,10 +98,10 @@ TEST_F(ManagedPoolAllocatorTests, Free_SmallerThanMinimumMemoryAddressTriggersAs
     uintptr_t firstAddressChunk = 0;
     for (size_t i = 0; i < pool.getMaxAllocationCount(); ++i)
     {
-        firstAddressChunk = reinterpret_cast<uintptr_t>(pool.allocChunk());
+        firstAddressChunk = reinterpret_cast<uintptr_t>(pool.malloc());
     }
     EXPECT_NE(0, firstAddressChunk);
-    EXPECT_DEBUG_DEATH(pool.freeChunk(reinterpret_cast<void*>(firstAddressChunk - 1)), "");
+    EXPECT_DEBUG_DEATH(pool.mfree(reinterpret_cast<void*>(firstAddressChunk - 1)), "");
 }
 
 
@@ -135,21 +135,21 @@ TEST_F(UnmanagedPoolAllocatorTests, Alloc_AllocatingObjectWithSizeGreaterThanChu
 { EXPECT_DEBUG_DEATH(static_cast<void>(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f)), ""); }
 
 
-TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_NullptrTriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(pool.freeChunk(nullptr), ""); }
+TEST_F(UnmanagedPoolAllocatorTests, Mfree_NullptrTriggersAssertionInDebugMode)
+{ EXPECT_DEBUG_DEATH(pool.mfree(nullptr), ""); }
 
 
 TEST_F(UnmanagedPoolAllocatorTests, Free_NullptrTriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(pool.freeChunk(nullptr), ""); }
+{ EXPECT_DEBUG_DEATH(pool.mfree(nullptr), ""); }
 
 
-TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_GreaterThanMaxMemoryAddressTriggersAssertionInDebugMode)
+TEST_F(UnmanagedPoolAllocatorTests, Mfree_GreaterThanMaxMemoryAddressTriggersAssertionInDebugMode)
 {
     // Since we arranging memory from back to front
     // the first allocation holds the largest allocation memory address
     // so we can try to free 1 + last address which should trigger assertion
-    const auto lastAddressChunk = reinterpret_cast<uintptr_t>(pool.allocChunk());
-    EXPECT_DEBUG_DEATH(pool.freeChunk(reinterpret_cast<void*>(lastAddressChunk + 1)), "");
+    const auto lastAddressChunk = reinterpret_cast<uintptr_t>(pool.malloc());
+    EXPECT_DEBUG_DEATH(pool.mfree(reinterpret_cast<void*>(lastAddressChunk + 1)), "");
 }
 
 
@@ -160,10 +160,10 @@ TEST_F(UnmanagedPoolAllocatorTests, Free_SmallerThanMinimumMemoryAddressTriggers
     uintptr_t firstAddressChunk = 0;
     for (size_t i = 0; i < pool.getMaxAllocationCount(); ++i)
     {
-        firstAddressChunk = reinterpret_cast<uintptr_t>(pool.allocChunk());
+        firstAddressChunk = reinterpret_cast<uintptr_t>(pool.malloc());
     }
     EXPECT_NE(0, firstAddressChunk);
-    EXPECT_DEBUG_DEATH(pool.freeChunk(reinterpret_cast<void*>(firstAddressChunk - 1)), "");
+    EXPECT_DEBUG_DEATH(pool.mfree(reinterpret_cast<void*>(firstAddressChunk - 1)), "");
 }
 
 #endif

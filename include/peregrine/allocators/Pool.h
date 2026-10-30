@@ -59,7 +59,7 @@ namespace pmm
          * @warning This allocator is NOT thread-safe by default.
          */
         [[nodiscard]] explicit constexpr Pool(size_t poolSize, size_t chuckSize, size_t chunkAlignment) noexcept
-            requires (MemoryPolicy == MemPolicy::Internal);
+            requires(MemoryPolicy == MemPolicy::Internal);
 
 
         /**
@@ -77,7 +77,7 @@ namespace pmm
          */
         [[nodiscard]] explicit constexpr Pool(uint8_t* backingBuffer, size_t bufferSize, size_t chuckSize,
                                               size_t chunkAlignment) noexcept
-            requires (MemoryPolicy == MemPolicy::External);
+            requires(MemoryPolicy == MemPolicy::External);
 
 
         /**
@@ -130,7 +130,7 @@ namespace pmm
          *
          * @relatedalso alloc
          */
-        [[nodiscard]] void* allocChunk() noexcept;
+        [[nodiscard]] void* malloc() noexcept;
 
 
         /**
@@ -145,7 +145,7 @@ namespace pmm
          *
          * @return A reference to the allocated memory.
          *
-         * @relatedalso allocChunk
+         * @relatedalso malloc
          */
         template <typename T, typename... Args>
         [[nodiscard]] T* alloc(Args... args) noexcept;
@@ -167,7 +167,7 @@ namespace pmm
          * @relatedalso free
          * @relatedalso clear
          */
-        bool freeChunk(void* ptr) noexcept;
+        bool mfree(void* ptr) noexcept;
 
 
         /**
@@ -182,7 +182,7 @@ namespace pmm
          * @return A boolean status indicating whether the free was valid.
          *         **Validation is available ONLY for SafePool in Release Mode**
          *
-         * @relatedalso freeChunk
+         * @relatedalso mfree
          * @relatedalso clear
          */
         template <typename T>
@@ -193,7 +193,7 @@ namespace pmm
          * @brief Free the entire pool, resetting to a fresh state.
          *
          * @relatedalso  free
-         * @relatedalso  freeChunk
+         * @relatedalso  mfree
          */
         void clear();
 
@@ -206,7 +206,7 @@ namespace pmm
          * @remarks API specialized for @ref pmm::ManagedMemory.
          */
         ~Pool() noexcept
-            requires (MemoryPolicy == MemPolicy::Internal);
+            requires(MemoryPolicy == MemPolicy::Internal);
 
 
         /**
@@ -219,7 +219,7 @@ namespace pmm
          * @remarks API specialized for @ref pmm::UnmanagedMemory.
          */
         ~Pool() noexcept
-            requires (MemoryPolicy == MemPolicy::External)
+            requires(MemoryPolicy == MemPolicy::External)
         = default;
 
 

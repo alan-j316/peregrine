@@ -68,10 +68,10 @@ TEST_F(ManagedSafePoolTests, AllocBytes_ReturnsNullPtrWhenAllocatingInAFullPool)
     // Use the full capacity
     // Since each chunk is 1_KB, we can allocate 2 of those utmost
     // and any further allocation must return a nullptr.
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
 
-    EXPECT_EQ(nullptr, pool.allocChunk());
+    EXPECT_EQ(nullptr, pool.malloc());
 }
 
 
@@ -88,35 +88,35 @@ TEST_F(ManagedSafePoolTests, Alloc_ReturnsNullPtrWhenAllocatingInAFullPool)
 }
 
 
-TEST_F(ManagedSafePoolTests, FreeChunk_AddressLessThanBaseAddressReturnsFalse)
+TEST_F(ManagedSafePoolTests, Mfree_AddressLessThanBaseAddressReturnsFalse)
 {
-    const auto allocation = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation = static_cast<uint8_t*>(pool.malloc());
     // NOTE: Since we are allocating backwards we cannot offset by 1 chunkSize,
     // since it can return a valid offset as out allocatedAddress - chunkSize can point
     // to the base address
     // BASE_ADDRESS <- ALLOCATION
     const auto outOfBoundsLocation = allocation - 2 * chunkSize;
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
-TEST_F(ManagedSafePoolTests, FreeChunk_AddressGreaterThanMaxAddressReturnsFalse)
+TEST_F(ManagedSafePoolTests, Mfree_AddressGreaterThanMaxAddressReturnsFalse)
 {
-    const auto allocation          = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation          = static_cast<uint8_t*>(pool.malloc());
     const auto outOfBoundsLocation = allocation + poolSize + 24;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 
-TEST_F(ManagedSafePoolTests, FreeChunk_AddressesInBetweenChunkSizeReturnsFalse)
+TEST_F(ManagedSafePoolTests, Mfree_AddressesInBetweenChunkSizeReturnsFalse)
 {
-    const auto allocation        = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation        = static_cast<uint8_t*>(pool.malloc());
     const auto inBetweenLocation = allocation + 24;
 
-    EXPECT_FALSE(pool.freeChunk(inBetweenLocation));
+    EXPECT_FALSE(pool.mfree(inBetweenLocation));
 }
 
-TEST_F(ManagedSafePoolTests, FreeChunk_NullptrReturnsFalse) { EXPECT_FALSE(pool.freeChunk(nullptr)); }
+TEST_F(ManagedSafePoolTests, Mfree_NullptrReturnsFalse) { EXPECT_FALSE(pool.mfree(nullptr)); }
 
 
 TEST_F(ManagedSafePoolTests, Free_AddressLessThanBaseAddressReturnsFalse)
@@ -124,7 +124,7 @@ TEST_F(ManagedSafePoolTests, Free_AddressLessThanBaseAddressReturnsFalse)
     const auto allocation          = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto outOfBoundsLocation = allocation - chunkSize;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 TEST_F(ManagedSafePoolTests, Free_AddressGreaterThanMaxAddressReturnsFalse)
@@ -132,7 +132,7 @@ TEST_F(ManagedSafePoolTests, Free_AddressGreaterThanMaxAddressReturnsFalse)
     const auto allocation          = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto outOfBoundsLocation = allocation + poolSize + 24;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 
@@ -141,7 +141,7 @@ TEST_F(ManagedSafePoolTests, Free_AddressesInBetweenChunkSizeReturnsFalse)
     const auto allocation        = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto inBetweenLocation = allocation + 24;
 
-    EXPECT_FALSE(pool.freeChunk(inBetweenLocation));
+    EXPECT_FALSE(pool.mfree(inBetweenLocation));
 }
 
 /// Note: We can't directly pass in a nullptr so we are casting it
@@ -158,10 +158,10 @@ TEST_F(UnmanagedSafePoolTests, AllocBytes_ReturnsNullPtrWhenAllocatingInAFullPoo
     // Use the full capacity
     // Since each chunk is 1_KB, we can allocate 2 of those utmost
     // and any further allocation must return a nullptr.
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
 
-    EXPECT_EQ(nullptr, pool.allocChunk());
+    EXPECT_EQ(nullptr, pool.malloc());
 }
 
 
@@ -178,37 +178,37 @@ TEST_F(UnmanagedSafePoolTests, Alloc_ReturnsNullPtrWhenAllocatingInAFullPool)
 }
 
 
-TEST_F(UnmanagedSafePoolTests, FreeChunk_AddressLessThanBaseAddressReturnsFalse)
+TEST_F(UnmanagedSafePoolTests, Mfree_AddressLessThanBaseAddressReturnsFalse)
 {
-    const auto allocation = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation = static_cast<uint8_t*>(pool.malloc());
     // NOTE: Since we are allocating backwards we cannot offset by 1 chunkSize,
     // since it can return a valid offset as out allocatedAddress - chunkSize can point
     // to the base address
     // BASE_ADDRESS <- ALLOCATION
     const auto outOfBoundsLocation = allocation - 2 * chunkSize;
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 
-TEST_F(UnmanagedSafePoolTests, FreeChunk_AddressGreaterThanMaxAddressReturnsFalse)
+TEST_F(UnmanagedSafePoolTests, Mfree_AddressGreaterThanMaxAddressReturnsFalse)
 {
-    const auto allocation          = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation          = static_cast<uint8_t*>(pool.malloc());
     const auto outOfBoundsLocation = allocation + poolSize + 24;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 
-TEST_F(UnmanagedSafePoolTests, FreeChunk_AddressesInBetweenChunkSizeReturnsFalse)
+TEST_F(UnmanagedSafePoolTests, Mfree_AddressesInBetweenChunkSizeReturnsFalse)
 {
-    const auto allocation        = static_cast<uint8_t*>(pool.allocChunk());
+    const auto allocation        = static_cast<uint8_t*>(pool.malloc());
     const auto inBetweenLocation = allocation + 24;
 
-    EXPECT_FALSE(pool.freeChunk(inBetweenLocation));
+    EXPECT_FALSE(pool.mfree(inBetweenLocation));
 }
 
 
-TEST_F(UnmanagedSafePoolTests, FreeChunk_NullptrReturnsFalse) { EXPECT_FALSE(pool.freeChunk(nullptr)); }
+TEST_F(UnmanagedSafePoolTests, Mfree_NullptrReturnsFalse) { EXPECT_FALSE(pool.mfree(nullptr)); }
 
 
 TEST_F(UnmanagedSafePoolTests, Free_AddressLessThanBaseAddressReturnsFalse)
@@ -216,7 +216,7 @@ TEST_F(UnmanagedSafePoolTests, Free_AddressLessThanBaseAddressReturnsFalse)
     const auto allocation          = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto outOfBoundsLocation = allocation - chunkSize;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 TEST_F(UnmanagedSafePoolTests, Free_AddressGreaterThanMaxAddressReturnsFalse)
@@ -224,7 +224,7 @@ TEST_F(UnmanagedSafePoolTests, Free_AddressGreaterThanMaxAddressReturnsFalse)
     const auto allocation          = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto outOfBoundsLocation = allocation + poolSize + 24;
 
-    EXPECT_FALSE(pool.freeChunk(outOfBoundsLocation));
+    EXPECT_FALSE(pool.mfree(outOfBoundsLocation));
 }
 
 
@@ -233,7 +233,7 @@ TEST_F(UnmanagedSafePoolTests, Free_AddressesInBetweenChunkSizeReturnsFalse)
     const auto allocation        = pool.alloc<LargeData<chunkSize - sizeof(LargeData<chunkSize>)>>();
     const auto inBetweenLocation = allocation + 24;
 
-    EXPECT_FALSE(pool.freeChunk(inBetweenLocation));
+    EXPECT_FALSE(pool.mfree(inBetweenLocation));
 }
 
 /// Note: We can't directly pass in a nullptr so we are casting it

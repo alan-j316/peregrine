@@ -36,7 +36,7 @@ TEST_F(ManagedPoolAllocatorTests, EnabledTelemetry_ReturnsRealTelemetry)
 TEST_F(ManagedPoolAllocatorTests, DisabledTelemetry_ReturnsDummyTelemetry)
 {
     [[maybe_unused]] const pmm::Pool<pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled> telemetryDisabledPool(512, 16,
-                                                                                                              8);
+                                                                                                               8);
 
     [[maybe_unused]] auto telemetry = telemetryDisabledPool.getTelemetry();
     const bool result               = std::is_same_v<decltype(telemetry), pmm::DummyPoolTelemetry>;
@@ -55,11 +55,11 @@ TEST(ManagedPoolAllocatorTests_TelemetryDisabled, IsTelemetryEnabled_ReturnsFals
 }
 
 
-TEST_F(ManagedPoolAllocatorTests, AllocChunk_IncrementsUsageInTelemetry)
+TEST_F(ManagedPoolAllocatorTests, Malloc_IncrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
 
     EXPECT_EQ(2, telemetry.getUsedAllocationCount());
 }
@@ -75,12 +75,12 @@ TEST_F(ManagedPoolAllocatorTests, Alloc_IncrementsUsageInTelemetry)
 }
 
 
-TEST_F(ManagedPoolAllocatorTests, FreeChunk_DecrementsUsageInTelemetry)
+TEST_F(ManagedPoolAllocatorTests, Mfree_DecrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    const auto mem = pool.allocChunk();
-    pool.freeChunk(mem);
+    static_cast<void>(pool.malloc());
+    const auto mem = pool.malloc();
+    pool.mfree(mem);
 
     EXPECT_EQ(1, telemetry.getUsedAllocationCount());
 }
@@ -89,7 +89,7 @@ TEST_F(ManagedPoolAllocatorTests, FreeChunk_DecrementsUsageInTelemetry)
 TEST_F(ManagedPoolAllocatorTests, Free_DecrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
     const auto mem = pool.alloc<size_t>(1);
     pool.free(mem);
 
@@ -100,8 +100,8 @@ TEST_F(ManagedPoolAllocatorTests, Free_DecrementsUsageInTelemetry)
 TEST_F(ManagedPoolAllocatorTests, Clear_ClearsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     pool.clear();
 
     EXPECT_EQ(0, telemetry.getUsedAllocationCount());
@@ -117,8 +117,8 @@ TEST_F(UnmanagedPoolAllocatorTests, EnabledTelemetry_ReturnsRealTelemetry)
 {
     const auto backingBuffer = new uint8_t[512];
 
-    [[maybe_unused]] const pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled> telemetryEnabledPool(backingBuffer,
-                                                                                                         512, 16, 8);
+    [[maybe_unused]] const pmm::Pool<pmm::MemPolicy::External, pmm::TelPolicy::Enabled> telemetryEnabledPool(
+        backingBuffer, 512, 16, 8);
 
     [[maybe_unused]] auto telemetry = telemetryEnabledPool.getTelemetry();
     const bool result               = std::is_same_v<decltype(telemetry), pmm::PoolTelemetry>;
@@ -157,11 +157,11 @@ TEST(UnmanagedPoolAllocator_TelemetryDisabledTests, IsTelemetryEnabled_ReturnsFa
     delete[] buffer;
 }
 
-TEST_F(UnmanagedPoolAllocatorTests, AllocChunk_IncrementsUsageInTelemetry)
+TEST_F(UnmanagedPoolAllocatorTests, Malloc_IncrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
 
     EXPECT_EQ(2, telemetry.getUsedAllocationCount());
 }
@@ -177,12 +177,12 @@ TEST_F(UnmanagedPoolAllocatorTests, Alloc_IncrementsUsageInTelemetry)
 }
 
 
-TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_DecrementsUsageInTelemetry)
+TEST_F(UnmanagedPoolAllocatorTests, Mfree_DecrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    const auto mem = pool.allocChunk();
-    pool.freeChunk(mem);
+    static_cast<void>(pool.malloc());
+    const auto mem = pool.malloc();
+    pool.mfree(mem);
 
     EXPECT_EQ(1, telemetry.getUsedAllocationCount());
 }
@@ -191,7 +191,7 @@ TEST_F(UnmanagedPoolAllocatorTests, FreeChunk_DecrementsUsageInTelemetry)
 TEST_F(UnmanagedPoolAllocatorTests, Free_DecrementsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
     const auto mem = pool.alloc<size_t>(1);
     pool.free(mem);
 
@@ -202,8 +202,8 @@ TEST_F(UnmanagedPoolAllocatorTests, Free_DecrementsUsageInTelemetry)
 TEST_F(UnmanagedPoolAllocatorTests, Clear_ClearsUsageInTelemetry)
 {
     const auto& telemetry = pool.getTelemetry();
-    static_cast<void>(pool.allocChunk());
-    static_cast<void>(pool.allocChunk());
+    static_cast<void>(pool.malloc());
+    static_cast<void>(pool.malloc());
     pool.clear();
 
     EXPECT_EQ(0, telemetry.getUsedAllocationCount());
