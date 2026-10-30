@@ -144,7 +144,7 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocBytes(
+    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
         const std::size_t size, const std::size_t alignment) noexcept
         requires(Type == StackPolicy::Loose)
     {
@@ -183,7 +183,7 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocBytes(
+    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
         const std::size_t size, const std::size_t alignment) noexcept
         requires(Type == StackPolicy::Strict)
     {
@@ -230,7 +230,7 @@ namespace pmm
     PMM_INLINE T* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(
         Args... args) noexcept
     {
-        auto rawMemory = allocBytes(sizeof(T), alignof(T));
+        auto rawMemory = malloc(sizeof(T), alignof(T));
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (rawMemory == nullptr)
@@ -256,7 +256,7 @@ namespace pmm
                 return std::span<T>();
             }
         }
-        return std::span(static_cast<T*>(allocBytes(sizeof(T) * count, alignof(T))), count);
+        return std::span(static_cast<T*>(malloc(sizeof(T) * count, alignof(T))), count);
     }
 
 
@@ -286,7 +286,7 @@ namespace pmm
         }
 
         // Else make new allocations
-        auto newPtr = allocBytes(newSize, alignment);
+        auto newPtr = malloc(newSize, alignment);
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (newPtr == nullptr)
@@ -357,7 +357,7 @@ namespace pmm
             return oldMemory;
         }
 
-        auto newPtr = allocBytes(newSize, alignment);
+        auto newPtr = malloc(newSize, alignment);
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (newPtr == nullptr)
@@ -387,7 +387,7 @@ namespace pmm
             }
         }
 
-        auto newPtr = allocBytes(newSize, alignment);
+        auto newPtr = malloc(newSize, alignment);
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (newPtr == nullptr)

@@ -49,7 +49,7 @@ TEST(UnmanagedLooseStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInDe
  *        than the stack capacity.
  */
 TEST_F(LooseStackTests, Allocation_GreaterThanCapacity_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(stackSize + 10)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(stackSize + 10)), ""); }
 
 
 /**
@@ -59,8 +59,8 @@ TEST_F(LooseStackTests, Allocation_GreaterThanCapacity_TriggersAssertionInDebugM
 TEST_F(LooseStackTests, Allocation_NearFullStack_TriggersAssertion)
 {
     // Allocate a big chunk to fill the stack near capacity
-    static_cast<void>(stack.allocBytes(stackSize - 50));
-    EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500)), "");
+    static_cast<void>(stack.malloc(stackSize - 50));
+    EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500)), "");
 }
 
 /**
@@ -71,7 +71,7 @@ TEST_P(StackAlignmentNonPowersOfTwo, LooseStackAllocation_InFullStack_TriggersAs
 {
     // Allocate a big chunk to fill the stack near capacity
     pmm::Stack<pmm::StackPolicy::Loose> stack(5120);
-    EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, GetParam())), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500, GetParam())), "");
 }
 
 /**
@@ -79,7 +79,7 @@ TEST_P(StackAlignmentNonPowersOfTwo, LooseStackAllocation_InFullStack_TriggersAs
  *        given alignment greater than 128.
  */
 TEST_F(LooseStackTests, Allocation_GreaterThanSize_TriggersAssertion)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, 255)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500, 255)), ""); }
 
 
 /**
@@ -104,7 +104,7 @@ TEST_F(LooseStackTests, FreeBytes_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEAT
 TEST_F(LooseStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
 {
     constexpr auto size = 512;
-    const auto memory   = static_cast<char*>(stack.allocBytes(size));
+    const auto memory   = static_cast<char*>(stack.malloc(size));
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory + size + 1), "");
 }
 
@@ -118,7 +118,7 @@ TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
     constexpr auto size      = 512;
     constexpr auto alignment = 8;
 
-    const auto memory = static_cast<char*>(stack.allocBytes(size, alignment));
+    const auto memory = static_cast<char*>(stack.malloc(size, alignment));
 
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
@@ -132,7 +132,7 @@ TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
 TEST_F(LooseStackTests, FreeBytes_BeyondCapacity_TriggersAssertion)
 {
     constexpr auto size = 512;
-    const auto memory   = static_cast<char*>(stack.allocBytes(size, 8));
+    const auto memory   = static_cast<char*>(stack.malloc(size, 8));
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory + stackSize), "");
 }
@@ -152,21 +152,21 @@ TEST_F(LooseStackTests, Resize_Nullptr_TriggersAssertion)
  */
 TEST_F(LooseStackTests, Resize_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 128, 0)), "");
 }
 
 
 TEST_F(LooseStackTests, Resize_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 0, 256)), "");
 }
 
 
 TEST_F(LooseStackTests, Resize_LatestAllocation_ToAnInsufficentlyLargeSizeTriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 128, stackSize)), "");
 }
 
@@ -184,13 +184,13 @@ TEST_F(LooseStackTests, ResizeFast_Nullptr_TriggersAssertion)
  */
 TEST_F(LooseStackTests, ResizeFast_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeFast(address, 128, 0)), "");
 }
 
 TEST_F(LooseStackTests, ResizeFast_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeFast(address, 0, 256)), "");
 }
 
@@ -209,14 +209,14 @@ TEST_F(LooseStackTests, ResizeLast_Nullptr_TriggersAssertion)
  */
 TEST_F(LooseStackTests, ResizeLast_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeLast(address, 128, 0)), "");
 }
 
 
 TEST_F(LooseStackTests, ResizeLast_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeLast(address, 0, 256)), "");
 }
 
@@ -246,7 +246,7 @@ TEST(UnmanagedStrictStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInD
  *        than the stack capacity.
  */
 TEST_F(StrictStackTests, Allocation_GreaterThanCapacity_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(stackSize + 10)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(stackSize + 10)), ""); }
 
 
 /**
@@ -256,8 +256,8 @@ TEST_F(StrictStackTests, Allocation_GreaterThanCapacity_TriggersAssertionInDebug
 TEST_F(StrictStackTests, Allocation_NearFullStack_TriggersAssertion)
 {
     // Allocate a big chunk to fill the stack near capacity
-    static_cast<void>(stack.allocBytes(stackSize - 50));
-    EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500)), "");
+    static_cast<void>(stack.malloc(stackSize - 50));
+    EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500)), "");
 }
 
 /**
@@ -268,7 +268,7 @@ TEST_P(StackAlignmentNonPowersOfTwo, StrictStackAllocation_InFullStack_TriggersA
 {
     // Allocate a big chunk to fill the stack near capacity
     pmm::Stack<pmm::StackPolicy::Strict> stack(5120);
-    EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, GetParam())), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500, GetParam())), "");
 }
 
 /**
@@ -276,7 +276,7 @@ TEST_P(StackAlignmentNonPowersOfTwo, StrictStackAllocation_InFullStack_TriggersA
  *        given alignment greater than 128.
  */
 TEST_F(StrictStackTests, Allocation_GreaterThanSize_TriggersAssertion)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.allocBytes(500, 255)), ""); }
+{ EXPECT_DEBUG_DEATH(static_cast<void>(stack.malloc(500, 255)), ""); }
 
 
 /**
@@ -301,7 +301,7 @@ TEST_F(StrictStackTests, FreeBytes_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEA
 TEST_F(StrictStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
 {
     constexpr auto size = 512;
-    const auto memory   = static_cast<char*>(stack.allocBytes(size));
+    const auto memory   = static_cast<char*>(stack.malloc(size));
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory + size + 1), "");
 }
 
@@ -314,7 +314,7 @@ TEST_F(StrictStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion
 {
     constexpr auto size      = 512;
     constexpr auto alignment = 8;
-    const auto memory        = static_cast<char*>(stack.allocBytes(size, alignment));
+    const auto memory        = static_cast<char*>(stack.malloc(size, alignment));
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
 }
@@ -327,7 +327,7 @@ TEST_F(StrictStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion
 TEST_F(StrictStackTests, FreeBytes_BeyondCapacity_TriggersAssertion)
 {
     constexpr auto size = 512;
-    const auto memory   = static_cast<char*>(stack.allocBytes(size, 8));
+    const auto memory   = static_cast<char*>(stack.malloc(size, 8));
     // Move 1 below assume header size
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory + stackSize), "");
 }
@@ -339,10 +339,10 @@ TEST_F(StrictStackTests, FreeBytes_BeyondCapacity_TriggersAssertion)
 TEST_F(StrictStackTests, FreeBytes_OutOfOrder_TriggersAssertion)
 {
     constexpr auto size = 512;
-    const auto memory   = static_cast<char*>(stack.allocBytes(size, 8));
+    const auto memory   = static_cast<char*>(stack.malloc(size, 8));
 
     // Second allocation
-    static_cast<void>(stack.allocBytes(40));
+    static_cast<void>(stack.malloc(40));
 
     EXPECT_DEBUG_DEATH(stack.freeBytes(memory), "");
 }
@@ -361,21 +361,21 @@ TEST_F(StrictStackTests, Resize_Nullptr_TriggersAssertion)
  */
 TEST_F(StrictStackTests, Resize_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 128, 0)), "");
 }
 
 
 TEST_F(StrictStackTests, Resize_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 0, 256)), "");
 }
 
 
 TEST_F(StrictStackTests, Resize_LatestAllocation_ToAnInsufficentlyLargeSizeTriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resize(address, 128, stackSize)), "");
 }
 
@@ -394,14 +394,14 @@ TEST_F(StrictStackTests, ResizeFast_Nullptr_TriggersAssertion)
  */
 TEST_F(StrictStackTests, ResizeFast_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeFast(address, 128, 0)), "");
 }
 
 
 TEST_F(StrictStackTests, ResizeFast_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeFast(address, 0, 256)), "");
 }
 
@@ -419,7 +419,7 @@ TEST_F(StrictStackTests, ResizeLast_Nullptr_TriggersAssertion)
  */
 TEST_F(StrictStackTests, ResizeLast_ToZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeLast(address, 128, 0)), "");
 }
 
@@ -430,15 +430,15 @@ TEST_F(StrictStackTests, ResizeLast_ToZero_TriggersAssertion)
  */
 TEST_F(StrictStackTests, ResizeLast_OutOfOrder_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
-    static_cast<void>(stack.allocBytes(20)); // Second allocation to trigger out of order
+    const auto address = stack.malloc(128);
+    static_cast<void>(stack.malloc(20)); // Second allocation to trigger out of order
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeLast(address, 128, 0)), "");
 }
 
 
 TEST_F(StrictStackTests, ResizeLast_FromZero_TriggersAssertion)
 {
-    const auto address = stack.allocBytes(128);
+    const auto address = stack.malloc(128);
     EXPECT_DEBUG_DEATH(static_cast<void>(stack.resizeLast(address, 0, 256)), "");
 }
 

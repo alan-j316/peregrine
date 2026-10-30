@@ -45,7 +45,7 @@ TEST(StackMemoryManagementTests, ManagedStack_MaintainsInternalBuffer)
     pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal> stack{ 4096 };
 
     constexpr auto count = 128;
-    const auto buffer    = static_cast<int*>(stack.allocBytes(count * sizeof(int)));
+    const auto buffer    = static_cast<int*>(stack.malloc(count * sizeof(int)));
 
     for (std::size_t i = 0; i < count; ++i)
     {

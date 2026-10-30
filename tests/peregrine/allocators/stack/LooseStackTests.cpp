@@ -3,7 +3,8 @@
  * @author Alan Abraham P Kochumon
  * @date Created on: June 20, 2026
  *
- * @brief Verify @ref pmm::Stack<pmm::StackPolicy::Loose> allocation, deallocation, and other related memory management logic.
+ * @brief Verify @ref pmm::Stack<pmm::StackPolicy::Loose> allocation, deallocation, and other related memory management
+ * logic.
  *
  * @copyright Copyright (c) 2026 Alan Abraham P Kochumon
  */
@@ -66,7 +67,7 @@ TEST_F(LooseStackTests, FreeSize_NoAllocations_ReturnsTheSizeOfTheStack) { EXPEC
 TEST_F(LooseStackTests, FreeSize_ReturnsStackSizeMinusPaddingAndAllocationSize)
 {
     constexpr std::size_t allocatedSize = 512;
-    const auto memory                   = static_cast<char*>(stack.allocBytes(allocatedSize));
+    const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
     const auto header       = reinterpret_cast<pmm::LooseStackHeader*>(memory - sizeof(pmm::LooseStackHeader));
     const auto expectedSize = stackSize - (allocatedSize + header->padding);
 
@@ -80,7 +81,7 @@ TEST_F(LooseStackTests, FreeSize_ReturnsStackSizeMinusPaddingAndAllocationSize)
 TEST_F(LooseStackTests, FreeSize_AfterFreeingAllocation_ReturnsStackSize)
 {
     constexpr std::size_t allocatedSize = 512;
-    const auto memory                   = static_cast<char*>(stack.allocBytes(allocatedSize));
+    const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
     stack.freeBytes(memory);
     EXPECT_EQ(stackSize, stack.freeSize());
 }
@@ -92,7 +93,7 @@ TEST_F(LooseStackTests, FreeSize_AfterFreeingAllocation_ReturnsStackSize)
 TEST_F(LooseStackTests, FreeSize_AfterFreeingAllAllocations_ReturnsStackSize)
 {
     constexpr std::size_t allocatedSize = 512;
-    static_cast<void>(stack.allocBytes(allocatedSize));
+    static_cast<void>(stack.malloc(allocatedSize));
     stack.clear();
     EXPECT_EQ(stackSize, stack.freeSize());
 }
@@ -110,7 +111,7 @@ TEST_F(LooseStackTests, UsedSize_NoAllocations_ReturnsZero) { EXPECT_EQ(0, stack
 TEST_F(LooseStackTests, UsedSize_ReturnsStackSizeMinusPaddingAndAllocationSize)
 {
     constexpr std::size_t allocatedSize = 512;
-    const auto memory                   = static_cast<char*>(stack.allocBytes(allocatedSize));
+    const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
     const auto header       = reinterpret_cast<pmm::LooseStackHeader*>(memory - sizeof(pmm::LooseStackHeader));
     const auto expectedSize = allocatedSize + header->padding;
 
@@ -124,7 +125,7 @@ TEST_F(LooseStackTests, UsedSize_ReturnsStackSizeMinusPaddingAndAllocationSize)
 TEST_F(LooseStackTests, UsedSize_AfterFreeingAllocation_ReturnsZero)
 {
     constexpr std::size_t allocatedSize = 512;
-    const auto memory                   = static_cast<char*>(stack.allocBytes(allocatedSize));
+    const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
     stack.freeBytes(memory);
     EXPECT_EQ(0, stack.usedSize());
 }
@@ -136,7 +137,7 @@ TEST_F(LooseStackTests, UsedSize_AfterFreeingAllocation_ReturnsZero)
 TEST_F(LooseStackTests, UsedSize_ClearAllocation_ReturnsStackSize)
 {
     constexpr std::size_t allocatedSize = 512;
-    static_cast<void>(stack.allocBytes(allocatedSize));
+    static_cast<void>(stack.malloc(allocatedSize));
     stack.clear();
     EXPECT_EQ(0, stack.usedSize());
 }
@@ -144,7 +145,8 @@ TEST_F(LooseStackTests, UsedSize_ClearAllocation_ReturnsStackSize)
 
 TEST_F(LooseStackTests, MoveCtor_CopiesAttributesToNewObject)
 {
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack2 = std::move(stack);
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack2 =
+        std::move(stack);
     EXPECT_EQ(stackSize, stack2.freeSize());
     EXPECT_EQ(stackSize, stack2.size());
     EXPECT_EQ(0, stack2.usedSize());
@@ -155,10 +157,11 @@ TEST_F(LooseStackTests, MoveCtor_CopiesAttributesToNewObject)
 TEST_F(LooseStackTests, MoveCtor_MovesTelemetry)
 {
 
-    static_cast<void>(stack.allocBytes(250, 16));
+    static_cast<void>(stack.malloc(250, 16));
     // Must get the telemetry by value here else the reference will be reset
     const auto initialTelemetry = stack.getTelemetry();
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack2 = std::move(stack);
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack2 =
+        std::move(stack);
 
     // Checking for telemetry equality
     EXPECT_EQ(initialTelemetry.getCurrentMemoryUsage(), stack2.getTelemetry().getCurrentMemoryUsage());
@@ -175,22 +178,22 @@ TEST_F(LooseStackTests, MoveCtor_MovesTelemetry)
  *            ALLOC BYTES             *
  **************************************/
 
-/** @brief Verify that stack allocation using allocBytes returns a valid pointer, given an empty stack. */
-TEST_F(LooseStackTests, AllocBytes_ReturnsNonNullPtrOnEmptyStack)
+/** @brief Verify that stack allocation using malloc returns a valid pointer, given an empty stack. */
+TEST_F(LooseStackTests, Malloc_ReturnsNonNullPtrOnEmptyStack)
 {
-    const auto dataPtr = stack.allocBytes(120);
+    const auto dataPtr = stack.malloc(120);
     EXPECT_NE(nullptr, dataPtr);
 }
 
 
 /**
- * @brief Verify that stack allocation using allocBytes returns a valid pointer,
+ * @brief Verify that stack allocation using malloc returns a valid pointer,
  *        given a non-empty stack with memory to spare.
  */
-TEST_F(LooseStackTests, AllocBytes_ReturnNonNullPtrOnNonEmptyStack)
+TEST_F(LooseStackTests, Malloc_ReturnNonNullPtrOnNonEmptyStack)
 {
-    const auto dataPtr1 = stack.allocBytes(500);
-    const auto dataPtr2 = stack.allocBytes(500);
+    const auto dataPtr1 = stack.malloc(500);
+    const auto dataPtr2 = stack.malloc(500);
 
     EXPECT_NE(nullptr, dataPtr1);
     EXPECT_NE(nullptr, dataPtr2);
@@ -199,12 +202,12 @@ TEST_F(LooseStackTests, AllocBytes_ReturnNonNullPtrOnNonEmptyStack)
 
 
 
-/** @brief Verify that memory allocated using allocBytes maintains data integrity. */
-TEST_F(LooseStackTests, AllocBytes_RepeatedAllocationAndWritesDoNotCorruptData)
+/** @brief Verify that memory allocated using malloc maintains data integrity. */
+TEST_F(LooseStackTests, Malloc_RepeatedAllocationAndWritesDoNotCorruptData)
 {
     constexpr std::size_t array1Len = 50;
     constexpr std::size_t array2Len = 25;
-    const auto array1               = static_cast<int*>(stack.allocBytes(array1Len * sizeof(int)));
+    const auto array1               = static_cast<int*>(stack.malloc(array1Len * sizeof(int)));
 
     // Write into first array
     for (std::size_t i = 0; i < array1Len; ++i)
@@ -213,7 +216,7 @@ TEST_F(LooseStackTests, AllocBytes_RepeatedAllocationAndWritesDoNotCorruptData)
     }
 
     // Write into second array
-    const auto array2 = static_cast<int*>(stack.allocBytes(array2Len * sizeof(int)));
+    const auto array2 = static_cast<int*>(stack.malloc(array2Len * sizeof(int)));
     for (std::size_t i = 0; i < array2Len; ++i)
     {
         array2[i] = static_cast<int>(i + 515);
@@ -233,11 +236,11 @@ TEST_F(LooseStackTests, AllocBytes_RepeatedAllocationAndWritesDoNotCorruptData)
 }
 
 
-/** @brief Verify that allocation using allocBytes stores header before returned address. */
-TEST_F(LooseStackTests, AllocBytes_HeaderIsStoredBehindReturnedAddress)
+/** @brief Verify that allocation using malloc stores header before returned address. */
+TEST_F(LooseStackTests, Malloc_HeaderIsStoredBehindReturnedAddress)
 {
     constexpr auto alignment = 8;
-    const auto memoryStart   = static_cast<char*>(stack.allocBytes(500, alignment));
+    const auto memoryStart   = static_cast<char*>(stack.malloc(500, alignment));
 
     const auto header =
         reinterpret_cast<pmm::LooseStackHeader*>(reinterpret_cast<char*>(memoryStart) - sizeof(pmm::LooseStackHeader));
@@ -246,17 +249,17 @@ TEST_F(LooseStackTests, AllocBytes_HeaderIsStoredBehindReturnedAddress)
 
 
 /**
- * @brief Verify that allocation using allocBytes always return an address aligned
+ * @brief Verify that allocation using malloc always return an address aligned
  *        to the specified boundary.
  */
-TEST_P(LooseStackAllocationAlignmentTests, AllocBytes_AlwaysReturnAnAlignedMemoryAddress)
+TEST_P(LooseStackAllocationAlignmentTests, Malloc_AlwaysReturnAnAlignedMemoryAddress)
 {
     const auto alignment = this->GetParam();
     const auto blockSize = 5 * alignment;
     const auto stackSize = 10 * alignment;
     // pmm::Stack<pmm::MemPolicy::External> stack(stackSize);
     pmm::Stack<pmm::StackPolicy::Loose> stack{ stackSize };
-    const void* dataAddress = stack.allocBytes(blockSize, alignment);
+    const void* dataAddress = stack.malloc(blockSize, alignment);
 
     // Verify returned address is 0 by using 2^n modulo trick
     EXPECT_EQ(0, reinterpret_cast<uintptr_t>(dataAddress) & (alignment - 1));
@@ -384,7 +387,7 @@ TEST_F(LooseStackTests, AllocV_AllocatesWriteTypeArray)
 TEST_F(LooseStackTests, AllocV_BaseAddressAlignedToAlignmentOfType)
 {
     // Allocate some memory to throw off alignment
-    static_cast<void>(stack.allocBytes(2, 2));
+    static_cast<void>(stack.malloc(2, 2));
 
     const auto vector = stack.allocV<Vec4>(10);
     // Base address % alignment == 0
@@ -400,7 +403,7 @@ TEST_F(LooseStackTests, AllocV_BaseAddressAlignedToAlignmentOfType)
 TEST_F(LooseStackTests, Resize_LatestAllocationSmallerSize_ReturnsSameAddress)
 {
     constexpr auto oldSize = 128, newSize = 64;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resize(oldMemory, oldSize, newSize);
 
     EXPECT_EQ(oldMemory, newMemory);
@@ -411,7 +414,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationSmallerSize_ReturnsSameAddress)
 TEST_F(LooseStackTests, Resize_LatestAllocationLargerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 256;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resize(oldMemory, oldSize, newSize);
 
     EXPECT_NE(oldMemory, newMemory);
@@ -423,7 +426,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationLargerSize_ResizesMemory)
 {
     constexpr auto count          = 128;
     constexpr std::size_t oldSize = 128, newSize = sizeof(int) * count;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = static_cast<int*>(stack.resize(oldMemory, oldSize, newSize));
 
 
@@ -446,9 +449,9 @@ TEST_F(LooseStackTests, Resize_LatestAllocationLargerSize_ResizesMemory)
 TEST_F(LooseStackTests, Resize_SmallerSize_ReturnsSameAddress)
 {
     constexpr auto oldSize = 128, newSize = 64;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = stack.resize(oldMemory, oldSize, newSize);
 
@@ -460,9 +463,9 @@ TEST_F(LooseStackTests, Resize_SmallerSize_ReturnsSameAddress)
 TEST_F(LooseStackTests, Resize_LargerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 256;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = stack.resize(oldMemory, oldSize, newSize);
 
@@ -475,9 +478,9 @@ TEST_F(LooseStackTests, Resize_LargerSize_ResizesMemory)
 {
     constexpr auto count          = 128;
     constexpr std::size_t oldSize = 128, newSize = sizeof(int) * count;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = static_cast<int*>(stack.resize(oldMemory, oldSize, newSize));
 
@@ -508,11 +511,11 @@ TEST_F(LooseStackTests, Resize_CopiesOverOldMemory)
     constexpr auto oldCount       = 48;
     constexpr auto newCount       = 128;
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
-    const auto oldMemory = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto oldMemory = static_cast<int*>(stack.malloc(oldSize));
 
     // Since the copy is logically triggered only for allocations that are "moved"
     // We need a second allocation to trigger it
-    static_cast<void>(stack.allocBytes(oldSize));
+    static_cast<void>(stack.malloc(oldSize));
 
     // Store some random value in memory
     for (std::size_t i = 0; i < oldCount; ++i)
@@ -539,14 +542,14 @@ TEST_F(LooseStackTests, Resize_NonLatestAllocShrinking_CorruptsNoMemory)
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
 
     // Allocate the memory
-    const auto firstAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto firstAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the first allocation with data
     for (std::size_t i = 0; i < oldCount; ++i)
     {
         firstAlloc[i] = static_cast<int>(2813 + i);
     }
     // Allocate another memory
-    const auto secondAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto secondAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the buffer
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -578,14 +581,14 @@ TEST_F(LooseStackTests, Resize_NonLatestAllocExpansion_CorruptsNoMemory)
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
 
     // Allocate the memory
-    const auto firstAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto firstAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the first allocation with data
     for (std::size_t i = 0; i < oldCount; ++i)
     {
         firstAlloc[i] = static_cast<int>(2813 + i);
     }
     // Allocate another memory
-    const auto secondAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto secondAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the buffer
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -621,7 +624,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationShrinking_CorruptsNoMemory)
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
 
     // Allocate the memory
-    const auto firstAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto firstAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the first allocation with data
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -632,7 +635,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationShrinking_CorruptsNoMemory)
     const auto newMemory = static_cast<int*>(stack.resize(firstAlloc, oldSize, newSize));
 
     // Allocate another memory
-    const auto secondAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto secondAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the buffer
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -660,7 +663,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationExpansion_CorruptsNoMemory)
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
 
     // Allocate the memory
-    const auto firstAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto firstAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the first allocation with data
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -677,7 +680,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationExpansion_CorruptsNoMemory)
     }
 
     // Allocate another memory
-    const auto secondAlloc = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto secondAlloc = static_cast<int*>(stack.malloc(oldSize));
     // Fill the buffer
     for (std::size_t i = 0; i < oldCount; ++i)
     {
@@ -701,7 +704,7 @@ TEST_F(LooseStackTests, Resize_LatestAllocationExpansion_CorruptsNoMemory)
 TEST_F(LooseStackTests, ResizeFast_LatestAllocationSmallerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 64;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resizeFast(oldMemory, oldSize, newSize);
 
     EXPECT_NE(oldMemory, newMemory);
@@ -712,7 +715,7 @@ TEST_F(LooseStackTests, ResizeFast_LatestAllocationSmallerSize_ReturnsNewAddress
 TEST_F(LooseStackTests, ResizeFast_LatestAllocationLargerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 256;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resizeFast(oldMemory, oldSize, newSize);
 
     EXPECT_NE(oldMemory, newMemory);
@@ -723,9 +726,9 @@ TEST_F(LooseStackTests, ResizeFast_LatestAllocationLargerSize_ReturnsNewAddress)
 TEST_F(LooseStackTests, ResizeFast_SmallerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 64;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = stack.resizeFast(oldMemory, oldSize, newSize);
 
@@ -737,9 +740,9 @@ TEST_F(LooseStackTests, ResizeFast_SmallerSize_ReturnsNewAddress)
 TEST_F(LooseStackTests, ResizeFast_LargerSize_ReturnsNewAddress)
 {
     constexpr auto oldSize = 128, newSize = 256;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = stack.resizeFast(oldMemory, oldSize, newSize);
 
@@ -752,9 +755,9 @@ TEST_F(LooseStackTests, ResizeFast_ResizesMemory)
 {
     constexpr auto count          = 128;
     constexpr std::size_t oldSize = 128, newSize = sizeof(int) * count;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
-    static_cast<void>(stack.allocBytes(oldSize)); // Second allocation
+    static_cast<void>(stack.malloc(oldSize)); // Second allocation
 
     const auto newMemory = static_cast<int*>(stack.resizeFast(oldMemory, oldSize, newSize));
 
@@ -785,7 +788,7 @@ TEST_F(LooseStackTests, ResizeFast_CopiesOverOldMemory)
     constexpr auto oldCount       = 48;
     constexpr auto newCount       = 128;
     constexpr std::size_t oldSize = sizeof(int) * oldCount, newSize = sizeof(int) * newCount;
-    const auto oldMemory = static_cast<int*>(stack.allocBytes(oldSize));
+    const auto oldMemory = static_cast<int*>(stack.malloc(oldSize));
 
     // Store some random value in memory
     for (std::size_t i = 0; i < oldCount; ++i)
@@ -807,7 +810,7 @@ TEST_F(LooseStackTests, ResizeFast_CopiesOverOldMemory)
 TEST_F(LooseStackTests, ResizeLast_LatestAllocationSmallerSize_ReturnsSameAddress)
 {
     constexpr auto oldSize = 128, newSize = 64;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resizeLast(oldMemory, oldSize, newSize);
 
     EXPECT_EQ(oldMemory, newMemory);
@@ -818,7 +821,7 @@ TEST_F(LooseStackTests, ResizeLast_LatestAllocationSmallerSize_ReturnsSameAddres
 TEST_F(LooseStackTests, ResizeLast_LatestAllocationLargerSize_ReturnsSameAddress)
 {
     constexpr auto oldSize = 128, newSize = 256;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
     const auto newMemory = stack.resizeLast(oldMemory, oldSize, newSize);
 
     EXPECT_EQ(oldMemory, newMemory);
@@ -830,7 +833,7 @@ TEST_F(LooseStackTests, ResizeLast_ResizesMemory)
 {
     constexpr auto count          = 128;
     constexpr std::size_t oldSize = 128, newSize = sizeof(int) * count;
-    const auto oldMemory = stack.allocBytes(oldSize);
+    const auto oldMemory = stack.malloc(oldSize);
 
     const auto newMemory = static_cast<int*>(stack.resizeLast(oldMemory, oldSize, newSize));
 
@@ -865,13 +868,13 @@ TEST_F(LooseStackTests, FreeBytes_FreesMemoryForSubsequentAllocations)
 {
     constexpr std::size_t alignment = 8;
     const auto usableSize = stackSize - 128; // A big offset is used since we need to make room for header + alignment
-    const auto freeMemory = static_cast<char*>(stack.allocBytes(usableSize, alignment));
+    const auto freeMemory = static_cast<char*>(stack.malloc(usableSize, alignment));
     // Free the memory
     EXPECT_TRUE(stack.freeBytes(freeMemory));
 
     // Allocation another buffer
     const auto elementCount  = (stackSize - alignment - 1) / sizeof(int);
-    const auto newAllocation = static_cast<int*>(stack.allocBytes(elementCount * sizeof(int)));
+    const auto newAllocation = static_cast<int*>(stack.malloc(elementCount * sizeof(int)));
 
     // Write to new allocation
     for (std::size_t i = 0; i < elementCount; ++i)
@@ -897,7 +900,7 @@ TEST_F(LooseStackTests, FreeBytes_MultipleTimesMakesRoomInTheStack)
     // Allocate Memory
     for (std::size_t i = 0; i < 4; ++i)
     {
-        memory[i] = stack.allocBytes(allocationSizes[i], alignment);
+        memory[i] = stack.malloc(allocationSizes[i], alignment);
     }
 
     // Free the memory
@@ -911,7 +914,7 @@ TEST_F(LooseStackTests, FreeBytes_MultipleTimesMakesRoomInTheStack)
 
     // Allocation another buffer with a large enough size that proper allocation will not happen without proper frees
     const auto elementCount  = (stackSize - alignment - 1) / sizeof(int);
-    const auto newAllocation = static_cast<int*>(stack.allocBytes(elementCount * sizeof(int)));
+    const auto newAllocation = static_cast<int*>(stack.malloc(elementCount * sizeof(int)));
 
     // Write to new allocation
     for (std::size_t i = 0; i < elementCount; ++i)
@@ -929,7 +932,7 @@ TEST_F(LooseStackTests, FreeBytes_MultipleTimesMakesRoomInTheStack)
 
 TEST_F(LooseStackTests, FreeBytes_ValidAddress_ReturnsTrue)
 {
-    [[maybe_unused]] const auto firstAllocation = static_cast<uint8_t*>(stack.allocBytes(512));
+    [[maybe_unused]] const auto firstAllocation = static_cast<uint8_t*>(stack.malloc(512));
     EXPECT_TRUE(stack.freeBytes(firstAllocation));
 }
 
@@ -944,7 +947,7 @@ TEST_F(LooseStackTests, Clear_FreesTheEntireStack)
     // Allocate Memory
     for (std::size_t i = 0; i < 4; ++i)
     {
-        static_cast<void>(stack.allocBytes(allocationSizes[i], alignment));
+        static_cast<void>(stack.malloc(allocationSizes[i], alignment));
     }
 
     // Free the entire memory
@@ -952,7 +955,7 @@ TEST_F(LooseStackTests, Clear_FreesTheEntireStack)
 
     // Allocation another buffer with a large enough size that proper allocation will not happen without proper frees
     const auto elementCount  = (stackSize - alignment - 1) / sizeof(int);
-    const auto newAllocation = static_cast<int*>(stack.allocBytes(elementCount * sizeof(int)));
+    const auto newAllocation = static_cast<int*>(stack.malloc(elementCount * sizeof(int)));
 
     // Write to new allocation
     for (std::size_t i = 0; i < elementCount; ++i)
@@ -1079,7 +1082,7 @@ namespace pmm
         // that the allocation will be exactly the size
         constexpr std::size_t allocationSize = 120;
 
-        static_cast<void>(stack.allocBytes(allocationSize));
+        static_cast<void>(stack.malloc(allocationSize));
         EXPECT_GE(stack._offset, allocationSize);
     }
 
@@ -1088,7 +1091,7 @@ namespace pmm
     {
         constexpr auto size = 512;
         // Initially allocate some memory
-        static_cast<void>(stack.allocBytes(size));
+        static_cast<void>(stack.malloc(size));
         // Assert initial offset state is greater than size
         EXPECT_GT(stack._offset, size);
 
@@ -1104,7 +1107,7 @@ namespace pmm
     {
         Stack<pmm::StackPolicy::Loose> stack(20_KB);
         const auto [oldSize, newSize] = GetParam();
-        auto oldMemory                = stack.allocBytes(oldSize);
+        auto oldMemory                = stack.malloc(oldSize);
         const auto oldOffset          = stack._offset;
 
         oldMemory = stack.resizeLast(oldMemory, oldSize, newSize);
@@ -1119,7 +1122,8 @@ namespace pmm
 
     TEST_F(LooseStackTests, MoveCtor_NullsOutInternalBuffer)
     {
-        [[maybe_unused]] const Stack<StackPolicy::Loose, MemPolicy::Internal, TelPolicy::Enabled> stack2 = std::move(stack);
+        [[maybe_unused]] const Stack<StackPolicy::Loose, MemPolicy::Internal, TelPolicy::Enabled> stack2 =
+            std::move(stack);
         // NOLINT(bugprone-use-after-move)
         EXPECT_EQ(nullptr, stack._buffer);
     }

@@ -87,7 +87,9 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, EnabledTelemetry_ReturnsRealT
 
 TEST_F(ManagedLooseStackTelemetryIntegrationTests, DisabledTelemetry_ReturnsDummyTelemetry)
 {
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled> noTelemetryStack{ size };
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled> noTelemetryStack{
+        size
+    };
     [[maybe_unused]] const auto telemetry = noTelemetryStack.getTelemetry();
     const bool result                     = std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry>;
     EXPECT_TRUE(result);
@@ -128,13 +130,13 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, TelemetryDisabledStack_Return
 }
 
 
-TEST_F(ManagedLooseStackTelemetryIntegrationTests, AllocationUsingAllocBytes_IncreasesMemoryUsage)
+TEST_F(ManagedLooseStackTelemetryIntegrationTests, AllocationUsingMalloc_IncreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
     const auto& telemetry         = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(bytesAllocated, alignment));
+    static_cast<void>(stack.malloc(bytesAllocated, alignment));
 
     EXPECT_EQ(bytesAllocated, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(bytesAllocated, telemetry.getPeakMemoryUsage());
@@ -198,7 +200,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesM
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
-    const auto ptr = stack.allocBytes(bytesAllocated, alignment);
+    const auto ptr = stack.malloc(bytesAllocated, alignment);
     stack.freeBytes(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
@@ -252,7 +254,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizingToLargerSize_Increase
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -270,7 +272,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizingToSmallerSize_DoesNot
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
     const auto priorTotalUsage   = telemetry.getTotalUsage();
@@ -290,7 +292,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToLargerSi
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeFast(ptr, oldSize, newSize);
@@ -308,7 +310,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToSmallerS
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeFast(ptr, oldSize, newSize);
@@ -329,7 +331,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToLargerSi
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -346,7 +348,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToLargerSi
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -366,7 +368,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToSmallerS
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -383,7 +385,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToSmallerS
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -397,7 +399,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, Clear_ResetPaddingAndMemoryUs
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
     stack.clear();
 
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
@@ -411,7 +413,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, Clear_DoesNotResetPeakAndMinU
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
 
     EXPECT_NE(0, telemetry.getPeakMemoryUsage());
     EXPECT_NE(0, telemetry.getMinMemoryUsage());
@@ -435,7 +437,9 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, EnabledTelemetry_ReturnsReal
 
 TEST_F(ManagedStrictStackTelemetryIntegrationTests, DisabledTelemetry_ReturnsDummyTelemetry)
 {
-    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled> noTelemetryStack{ size };
+    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled> noTelemetryStack{
+        size
+    };
     [[maybe_unused]] const auto telemetry = noTelemetryStack.getTelemetry();
     const bool result                     = std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry>;
     EXPECT_TRUE(result);
@@ -476,13 +480,13 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, TelemetryDisabledStack_Retur
 }
 
 
-TEST_F(ManagedStrictStackTelemetryIntegrationTests, AllocationUsingAllocBytes_IncreasesMemoryUsage)
+TEST_F(ManagedStrictStackTelemetryIntegrationTests, AllocationUsingMalloc_IncreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
     const auto& telemetry         = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(bytesAllocated, alignment));
+    static_cast<void>(stack.malloc(bytesAllocated, alignment));
 
     EXPECT_EQ(bytesAllocated, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(bytesAllocated, telemetry.getPeakMemoryUsage());
@@ -546,7 +550,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decreases
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
-    const auto ptr = stack.allocBytes(bytesAllocated, alignment);
+    const auto ptr = stack.malloc(bytesAllocated, alignment);
     stack.freeBytes(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
@@ -602,7 +606,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingToL
     constexpr auto newSize = 256_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -618,7 +622,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingToL
     constexpr auto newSize = 256_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -637,7 +641,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingToS
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -653,7 +657,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingToS
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -670,10 +674,10 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, AnyAllocation_ResizingToLarg
     const auto& telemetry        = stack.getTelemetry();
 
 
-    auto ptr = stack.allocBytes(oldSize);
+    auto ptr = stack.malloc(oldSize);
 
     // Second allocation used to make ptr not the latest allocation
-    static_cast<void>(stack.allocBytes(secondarySize));
+    static_cast<void>(stack.malloc(secondarySize));
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
@@ -691,10 +695,10 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, AnyAllocation_ResizingToSmal
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr = stack.allocBytes(oldSize);
+    auto ptr = stack.malloc(oldSize);
 
     // Second allocation used to make ptr not the latest allocation
-    static_cast<void>(stack.allocBytes(12_KB));
+    static_cast<void>(stack.malloc(12_KB));
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
     const auto priorTotalUsage   = telemetry.getTotalUsage();
@@ -717,7 +721,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToLargerS
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -734,7 +738,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToLargerS
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -754,7 +758,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, ResizeFast_ResizingToSmaller
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -771,7 +775,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToSmaller
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -785,7 +789,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, Clear_ResetPaddingAndMemoryU
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
     stack.clear();
 
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
@@ -799,7 +803,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, Clear_DoesNotResetPeakAndMin
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
 
     EXPECT_NE(0, telemetry.getPeakMemoryUsage());
     EXPECT_NE(0, telemetry.getMinMemoryUsage());
@@ -823,8 +827,9 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, EnabledTelemetry_ReturnsRea
 
 TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, DisabledTelemetry_ReturnsDummyTelemetry)
 {
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                          size };
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     [[maybe_unused]] const auto telemetry = noTelemetryStack.getTelemetry();
     const bool result                     = std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry>;
     EXPECT_TRUE(result);
@@ -845,29 +850,31 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, TelemetryEnabledStack_Retur
 
 TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, TelemetryDisabled_IsTelemetryEnabled_ReturnsFalse)
 {
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                          size };
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     EXPECT_FALSE(noTelemetryStack.isTelemetryEnabled());
 }
 
 
 TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, TelemetryDisabledStack_ReturnsZeroForTelemetryData)
 {
-    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                          size };
+    const pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     const auto& telemetry = noTelemetryStack.getTelemetry();
     static_assert(std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry&> == true);
     EXPECT_EQ(0, telemetry.getStackSize());
 }
 
 
-TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, AllocationUsingAllocBytes_IncreasesMemoryUsage)
+TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, AllocationUsingMalloc_IncreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
     const auto& telemetry         = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(bytesAllocated, alignment));
+    static_cast<void>(stack.malloc(bytesAllocated, alignment));
 
     EXPECT_EQ(bytesAllocated, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(bytesAllocated, telemetry.getPeakMemoryUsage());
@@ -931,7 +938,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decrease
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
-    const auto ptr = stack.allocBytes(bytesAllocated, alignment);
+    const auto ptr = stack.malloc(bytesAllocated, alignment);
     stack.freeBytes(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
@@ -985,7 +992,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizingToLargerSize_Increa
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -1003,7 +1010,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizingToSmallerSize_DoesN
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
     const auto priorTotalUsage   = telemetry.getTotalUsage();
@@ -1023,7 +1030,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToLarger
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeFast(ptr, oldSize, newSize);
@@ -1041,7 +1048,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToSmalle
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeFast(ptr, oldSize, newSize);
@@ -1062,7 +1069,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToLarger
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1079,7 +1086,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToLarger
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1099,7 +1106,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeFast_ResizingToSmalle
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1116,7 +1123,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, ResizeLast_ResizingToSmalle
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1130,7 +1137,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, Clear_ResetPaddingAndMemory
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
     stack.clear();
 
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
@@ -1144,7 +1151,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, Clear_DoesNotResetPeakAndMi
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
 
     EXPECT_NE(0, telemetry.getPeakMemoryUsage());
     EXPECT_NE(0, telemetry.getMinMemoryUsage());
@@ -1168,8 +1175,9 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, EnabledTelemetry_ReturnsRe
 
 TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, DisabledTelemetry_ReturnsDummyTelemetry)
 {
-    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                           size };
+    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     [[maybe_unused]] const auto telemetry = noTelemetryStack.getTelemetry();
     const bool result                     = std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry>;
     EXPECT_TRUE(result);
@@ -1190,8 +1198,9 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, TelemetryEnabledStack_Retu
 
 TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, TelemetryDisabled_IsTelemetryEnabled_ReturnsFalse)
 {
-    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                           size };
+    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     EXPECT_FALSE(noTelemetryStack.isTelemetryEnabled());
 }
 
@@ -1199,21 +1208,22 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, TelemetryDisabled_IsTeleme
 TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, TelemetryDisabledStack_ReturnsZeroForTelemetryData)
 {
 
-    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{ buffer,
-                                                                                                           size };
+    const pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Disabled> noTelemetryStack{
+        buffer, size
+    };
     const auto& telemetry = noTelemetryStack.getTelemetry();
     static_assert(std::is_same_v<decltype(telemetry), const pmm::DummyStackTelemetry&> == true);
     EXPECT_EQ(0, telemetry.getStackSize());
 }
 
 
-TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, AllocationUsingAllocBytes_IncreasesMemoryUsage)
+TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, AllocationUsingMalloc_IncreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
     const auto& telemetry         = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(bytesAllocated, alignment));
+    static_cast<void>(stack.malloc(bytesAllocated, alignment));
 
     EXPECT_EQ(bytesAllocated, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(bytesAllocated, telemetry.getPeakMemoryUsage());
@@ -1277,7 +1287,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decreas
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
-    const auto ptr = stack.allocBytes(bytesAllocated, alignment);
+    const auto ptr = stack.malloc(bytesAllocated, alignment);
     stack.freeBytes(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
@@ -1334,7 +1344,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests,
     constexpr auto newSize = 256_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -1350,7 +1360,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingT
     constexpr auto newSize = 256_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -1369,7 +1379,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingT
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -1385,7 +1395,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, LatestAllocation_ResizingT
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resize(ptr, oldSize, newSize);
@@ -1402,10 +1412,10 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, AnyAllocation_ResizingToLa
     const auto& telemetry        = stack.getTelemetry();
 
 
-    auto ptr = stack.allocBytes(oldSize);
+    auto ptr = stack.malloc(oldSize);
 
     // Second allocation used to make ptr not the latest allocation
-    static_cast<void>(stack.allocBytes(secondarySize));
+    static_cast<void>(stack.malloc(secondarySize));
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
@@ -1423,10 +1433,10 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, AnyAllocation_ResizingToSm
     constexpr auto newSize = 128_KB;
     const auto& telemetry  = stack.getTelemetry();
 
-    auto ptr = stack.allocBytes(oldSize);
+    auto ptr = stack.malloc(oldSize);
 
     // Second allocation used to make ptr not the latest allocation
-    static_cast<void>(stack.allocBytes(12_KB));
+    static_cast<void>(stack.malloc(12_KB));
     const auto priorMemoryUsage  = telemetry.getCurrentMemoryUsage();
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
     const auto priorTotalUsage   = telemetry.getTotalUsage();
@@ -1449,7 +1459,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToLarge
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1466,7 +1476,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToLarge
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1486,7 +1496,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, ResizeFast_ResizingToSmall
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1503,7 +1513,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, ResizeLast_ResizingToSmall
     const auto& telemetry  = stack.getTelemetry();
 
 
-    auto ptr                     = stack.allocBytes(oldSize);
+    auto ptr                     = stack.malloc(oldSize);
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     ptr = stack.resizeLast(ptr, oldSize, newSize);
@@ -1517,7 +1527,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, Clear_ResetPaddingAndMemor
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
     stack.clear();
 
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
@@ -1531,7 +1541,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, Clear_DoesNotResetPeakAndM
     constexpr auto allocSize = 256_KB;
     const auto& telemetry    = stack.getTelemetry();
 
-    static_cast<void>(stack.allocBytes(allocSize));
+    static_cast<void>(stack.malloc(allocSize));
 
     EXPECT_NE(0, telemetry.getPeakMemoryUsage());
     EXPECT_NE(0, telemetry.getMinMemoryUsage());

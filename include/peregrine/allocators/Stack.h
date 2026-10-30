@@ -196,7 +196,7 @@ namespace pmm
          * @relatedalso alloc
          * @relatedalso allocV
          */
-        [[nodiscard]] void* allocBytes(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
+        [[nodiscard]] void* malloc(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
             requires(Type == StackPolicy::Loose);
 
 
@@ -217,7 +217,7 @@ namespace pmm
          * @relatedalso alloc
          * @relatedalso allocV
          */
-        [[nodiscard]] void* allocBytes(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
+        [[nodiscard]] void* malloc(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
             requires(Type == StackPolicy::Strict);
 
 
@@ -234,7 +234,7 @@ namespace pmm
          *
          * @return A reference to the allocated memory.
          *
-         * @relatedalso allocBytes
+         * @relatedalso malloc
          * @relatedalso allocV
          */
         template <typename T, typename... Args>
@@ -256,7 +256,7 @@ namespace pmm
          * @return A `std::span<T>` viewing the allocated memory block.
          *         Returns an empty span (`.empty() == true`) if the Stack lacks sufficient capacity.
          *
-         * @relatedalso allocBytes
+         * @relatedalso malloc
          * @relatedalso alloc
          */
         template <typename T>
