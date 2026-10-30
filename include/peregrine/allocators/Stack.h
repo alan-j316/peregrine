@@ -415,7 +415,7 @@ namespace pmm
          * @relatedalso freeV
          * @relatedalso clear
          */
-        bool freeBytes(void* ptr) noexcept
+        bool mfree(void* ptr) noexcept
             requires(Type == StackPolicy::Loose);
 
 
@@ -438,7 +438,7 @@ namespace pmm
          * @relatedalso freeV
          * @relatedalso clear
          */
-        bool freeBytes(void* ptr) noexcept
+        bool mfree(void* ptr) noexcept
             requires(Type == StackPolicy::Strict);
 
 
@@ -455,7 +455,7 @@ namespace pmm
          *         **Validation is available ONLY for SafePool in Release Mode**
          *
          * @relatedalso freeV
-         * @relatedalso freeBytes
+         * @relatedalso mfree
          * @relatedalso clear
          */
         template <typename T>
@@ -475,7 +475,7 @@ namespace pmm
          * @param[in] vector The collection of objects to free.
          *
          * @relatedalso free
-         * @relatedalso freeBytes
+         * @relatedalso mfree
          * @relatedalso clear
          */
         template <typename T>
@@ -486,7 +486,7 @@ namespace pmm
          * @brief Free the entire stack, resetting to a fresh state.
          *
          * @relatedalso  free
-         * @relatedalso  freeBytes
+         * @relatedalso  mfree
          */
         void clear();
 

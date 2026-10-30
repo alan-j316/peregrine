@@ -483,7 +483,7 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeBytes(
+    PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(
         void* ptr) noexcept
         requires(Type == StackPolicy::Loose)
     {
@@ -518,7 +518,7 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeBytes(
+    PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(
         void* ptr) noexcept
         requires(Type == StackPolicy::Strict)
     {
@@ -564,7 +564,7 @@ namespace pmm
         {
             ptr->~T();
         }
-        return freeBytes(ptr);
+        return mfree(ptr);
     }
 
 
@@ -581,7 +581,7 @@ namespace pmm
                 item.~T();
             }
         }
-        return freeBytes(vector.data());
+        return mfree(vector.data());
     }
 
 

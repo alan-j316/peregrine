@@ -86,7 +86,7 @@ TEST_F(StrictStackTests, FreeSize_ReturnsStackSizeMinusPaddingAndAllocationSize)
 // {
 //     constexpr std::size_t allocatedSize = 512;
 //     const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
-//     stack.freeBytes(memory);
+//     stack.mfree(memory);
 //     EXPECT_EQ(stackSize, stack.freeSize());
 // }
 
@@ -130,7 +130,7 @@ TEST_F(StrictStackTests, UsedSize_AfterFreeingAllocation_ReturnsZero)
 {
     constexpr std::size_t allocatedSize = 512;
     const auto memory                   = static_cast<char*>(stack.malloc(allocatedSize));
-    stack.freeBytes(memory);
+    stack.mfree(memory);
     EXPECT_EQ(0, stack.usedSize());
 }
 
@@ -867,13 +867,13 @@ TEST_F(StrictStackTests, ResizeLast_ResizesMemory)
  **************************************/
 
 /** @brief Verify that stack free, frees up memory for subsequent allocations. */
-TEST_F(StrictStackTests, FreeBytes_FreesMemoryForSubsequentAllocations)
+TEST_F(StrictStackTests, Mfree_FreesMemoryForSubsequentAllocations)
 {
     constexpr std::size_t alignment = 8;
     const auto usableSize = stackSize - 128; // A big offset is used since we need to make room for header + alignment
     const auto freeMemory = static_cast<char*>(stack.malloc(usableSize, alignment));
     // Free the memory
-    EXPECT_TRUE(stack.freeBytes(freeMemory));
+    EXPECT_TRUE(stack.mfree(freeMemory));
 
     // Allocation another buffer
     const auto elementCount  = (stackSize - sizeof(pmm::StrictStackHeader) - alignment - 1) / sizeof(int);
@@ -893,7 +893,7 @@ TEST_F(StrictStackTests, FreeBytes_FreesMemoryForSubsequentAllocations)
 }
 
 /** @brief Verify that stack free, when called multiple times, free the allocated buffer. */
-TEST_F(StrictStackTests, FreeBytes_MultipleTimesMakesRoomInTheStack)
+TEST_F(StrictStackTests, Mfree_MultipleTimesMakesRoomInTheStack)
 {
     constexpr std::size_t alignment = 8;
     // Last 128 is the offset used to make room for header(at least 16 bytes) + alignment
@@ -915,7 +915,7 @@ TEST_F(StrictStackTests, FreeBytes_MultipleTimesMakesRoomInTheStack)
     // Data must be freed in the reverse order of allocation
     for (std::size_t i = 4; i > 0; --i)
     {
-        EXPECT_TRUE(stack.freeBytes(memory[i - 1]));
+        EXPECT_TRUE(stack.mfree(memory[i - 1]));
     }
 
     // Allocation another buffer with a large enough size that proper allocation will not happen without proper frees
@@ -998,10 +998,10 @@ TEST_F(StrictStackTests, Free_FreesMemoryForSubsequentAllocations)
 }
 
 
-TEST_F(StrictStackTests, FreeBytes_ValidAddress_ReturnsTrue)
+TEST_F(StrictStackTests, Mfree_ValidAddress_ReturnsTrue)
 {
     [[maybe_unused]] const auto firstAllocation = static_cast<uint8_t*>(stack.malloc(512));
-    EXPECT_TRUE(stack.freeBytes(firstAllocation));
+    EXPECT_TRUE(stack.mfree(firstAllocation));
 }
 
 

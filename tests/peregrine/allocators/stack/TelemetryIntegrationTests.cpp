@@ -190,7 +190,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, AllocationUsingAllocV_Increas
 }
 
 
-TEST_F(ManagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesMemoryUsage)
+TEST_F(ManagedLooseStackTelemetryIntegrationTests, FreeUsingMfree_DecreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
@@ -201,7 +201,7 @@ TEST_F(ManagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesM
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     const auto ptr = stack.malloc(bytesAllocated, alignment);
-    stack.freeBytes(ptr);
+    stack.mfree(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(priorPaddingUsage, telemetry.getCurrentPadding());
@@ -540,7 +540,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, AllocationUsingAllocV_Increa
 }
 
 
-TEST_F(ManagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesMemoryUsage)
+TEST_F(ManagedStrictStackTelemetryIntegrationTests, FreeUsingMfree_DecreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
@@ -551,7 +551,7 @@ TEST_F(ManagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decreases
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     const auto ptr = stack.malloc(bytesAllocated, alignment);
-    stack.freeBytes(ptr);
+    stack.mfree(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(priorPaddingUsage, telemetry.getCurrentPadding());
@@ -928,7 +928,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, AllocationUsingAllocV_Incre
 }
 
 
-TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesMemoryUsage)
+TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, FreeUsingMfree_DecreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
@@ -939,7 +939,7 @@ TEST_F(UnmanagedLooseStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decrease
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     const auto ptr = stack.malloc(bytesAllocated, alignment);
-    stack.freeBytes(ptr);
+    stack.mfree(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(priorPaddingUsage, telemetry.getCurrentPadding());
@@ -1277,7 +1277,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, AllocationUsingAllocV_Incr
 }
 
 
-TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_DecreasesMemoryUsage)
+TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, FreeUsingMfree_DecreasesMemoryUsage)
 {
     constexpr auto bytesAllocated = 128_KB;
     constexpr auto alignment      = 1024;
@@ -1288,7 +1288,7 @@ TEST_F(UnmanagedStrictStackTelemetryIntegrationTests, FreeUsingFreeBytes_Decreas
     const auto priorPaddingUsage = telemetry.getCurrentPadding();
 
     const auto ptr = stack.malloc(bytesAllocated, alignment);
-    stack.freeBytes(ptr);
+    stack.mfree(ptr);
 
     EXPECT_EQ(priorMemoryUsage, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(priorPaddingUsage, telemetry.getCurrentPadding());

@@ -41,7 +41,10 @@ TEST(UnmanagedLooseStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
 
 
 TEST(UnmanagedLooseStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>(nullptr, 512)), ""); }
+{
+    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>(nullptr, 512)),
+                       "");
+}
 
 
 /**
@@ -94,18 +97,18 @@ TEST_F(LooseStackTests, AllocV_SizeZero_TriggersAssertion)
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing nullptr.
  */
-TEST_F(LooseStackTests, FreeBytes_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEATH(stack.freeBytes(nullptr), ""); }
+TEST_F(LooseStackTests, Mfree_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEATH(stack.mfree(nullptr), ""); }
 
 
 /**
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing unallocated valid memory space.
  */
-TEST_F(LooseStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
+TEST_F(LooseStackTests, Mfree_UnallocatedMemoryAddress_TriggersAssertion)
 {
     constexpr auto size = 512;
     const auto memory   = static_cast<char*>(stack.malloc(size));
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory + size + 1), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory + size + 1), "");
 }
 
 
@@ -113,7 +116,7 @@ TEST_F(LooseStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing memory space below the base memory address.
  */
-TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
+TEST_F(LooseStackTests, Mfree_BelowFirstAllocationAddress_TriggersAssertion)
 {
     constexpr auto size      = 512;
     constexpr auto alignment = 8;
@@ -121,7 +124,7 @@ TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
     const auto memory = static_cast<char*>(stack.malloc(size, alignment));
 
     // Move 1 below assume header size
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory - 1), "");
 }
 
 
@@ -129,12 +132,12 @@ TEST_F(LooseStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing memory above maximum memory address.
  */
-TEST_F(LooseStackTests, FreeBytes_BeyondCapacity_TriggersAssertion)
+TEST_F(LooseStackTests, Mfree_BeyondCapacity_TriggersAssertion)
 {
     constexpr auto size = 512;
     const auto memory   = static_cast<char*>(stack.malloc(size, 8));
     // Move 1 below assume header size
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory + stackSize), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory + stackSize), "");
 }
 
 
@@ -232,13 +235,17 @@ TEST(ManagedStrictStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
 TEST(UnmanagedStrictStackCtorTests, ZeroSize_TriggersAssertionInDebugMode)
 {
     const auto buffer = new uint8_t[512];
-    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(buffer, 0)), "");
+    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(buffer, 0)),
+                       "");
     delete[] buffer;
 }
 
 
 TEST(UnmanagedStrictStackCtorTests, NullptrForBackingBuffer_TriggersAssertionInDebugMode)
-{ EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(nullptr, 512)), ""); }
+{
+    EXPECT_DEBUG_DEATH(static_cast<void>(pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>(nullptr, 512)),
+                       "");
+}
 
 
 /**
@@ -291,18 +298,18 @@ TEST_F(StrictStackTests, AllocV_SizeZero_TriggersAssertion)
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing nullptr.
  */
-TEST_F(StrictStackTests, FreeBytes_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEATH(stack.freeBytes(nullptr), ""); }
+TEST_F(StrictStackTests, Mfree_Nullptr_TriggersAssertion) { EXPECT_DEBUG_DEATH(stack.mfree(nullptr), ""); }
 
 
 /**
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing unallocated valid memory space.
  */
-TEST_F(StrictStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
+TEST_F(StrictStackTests, Mfree_UnallocatedMemoryAddress_TriggersAssertion)
 {
     constexpr auto size = 512;
     const auto memory   = static_cast<char*>(stack.malloc(size));
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory + size + 1), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory + size + 1), "");
 }
 
 
@@ -310,13 +317,13 @@ TEST_F(StrictStackTests, FreeBytes_UnallocatedMemoryAddress_TriggersAssertion)
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing memory space below the base memory address.
  */
-TEST_F(StrictStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion)
+TEST_F(StrictStackTests, Mfree_BelowFirstAllocationAddress_TriggersAssertion)
 {
     constexpr auto size      = 512;
     constexpr auto alignment = 8;
     const auto memory        = static_cast<char*>(stack.malloc(size, alignment));
     // Move 1 below assume header size
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory - 1), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory - 1), "");
 }
 
 
@@ -324,19 +331,19 @@ TEST_F(StrictStackTests, FreeBytes_BelowFirstAllocationAddress_TriggersAssertion
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when freeing memory above maximum memory address.
  */
-TEST_F(StrictStackTests, FreeBytes_BeyondCapacity_TriggersAssertion)
+TEST_F(StrictStackTests, Mfree_BeyondCapacity_TriggersAssertion)
 {
     constexpr auto size = 512;
     const auto memory   = static_cast<char*>(stack.malloc(size, 8));
     // Move 1 below assume header size
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory + stackSize), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory + stackSize), "");
 }
 
 /**
  * @brief Verify that stack free triggers assertion in *DEBUG MODE*,
  *        when memory out of order of allocation.
  */
-TEST_F(StrictStackTests, FreeBytes_OutOfOrder_TriggersAssertion)
+TEST_F(StrictStackTests, Mfree_OutOfOrder_TriggersAssertion)
 {
     constexpr auto size = 512;
     const auto memory   = static_cast<char*>(stack.malloc(size, 8));
@@ -344,7 +351,7 @@ TEST_F(StrictStackTests, FreeBytes_OutOfOrder_TriggersAssertion)
     // Second allocation
     static_cast<void>(stack.malloc(40));
 
-    EXPECT_DEBUG_DEATH(stack.freeBytes(memory), "");
+    EXPECT_DEBUG_DEATH(stack.mfree(memory), "");
 }
 
 /**
