@@ -31,7 +31,7 @@ namespace
     {
     protected:
         std::size_t _arenaSize = 2048;
-        pmm::Arena<>* _arena     = nullptr;
+        pmm::Arena<>* _arena   = nullptr;
 
         void SetUp() override { _arena = new pmm::Arena(_arenaSize); }
     };
@@ -112,10 +112,10 @@ TEST_F(TempArenaTests, RewindsStateFreeingMemoryHeldByTempArena)
 /**
  * @brief Verify that @ref TempArena::allocBytes returns a non-nullptr in an arena with free space.
  */
-TEST_F(TempArenaTests, AllocBytes_ReturnsNonNullValue)
+TEST_F(TempArenaTests, Malloc_ReturnsNonNullValue)
 {
     auto tArena1      = pmm::TempArena(this->_arena);
-    const auto memory = tArena1.allocBytes(512);
+    const auto memory = tArena1.malloc(512);
 
     EXPECT_NE(nullptr, memory);
 }
