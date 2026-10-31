@@ -5,7 +5,7 @@ add_library(
         Alias.h
         MemoryManager.h
         MemoryManager.tpp
-        AllocatorRegistry.h
+        PoolRegistry.h
 )
 add_library(${PEREGRINE_LIB_NAME}::Internal::Core ALIAS ${PEREGRINE_CORE_TARGET})
 

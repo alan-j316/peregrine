@@ -32,6 +32,7 @@ target_sources(
 
         core/AliasTests.cpp
         core/MemoryManagerTests.cpp
+        core/PoolRegistry.cpp
 
         # Headers
         pool/PoolTestSetup.h

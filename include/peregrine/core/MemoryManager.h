@@ -14,6 +14,7 @@
 #include "peregrine/allocators/Stack.h"
 #include "peregrine/allocators/TLSF.h"
 #include "peregrine/core/Alias.h"
+#include "peregrine/core/PoolRegistry.h"
 
 #include <bitset>
 #include <cstdint>
@@ -27,9 +28,6 @@
 namespace pmm
 {
     using AllocateTag = uint32_t;
-
-    /// Simple data structure for tracking and allocation usage.
-
 
 
     struct MemoryManagerConfig

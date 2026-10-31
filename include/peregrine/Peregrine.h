@@ -17,6 +17,7 @@
 #include "allocators/TempArena.h"
 #include "core/Alias.h"
 #include "core/MemoryManager.h"
+#include "core/PoolRegistry.h"
 #include "memory/Memory.h"
 #include "telemetry/ArenaTelemetry.h"
 #include "telemetry/PoolTelemetry.h"
