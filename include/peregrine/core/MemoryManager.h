@@ -18,40 +18,18 @@
 #include <bitset>
 #include <cstdint>
 
+
+/**
+ * @addtogroup PMM_Core
+ * @{
+ */
+
 namespace pmm
 {
     using AllocateTag = uint32_t;
 
     /// Simple data structure for tracking and allocation usage.
-    template <typename Klass, size_t Count>
-    struct AllocatorRegistry
-    {
 
-        constexpr Klass* get()
-        {
-            return nullptr;
-            // TODO:
-        }
-
-        constexpr void free(Klass* klass)
-        {
-            // TODO:
-            // Use pointer offset to calculate the index
-            // Turn off the index in the bitmask
-        }
-
-        // constexpr Klass&
-
-        [[nodiscard]] constexpr size_t getFirstIndex() const noexcept
-        {
-            return 0; // TODO:
-        }
-
-    private:
-        alignas(Klass) uint8_t _data[sizeof(Klass) * Count]{};
-        // TODO: Replace with custom bitset to support std::countr_zero for O(1) free bit lookups
-        std::bitset<Count> _usageBitmask{};
-    };
 
 
     struct MemoryManagerConfig
@@ -80,5 +58,6 @@ namespace pmm
     };
 } // namespace pmm
 
+/** @} */
 
 #include "MemoryManager.tpp"

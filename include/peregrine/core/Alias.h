@@ -14,6 +14,11 @@
 #include "peregrine/allocators/Stack.h"
 #include "peregrine/allocators/TLSF.h"
 
+/**
+ * @addtogroup PMM_Core
+ * @{
+ */
+
 namespace pmm
 {
 
@@ -105,3 +110,5 @@ namespace pmm
     using SafeLocalTLSF = TLSF<MemoryPolicy, TelemetryPolicy, SafeModePolicy::Safe, mt::MTPolicy::NoMT>;
 
 } // namespace pmm
+
+/** @} */

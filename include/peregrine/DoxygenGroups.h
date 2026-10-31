@@ -72,6 +72,12 @@
     * @brief Multithreading primitives and helpers.
     * @ingroup PMM_Lib
     */
+
+    /**
+    * @defgroup PMM_Core Core Library
+    * @brief Core Library
+    * @ingroup PMM_Lib
+    */
     
 /** @} */ // End of PMM_Lib
 
