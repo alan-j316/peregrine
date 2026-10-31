@@ -28,7 +28,9 @@ namespace
         using namespace pmm;
         /// @test Verify that the pool registry only occupies the expected size.
         /// @note The test verifies that the internal data structure doesn't scale linearly with number of objects.
-        static_assert(sizeof(PoolRegistry<Vec4, 0>) == alignof(Vec4));
+        // Zero sized arrays are not allowed so we have to have at least a 1 sized array, that combined
+        // with the alignment of Vec4 will result in (24 bytes rounded to the next 16 byte boundary)
+        static_assert(sizeof(PoolRegistry<Vec4, 0>) == 32);
         // NOTE: Since the Vec4 has an alignment of 16 bytes the registry will occupy 16 bytes even
         //       the real byte size is 24 (16 for Vec4 + 8 for Bitset)
         static_assert(sizeof(PoolRegistry<Vec4, 1>) == 32);

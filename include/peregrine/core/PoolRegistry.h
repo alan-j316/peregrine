@@ -106,11 +106,13 @@ namespace pmm
 
     private:
         static constexpr size_t _Bit = sizeof(RegistryBitset_t) * 8;
+        /// Count clamped to a minimum of 1 to prevent zero-sized array in struct/union error.
+        static constexpr size_t MinCount = (Count == 0) ? 1 : Count;
         /// Array size for storing the bitsets.
-        static constexpr size_t _BitsetArraySize = (Count + _Bit - 1) / _Bit;
+        static constexpr size_t _BitsetArraySize = (MinCount + _Bit - 1) / _Bit;
 
-        alignas(Klass) uint8_t _data[sizeof(Klass) * Count]{}; /// Storage
-        RegistryBitset_t _bitset[_BitsetArraySize]{};          /// Bitset
+        alignas(Klass) uint8_t _data[sizeof(Klass) * MinCount]{}; /// Storage
+        RegistryBitset_t _bitset[_BitsetArraySize]{};             /// Bitset
     };
 } // namespace pmm
 
