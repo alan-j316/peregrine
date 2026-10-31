@@ -82,7 +82,16 @@ namespace pmm
         /**
          * @brief Returns whether the Registry has no elements.
          */
-        [[nodiscard]] constexpr bool empty() { return false; }
+        [[nodiscard]] constexpr bool empty()
+        {
+            PEREGRINE_LOOP_UNROLL()
+            // bool isEmpty = false;
+            //     for (size_t i = 0; i < _BitsetArraySize; ++i)
+            //     {
+            //         retur
+            //     }
+            return false;
+        }
 
 
     private:

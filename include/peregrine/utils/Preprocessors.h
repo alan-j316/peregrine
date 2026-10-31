@@ -148,4 +148,21 @@ inline void logAssertion(const char* condition, const char* message, const char*
 #endif
 
 
+/**
+ * @brief Looping unrolling.
+ */
+#if defined(__clang__)
+    #define PEREGRINE_LOOP_UNROLL()    _Pragma("unroll")
+    #define PEREGRINE_LOOP_UNROLL_N(n) _Pragma("unroll(" #n ")")
+#elif defined(__GNUC__)
+    #define PEREGRINE_LOOP_UNROLL()
+    #define PEREGRINE_LOOP_UNROLL_N(n) _Pragma(GCC unroll n)
+#elif defined(_MSC_VER)
+    #define PEREGRINE_LOOP_UNROLL()
+    #define PEREGRINE_LOOP_UNROLL_N(n)
+#else
+    #define PEREGRINE_LOOP_UNROLL()
+    #define PEREGRINE_LOOP_UNROLL_N(n)
+#endif
+
 /** @} */
