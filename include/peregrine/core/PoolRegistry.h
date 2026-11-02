@@ -43,7 +43,7 @@ namespace pmm
          * @return A raw pointer to the class instance.
          */
         template <typename... Args>
-        [[nodiscard]] constexpr Klass* create(Args&&... args)
+        [[nodiscard]] constexpr Klass* create([[maybe_unused]] Args&&... args)
         {
 #ifndef PMM_REGISTRY_UNSAFE
             // TODO: Only return a nullptr if the size is zero is no nullptr is
@@ -59,7 +59,7 @@ namespace pmm
          *
          * @param klass The class instance to free.
          */
-        constexpr void free(Klass* klass)
+        constexpr void free([[maybe_unused]] Klass* klass)
         {
             // TODO:
             // Use pointer offset to calculate the index
@@ -84,7 +84,7 @@ namespace pmm
          */
         [[nodiscard]] constexpr bool empty()
         {
-            PEREGRINE_LOOP_UNROLL()
+            // PEREGRINE_LOOP_UNROLL()
             // bool isEmpty = false;
             //     for (size_t i = 0; i < _BitsetArraySize; ++i)
             //     {

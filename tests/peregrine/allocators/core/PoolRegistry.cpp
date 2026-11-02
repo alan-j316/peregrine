@@ -23,7 +23,6 @@ namespace
     {
         constexpr size_t V4Size     = sizeof(Vec4);
         constexpr size_t BitSetSize = sizeof(pmm::RegistryBitset_t);
-        constexpr size_t ByteSize   = sizeof(uint8_t);
 
         using namespace pmm;
         /// @test Verify that the pool registry only occupies the expected size.
