@@ -32,6 +32,20 @@ namespace pmm
     struct PoolRegistry
     {
         /**
+         * @brief Reset the registry.
+         */
+        constexpr void reset() noexcept
+        {
+            // For a registry reset we can update the bitset to 0xFFFFFFFF
+            // indicating all the "slots" are free.
+            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            {
+                _bitset[i] = static_cast<RegistryBitset_t>(~0ULL);
+            }
+        }
+
+        PoolRegistry() { reset(); }
+        /**
          * @brief Create and initialize an instance of @ref Klass type.
          *
          * @note If PMM_REGISTRY_UNSAFE is defined then release builds won't have
@@ -70,13 +84,13 @@ namespace pmm
         /**
          * @brief Get the number of elements in the registry.
          */
-        [[nodiscard]] constexpr size_t size() { return 0; }
+        [[nodiscard]] constexpr size_t size() { return 0; } // TODO
 
 
         /**
          * @brief Get the total number of elements the container is able to hold.
          */
-        [[nodiscard]] constexpr size_t capacity() { return 0; }
+        [[nodiscard]] constexpr size_t capacity() { return 0; } // TODO
 
 
         /**
@@ -101,7 +115,18 @@ namespace pmm
          */
         [[nodiscard]] constexpr size_t getNextIndex() const noexcept
         {
-            return 0; // TODO:
+            constexpr size_t fullZero = sizeof(RegistryBitset_t) * 8; // 64 for a 64-bit integral indicating full zeros;
+            size_t idx      = fullZero;
+
+            // NOTE: Add idx as a iteration pass can create unpredictability and the compiler may not unroll
+            //       the loop.
+            PEREGRINE_LOOP_UNROLL()
+            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            {
+                idx = std::min(std::countr_zero(_bitset[i]), idx);
+            }
+
+            return idx;
         }
 
     private:
