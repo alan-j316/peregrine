@@ -27,7 +27,7 @@ namespace pmm
           _flBitmap{ 0 },
           _buffer{ buffer },
           _telemetry(memorySize),
-          _mutex{ }
+          _mutex{}
     {
         PMM_ASSERT_MSG(buffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
         PMM_ASSERT_MSG(memorySize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
@@ -47,7 +47,7 @@ namespace pmm
           _buffer{ static_cast<uint8_t*>(memAlloc(allocatorSize)) },
           _freeList{},
           _telemetry(allocatorSize),
-          _mutex{ }
+          _mutex{}
     {
         PMM_ASSERT_MSG(allocatorSize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
         clear();
@@ -57,13 +57,13 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(TLSF&& tlsf) noexcept
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
         : _size{ tlsf._size },
           _usedSize{ tlsf._usedSize },
           _flBitmap{ tlsf._flBitmap },
           _buffer{ std::exchange(tlsf._buffer, nullptr) },
           _telemetry{ tlsf._telemetry },
-          _mutex{ }
-    /// TODO: Update after looking into mutex update, maybe delete move ctor?
+          _mutex{} // NOTE: This is dummy mutex as for thread safe TLSF move ctor is deleted.
     {
         std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));
         std::move(tlsf._slBitmap.begin(), tlsf._slBitmap.end(), _slBitmap.begin());
@@ -74,6 +74,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>& TLSF<
         MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::operator=(TLSF&& tlsf) noexcept
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         // If the memory is internally managed, we need to free it before moving over the other allocator's
         // internal buffer.

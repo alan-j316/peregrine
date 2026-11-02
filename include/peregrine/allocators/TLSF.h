@@ -196,7 +196,16 @@ namespace pmm
          *
          * @param[in,out] tlsf The TLSF allocator to move into this object.
          */
-        constexpr TLSF(TLSF&& tlsf) noexcept;
+        constexpr TLSF(TLSF&& tlsf) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
+
+
+        /**
+         * @brief Move construction is only available for non-multithreaded allocators.
+         */
+        constexpr TLSF(TLSF&& tlsf) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        = delete;
 
 
         /**
@@ -204,11 +213,20 @@ namespace pmm
          *
          * @warning This will delete any buffers held by the allocator on the left hand side of the assingment.
          *
-         * @param[in,out] tlsf The TLSF allocataor to move into this object.
+         * @param[in,out] tlsf The TLSF allocator to move into this object.
          *
          * @return The current TLSF allocator instance.
          */
-        constexpr TLSF& operator=(TLSF&& tlsf) noexcept;
+        constexpr TLSF& operator=(TLSF&& tlsf) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
+
+
+        /**
+         * @brief Move assignment is only available for non-multithreaded allocators.
+         */
+        constexpr TLSF& operator=(TLSF&& tlsf) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        = delete;
 
 
         /**
