@@ -14,6 +14,7 @@
 
 #include "peregrine/allocators/Policy.h"
 
+#include <cstdint>
 #include <type_traits>
 
 namespace pmm

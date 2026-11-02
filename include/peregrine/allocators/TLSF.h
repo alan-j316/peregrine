@@ -19,6 +19,7 @@
 #include "peregrine/utils/Preprocessors.h"
 
 #include <array>
+#include <cstdint>
 
 
 namespace pmm

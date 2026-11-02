@@ -10,6 +10,7 @@
  */
 
 #include <atomic>
+#include <cstdint>
 
 
 /**

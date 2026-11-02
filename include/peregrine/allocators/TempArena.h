@@ -12,6 +12,7 @@
 
 #include "Arena.h"
 
+#include <cstdint>
 
 namespace pmm
 {
