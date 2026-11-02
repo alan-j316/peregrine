@@ -10,11 +10,21 @@
 
 #include "Utils.h"
 
+#include <cstddef>
+#include <gtest/gtest.h>
 #include <peregrine/Peregrine.h>
-
 
 namespace
 {
+    /// @brief Test fixture for @ref pmm::PoolRegistry.
+    class PoolRegistryTests: public testing::Test
+    {
+    public:
+        using T                         = Vec4;
+        static constexpr size_t regSize = 1024;
+        pmm::PoolRegistry<Vec4, regSize> vecPool{};
+    };
+
 
     /// +---------------------------------------------------------------------------------------+
     /// |                                 STATIC TESTS                                          |
@@ -44,3 +54,8 @@ namespace
     } // namespace static_tests
 
 } // namespace
+
+
+// TODO: Add create and free empty tests as well
+
+TEST_F(PoolRegistryTests, Empty_ReturnsTruePoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }

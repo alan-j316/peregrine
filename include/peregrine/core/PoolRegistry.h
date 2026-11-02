@@ -84,13 +84,13 @@ namespace pmm
          */
         [[nodiscard]] constexpr bool empty()
         {
-            // PEREGRINE_LOOP_UNROLL()
-            // bool isEmpty = false;
-            //     for (size_t i = 0; i < _BitsetArraySize; ++i)
-            //     {
-            //         retur
-            //     }
-            return false;
+            bool isEmpty = false;
+            PEREGRINE_LOOP_UNROLL()
+            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            {
+                isEmpty |= _bitset[i] == 0;
+            }
+            return isEmpty;
         }
 
 
