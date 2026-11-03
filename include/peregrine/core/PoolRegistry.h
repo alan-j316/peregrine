@@ -11,6 +11,7 @@
 
 
 #include <cstdint>
+#include <new>
 
 
 /**
@@ -50,20 +51,32 @@ namespace pmm
          *
          * @note If PMM_REGISTRY_UNSAFE is defined then release builds won't have
          *       empty checks and user will have to do the checks manually.
-         * @note The call can trigger assertions if the registry is empty.
+         * @note The call can trigger assertions if the registry is full.
          *
          * @param args The arguments to the instance.
          *
          * @return A raw pointer to the class instance.
          */
         template <typename... Args>
-        [[nodiscard]] constexpr Klass* create([[maybe_unused]] Args&&... args)
+        [[nodiscard]] constexpr Klass* create(Args&&... args)
         {
+            PMM_ASSERT_MSG(!full(), "[Pool Registry]: No free space left in pool for allocations");
 #ifndef PMM_REGISTRY_UNSAFE
-            // TODO: Only return a nullptr if the size is zero is no nullptr is
+            // Only return a nullptr if the size is zero is no nullptr is
+            if (full())
+            {
+                return nullptr;
+            }
 #endif
-            return nullptr;
-            // TODO:
+            // Get the index of the next free block
+            const auto blockIdx = getNextIndex();
+            // Map pure block index to a proper memory location index.
+            const auto trueIdx = blockIdx * sizeof(Klass);
+            // Example:
+            // For a Registry of 8 blocks we'll have indices from 0 to 7.
+            // Assume Klass is 4 bytes; then, our stride is 4.
+            // Therefore, the indices into the block will 0, 4, 8, and so on or blockIndex * sizeof(Klass).
+            return new (&_data[trueIdx]) Klass(std::forward<Args>(args)...);
         }
 
 
@@ -98,13 +111,28 @@ namespace pmm
          */
         [[nodiscard]] constexpr bool empty()
         {
-            bool isEmpty = false;
+            bool isEmpty = true;
             PEREGRINE_LOOP_UNROLL()
             for (size_t i = 0; i < _BitsetArraySize; ++i)
             {
-                isEmpty |= _bitset[i] == 0;
+                isEmpty = isEmpty && _bitset[i] == static_cast<RegistryBitset_t>(~0ULL);
             }
             return isEmpty;
+        }
+
+
+        /**
+         * @brief Returns whether the registry has no storage left.
+         */
+        [[nodiscard]] constexpr bool full()
+        {
+            bool isFull = true;
+            PEREGRINE_LOOP_UNROLL()
+            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            {
+                isFull = isFull && _bitset[i] == 0;
+            }
+            return isFull;
         }
 
 
@@ -113,18 +141,26 @@ namespace pmm
          * @brief Returns the next free index.
          * @return
          */
-        [[nodiscard]] constexpr size_t getNextIndex() const noexcept
+        [[nodiscard]] constexpr size_t getNextIndex() noexcept
         {
             constexpr size_t fullZero = sizeof(RegistryBitset_t) * 8; // 64 for a 64-bit integral indicating full zeros;
-            size_t idx      = fullZero;
+            size_t idx                = fullZero;
 
             // NOTE: Add idx as a iteration pass can create unpredictability and the compiler may not unroll
             //       the loop.
+            // NOTE: Bitset's LSB is the 0th bit of the value at zeroth index.
+            size_t i = 0;
             PEREGRINE_LOOP_UNROLL()
-            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            for (; i < _BitsetArraySize && idx == fullZero; ++i)
             {
-                idx = std::min(std::countr_zero(_bitset[i]), idx);
+                // Get the minimum index from the bit set block where there is a 1(free slot)
+                idx = std::min<size_t>(std::countl_zero(_bitset[i]), idx);
+                // Invert the mask to mark the slot as used
+                _bitset[i] &= ~(0x8000000000000000ULL >> idx);
             }
+
+            // Offset the index by the block size.
+            idx += sizeof(RegistryBitset_t) * 8 * (i - 1);
 
             return idx;
         }
@@ -137,7 +173,8 @@ namespace pmm
         static constexpr size_t _BitsetArraySize = (MinCount + _Bit - 1) / _Bit;
 
         alignas(Klass) uint8_t _data[sizeof(Klass) * MinCount]{}; /// Storage
-        RegistryBitset_t _bitset[_BitsetArraySize]{};             /// Bitset
+        // alignas(Klass) Klass _data[MinCount]{};       /// Storage
+        RegistryBitset_t _bitset[_BitsetArraySize]{}; /// Bitset
     };
 } // namespace pmm
 

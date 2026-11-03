@@ -20,9 +20,9 @@ namespace
     class PoolRegistryTests: public testing::Test
     {
     public:
-        using T                         = Vec4;
-        static constexpr size_t regSize = 1024;
-        pmm::PoolRegistry<Vec4, regSize> vecPool{};
+        using T                              = Vec4;
+        static constexpr size_t elementCount = 1024;
+        pmm::PoolRegistry<Vec4, elementCount> vecPool{};
     };
 
 
@@ -57,5 +57,18 @@ namespace
 
 
 // TODO: Add create and free empty tests as well
+// TODO: Add reset test
+// TODO: Add create tests
 
-TEST_F(PoolRegistryTests, Empty_ReturnsTruePoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }
+TEST_F(PoolRegistryTests, Empty_ReturnsTrueForPoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }
+TEST_F(PoolRegistryTests, Full_ReturnsFalseForPoolWithoutAllocations) { ASSERT_FALSE(this->vecPool.full()); }
+
+
+TEST_F(PoolRegistryTests, Create_GetsAValidObjectTillFullBlockIsExhausted)
+{
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        T* allocation = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
+        ASSERT_NE(nullptr, allocation);
+    }
+}
