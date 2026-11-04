@@ -57,8 +57,6 @@ namespace
 
 
 // TODO: Add create and free empty tests as well
-// TODO: Add reset test
-// TODO: Add create tests
 
 
 
@@ -91,7 +89,9 @@ TEST_F(PoolRegistryTests, Empty_ReturnsFalseAfterAllocation)
     EXPECT_FALSE(vecPool.empty());
 }
 
+
 TEST_F(PoolRegistryTests, Full_ReturnsFalseForPoolWithoutAllocations) { ASSERT_FALSE(this->vecPool.full()); }
+
 
 TEST_F(PoolRegistryTests, Full_ReturnsFalseAfterSingleAllocation)
 {
@@ -109,6 +109,7 @@ TEST_F(PoolRegistryTests, Full_ReturnsTrueAfterReachingMaxAllocations)
     EXPECT_TRUE(vecPool.full());
 }
 
+
 TEST_F(PoolRegistryTests, Reset_ResetsThePool)
 {
     // We can that reset is working by making a few allocations and then calling reset
@@ -124,3 +125,6 @@ TEST_F(PoolRegistryTests, Reset_ResetsThePool)
     EXPECT_FALSE(vecPool.full());
     EXPECT_TRUE(vecPool.empty());
 }
+
+
+TEST_F(PoolRegistryTests, Capacity_ReturnsTheTotalCapacity) { EXPECT_EQ(elementCount, vecPool.capacity()); }

@@ -24,16 +24,19 @@ namespace pmm
     using RegistryBitset_t = uint64_t; ///< Type used for allocator registry's bitset.
 
     /**
-     * @brief Fixed size container for storing objects with minimal fragmentation and O(1) lookups.
+     * @brief Fixed size container for storing objects with minimal fragmentation and near O(1) lookups.
      *
      * @tparam Klass The stored element type.
-     * @tparam Count The number of elements in the storage. Can be 0.
+     * @tparam Count The number of elements in the storage.
+     *               Can be 0 but will have a memory footprint.
+     *
+     * @note The structure must be externally synchronized.
      */
     template <typename Klass, size_t Count>
     struct PoolRegistry
     {
         /**
-         * @brief Reset the registry.
+         * @brief Reset the registry and clear out all data.
          */
         constexpr void reset() noexcept
         {
@@ -42,10 +45,12 @@ namespace pmm
             for (size_t i = 0; i < _BitsetArraySize; ++i)
             {
                 _bitset[i] = static_cast<RegistryBitset_t>(~0ULL);
+                std::memset(_data, 0, sizeof(Klass) * Count);
             }
         }
 
-        PoolRegistry() { reset(); }
+        PoolRegistry() noexcept { reset(); }
+
         /**
          * @brief Create and initialize an instance of @ref Klass type.
          *
@@ -58,7 +63,7 @@ namespace pmm
          * @return A raw pointer to the class instance.
          */
         template <typename... Args>
-        [[nodiscard]] constexpr Klass* create(Args&&... args)
+        [[nodiscard]] constexpr Klass* create(Args&&... args) noexcept
         {
             PMM_ASSERT_MSG(!full(), "[Pool Registry]: No free space left in pool for allocations");
 #ifndef PMM_REGISTRY_UNSAFE
@@ -75,7 +80,7 @@ namespace pmm
             // Example:
             // For a Registry of 8 blocks we'll have indices from 0 to 7.
             // Assume Klass is 4 bytes; then, our stride is 4.
-            // Therefore, the indices into the block will 0, 4, 8, and so on or blockIndex * sizeof(Klass).
+            // Therefore, the indices into the block will be 0, 4, 8, and so on or blockIndex * sizeof(Klass).
             return new (&_data[trueIdx]) Klass(std::forward<Args>(args)...);
         }
 
@@ -86,7 +91,7 @@ namespace pmm
          *
          * @param klass The class instance to free.
          */
-        constexpr void free([[maybe_unused]] Klass* klass)
+        constexpr void free([[maybe_unused]] Klass* klass) noexcept
         {
             // TODO:
             // Use pointer offset to calculate the index
@@ -97,19 +102,19 @@ namespace pmm
         /**
          * @brief Get the number of elements in the registry.
          */
-        [[nodiscard]] constexpr size_t size() { return 0; } // TODO
+        [[nodiscard]] constexpr size_t size() const noexcept { return 0; } // TODO
 
 
         /**
          * @brief Get the total number of elements the container is able to hold.
          */
-        [[nodiscard]] constexpr size_t capacity() { return 0; } // TODO
+        [[nodiscard]] constexpr size_t capacity() const noexcept { return Count; }
 
 
         /**
          * @brief Returns whether the Registry has no elements.
          */
-        [[nodiscard]] constexpr bool empty()
+        [[nodiscard]] constexpr bool empty() const noexcept
         {
             bool isEmpty = true;
             PEREGRINE_LOOP_UNROLL()
@@ -124,7 +129,7 @@ namespace pmm
         /**
          * @brief Returns whether the registry has no storage left.
          */
-        [[nodiscard]] constexpr bool full()
+        [[nodiscard]] constexpr bool full() const noexcept
         {
             bool isFull = true;
             PEREGRINE_LOOP_UNROLL()
@@ -138,8 +143,8 @@ namespace pmm
 
     private:
         /**
-         * @brief Returns the next free index.
-         * @return
+         * @brief Returns the next free index and mark it as used.
+         * @return The next free block index; not the pure offset for memory location.
          */
         [[nodiscard]] constexpr size_t getNextIndex() noexcept
         {
@@ -173,8 +178,7 @@ namespace pmm
         static constexpr size_t _BitsetArraySize = (MinCount + _Bit - 1) / _Bit;
 
         alignas(Klass) uint8_t _data[sizeof(Klass) * MinCount]{}; /// Storage
-        // alignas(Klass) Klass _data[MinCount]{};       /// Storage
-        RegistryBitset_t _bitset[_BitsetArraySize]{}; /// Bitset
+        RegistryBitset_t _bitset[_BitsetArraySize]{};             /// Bitset
     };
 } // namespace pmm
 
