@@ -60,8 +60,6 @@ namespace
 // TODO: Add reset test
 // TODO: Add create tests
 
-TEST_F(PoolRegistryTests, Empty_ReturnsTrueForPoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }
-TEST_F(PoolRegistryTests, Full_ReturnsFalseForPoolWithoutAllocations) { ASSERT_FALSE(this->vecPool.full()); }
 
 
 TEST_F(PoolRegistryTests, Create_GetsAValidObjectTillFullBlockIsExhausted)
@@ -71,4 +69,58 @@ TEST_F(PoolRegistryTests, Create_GetsAValidObjectTillFullBlockIsExhausted)
         T* allocation = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
         ASSERT_NE(nullptr, allocation);
     }
+}
+
+
+TEST_F(PoolRegistryTests, Create_InstantiatesObjectWithParameters)
+{
+    const T* vec = vecPool.create(1, 2, 3, 4);
+    EXPECT_FLOAT_EQ(1.0f, vec->x);
+    EXPECT_FLOAT_EQ(2.0f, vec->y);
+    EXPECT_FLOAT_EQ(3.0f, vec->z);
+    EXPECT_FLOAT_EQ(4.0f, vec->w);
+}
+
+
+TEST_F(PoolRegistryTests, Empty_ReturnsTrueForPoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }
+
+
+TEST_F(PoolRegistryTests, Empty_ReturnsFalseAfterAllocation)
+{
+    [[maybe_unused]] const T* vec = vecPool.create(1, 2, 3, 4);
+    EXPECT_FALSE(vecPool.empty());
+}
+
+TEST_F(PoolRegistryTests, Full_ReturnsFalseForPoolWithoutAllocations) { ASSERT_FALSE(this->vecPool.full()); }
+
+TEST_F(PoolRegistryTests, Full_ReturnsFalseAfterSingleAllocation)
+{
+    [[maybe_unused]] const T* vec = vecPool.create(1, 2, 3, 4);
+    EXPECT_FALSE(vecPool.full());
+}
+
+
+TEST_F(PoolRegistryTests, Full_ReturnsTrueAfterReachingMaxAllocations)
+{
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        static_cast<void>(vecPool.create(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+    EXPECT_TRUE(vecPool.full());
+}
+
+TEST_F(PoolRegistryTests, Reset_ResetsThePool)
+{
+    // We can that reset is working by making a few allocations and then calling reset
+    // and validating if full is false and empty is true.
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        static_cast<void>(vecPool.create(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+
+    // Reset the registry
+    vecPool.reset();
+
+    EXPECT_FALSE(vecPool.full());
+    EXPECT_TRUE(vecPool.empty());
 }
