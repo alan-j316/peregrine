@@ -56,16 +56,17 @@ namespace
 } // namespace
 
 
-// TODO: Add create and free empty tests as well
 
-
+/// +---------------------------------------------------------------------------------------+
+/// |                           CREATE TESTS                                                |
+/// +---------------------------------------------------------------------------------------+
 
 TEST_F(PoolRegistryTests, Create_GetsAValidObjectTillFullBlockIsExhausted)
 {
     for (size_t i = 0; i < elementCount; ++i)
     {
         T* allocation = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
-        ASSERT_NE(nullptr, allocation);
+        EXPECT_NE(nullptr, allocation);
     }
 }
 
@@ -80,6 +81,125 @@ TEST_F(PoolRegistryTests, Create_InstantiatesObjectWithParameters)
 }
 
 
+
+/// +---------------------------------------------------------------------------------------+
+/// |                           FREE TESTS                                                  |
+/// +---------------------------------------------------------------------------------------+
+
+TEST_F(PoolRegistryTests, Free_FreesTheObject)
+{
+    const T* vec = vecPool.create(1, 2, 3, 4);
+    // To check if item is freed we can use size
+    // and in case of single allocation check if its free
+    vecPool.free(vec);
+
+    EXPECT_EQ(0, vecPool.size());
+    EXPECT_TRUE(vecPool.empty());
+}
+
+
+TEST_F(PoolRegistryTests, Free_CanFreeMultipleObjects)
+{
+    // Fill the pool
+    T* objects[elementCount]{};
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        objects[i] = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
+    }
+
+    // Free all the objects
+    for (const auto& obj : objects)
+    {
+        vecPool.free(obj);
+    }
+
+    // Assert pool is empty
+    EXPECT_EQ(0, vecPool.size());
+    EXPECT_TRUE(vecPool.empty());
+}
+
+
+TEST_F(PoolRegistryTests, Free_StaggeredFree_FreesMultipleObjects)
+{
+    // Fill the pool
+    T* objects[elementCount]{};
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        objects[i] = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
+    }
+
+    // Free all the objects
+    size_t numFreed = 0;
+    for (size_t i = 0; i < elementCount; i += 2)
+    {
+        vecPool.free(objects[i]);
+        ++numFreed;
+    }
+
+    // Assert number of used objects/slots is total capacity - free count
+    EXPECT_EQ(elementCount - numFreed, vecPool.size());
+}
+
+
+// Non Powers of 2 takes a separate path as power of 2 divides can be converted to shifts.
+TEST_F(PoolRegistryTests, Free_CanFreeInstancesWithNonPowerOf2Sizes)
+{
+    // TEST SETUP
+    struct Vec3
+    {
+        float x, y, z;
+    };
+    constexpr auto eleCount = 512;
+
+
+    pmm::PoolRegistry<Vec3, eleCount> vec3Pool;
+    // Fill the pool
+    Vec3* objects[eleCount]{};
+    for (size_t i = 0; i < eleCount; ++i)
+    {
+        objects[i] = vec3Pool.create(1.0f, 2.0f, 3.0f);
+    }
+
+    // Free all the objects
+    for (const auto& obj : objects)
+    {
+        vec3Pool.free(obj);
+    }
+
+    // Assert pool is empty
+    EXPECT_EQ(0, vec3Pool.size());
+    EXPECT_TRUE(vec3Pool.empty());
+}
+
+
+TEST_F(PoolRegistryTests, CreateCanCreateObjectsAfterFreed)
+{
+    // Create 5 objects
+    const auto* obj1                  = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj2 = vecPool.create(1, 2, 3, 4);
+    const auto* obj3                  = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj4 = vecPool.create(1, 2, 3, 4);
+    const auto* obj5                  = vecPool.create(1, 2, 3, 4);
+
+    // Free 3 objects
+    vecPool.free(obj1);
+    vecPool.free(obj3);
+    vecPool.free(obj5);
+
+    // Try to allocate count - 2 elements
+    for (size_t i = 0; i < elementCount - 2; ++i)
+    {
+        T* allocation = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                           EMPTY TESTS                                                 |
+/// +---------------------------------------------------------------------------------------+
+
 TEST_F(PoolRegistryTests, Empty_ReturnsTrueForPoolWithoutAllocations) { ASSERT_TRUE(this->vecPool.empty()); }
 
 
@@ -89,6 +209,11 @@ TEST_F(PoolRegistryTests, Empty_ReturnsFalseAfterAllocation)
     EXPECT_FALSE(vecPool.empty());
 }
 
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                            FULL TESTS                                                 |
+/// +---------------------------------------------------------------------------------------+
 
 TEST_F(PoolRegistryTests, Full_ReturnsFalseForPoolWithoutAllocations) { ASSERT_FALSE(this->vecPool.full()); }
 
@@ -110,6 +235,10 @@ TEST_F(PoolRegistryTests, Full_ReturnsTrueAfterReachingMaxAllocations)
 }
 
 
+/// +---------------------------------------------------------------------------------------+
+/// |                           RESET TESTS                                                 |
+/// +---------------------------------------------------------------------------------------+
+
 TEST_F(PoolRegistryTests, Reset_ResetsThePool)
 {
     // We can that reset is working by making a few allocations and then calling reset
@@ -126,6 +255,11 @@ TEST_F(PoolRegistryTests, Reset_ResetsThePool)
     EXPECT_TRUE(vecPool.empty());
 }
 
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                           CAPACITY & SIZE TESTS                                       |
+/// +---------------------------------------------------------------------------------------+
 
 TEST_F(PoolRegistryTests, Capacity_ReturnsTheTotalCapacity) { EXPECT_EQ(elementCount, vecPool.capacity()); }
 
@@ -151,4 +285,38 @@ TEST_F(PoolRegistryTests, Size_ReturnsValidCountAfterMultipleAllocations)
 }
 
 
-// TODO: Size return correct value after single free, multiple free, staggered multiple frees.
+TEST_F(PoolRegistryTests, Size_ReturnsCountAfterSingleFree)
+{
+    // Create 5 objects
+    const auto* obj1                  = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj2 = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj3 = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj4 = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj5 = vecPool.create(1, 2, 3, 4);
+
+    // Free 1
+    vecPool.free(obj1);
+
+    // Size must return 4
+    EXPECT_EQ(4, vecPool.size());
+}
+
+
+
+TEST_F(PoolRegistryTests, Size_ReturnsCountAfterManyFrees)
+{
+    // Create 5 objects
+    const auto* obj1                  = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj2 = vecPool.create(1, 2, 3, 4);
+    const auto* obj3                  = vecPool.create(1, 2, 3, 4);
+    [[maybe_unused]] const auto* obj4 = vecPool.create(1, 2, 3, 4);
+    const auto* obj5                  = vecPool.create(1, 2, 3, 4);
+
+    // Free 3 objects
+    vecPool.free(obj1);
+    vecPool.free(obj3);
+    vecPool.free(obj5);
+
+    // Size must return 2
+    EXPECT_EQ(2, vecPool.size());
+}

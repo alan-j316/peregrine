@@ -91,11 +91,42 @@ namespace pmm
          *
          * @param klass The class instance to free.
          */
-        constexpr void free([[maybe_unused]] Klass* klass) noexcept
+        constexpr void free(const Klass* klass) noexcept
         {
-            // TODO:
-            // Use pointer offset to calculate the index
-            // Turn off the index in the bitmask
+            // Call the dtor if the klass is not trivially destructible.
+            if constexpr (!std::is_trivially_destructible_v<Klass>)
+            {
+                klass->~Klass();
+            }
+
+            // For freeing an instance we can get the bitset index from the memory address
+            // The compute a mask as well as the index of the arrays that bitset is a part of
+            // and then invert the bit at that location to 1 to indicate a free.
+
+            // Calculate the true offset for the class's pointer
+            const auto trueIdx = reinterpret_cast<uintptr_t>(klass) - reinterpret_cast<uintptr_t>(_data);
+            // Use the size of the class to compute the bitset
+            // Optimization: If the Klass has a size of power of 2, then we can use shifts instead of pure division
+            size_t bitsetIdx = 0;
+            if constexpr (std::has_single_bit(sizeof(Klass)))
+            {
+                bitsetIdx = trueIdx >> std::countr_zero(sizeof(Klass));
+            }
+            else
+            {
+                bitsetIdx = trueIdx / sizeof(Klass);
+            }
+            // Since size of bitset type is always a power of 2 we can use shifting for division and modulo arithmetic
+            constexpr auto typeSizeInBits = sizeof(RegistryBitset_t) * 8;
+            // To divide by power of 2, we need to get the n(typeSizeBitPosition) from 2^n.
+            constexpr auto typeSizeBitPosition = std::countr_zero(typeSizeInBits);
+            const auto arrIdx                  = bitsetIdx >> typeSizeBitPosition;
+            // Modulo: x & (n - 1) (where n is the divisor)
+            const auto trueBitIdx = bitsetIdx & (typeSizeInBits - 1);
+            // std::cout << std::format("Trying to free [{}] | {}", arrIdx, trueBitIdx) << std::endl;
+
+            const auto mask = 0x8000000000000000ULL >> trueBitIdx;
+            _bitset[arrIdx] |= mask; // Mark the bit as free.
         }
 
 
