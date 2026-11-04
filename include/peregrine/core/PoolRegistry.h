@@ -102,7 +102,18 @@ namespace pmm
         /**
          * @brief Get the number of elements in the registry.
          */
-        [[nodiscard]] constexpr size_t size() const noexcept { return 0; } // TODO
+        [[nodiscard]] constexpr size_t size() const noexcept
+        {
+            size_t size = 0;
+            PEREGRINE_LOOP_UNROLL()
+            for (const auto bits : _bitset)
+            {
+                // sizeof(Bitset in bits) - Number of ones in the current bitset
+                // gives the number of 0s or used spaces.
+                size += sizeof(RegistryBitset_t) * 8 - std::popcount(bits);
+            }
+            return size;
+        }
 
 
         /**

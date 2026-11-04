@@ -128,3 +128,27 @@ TEST_F(PoolRegistryTests, Reset_ResetsThePool)
 
 
 TEST_F(PoolRegistryTests, Capacity_ReturnsTheTotalCapacity) { EXPECT_EQ(elementCount, vecPool.capacity()); }
+
+
+TEST_F(PoolRegistryTests, Size_ReturnsZeroInitially) { EXPECT_EQ(0, vecPool.size()); }
+
+
+TEST_F(PoolRegistryTests, Size_ReturnsOneAfterSingleAllocation)
+{
+    static_cast<void>(vecPool.create(1.0f, 2.0f, 3.0f, 4.0f));
+    EXPECT_EQ(1, vecPool.size());
+}
+
+
+TEST_F(PoolRegistryTests, Size_ReturnsValidCountAfterMultipleAllocations)
+{
+    for (size_t i = 0; i < elementCount; ++i)
+    {
+        static_cast<void>(vecPool.create(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+
+    EXPECT_EQ(elementCount, vecPool.size());
+}
+
+
+// TODO: Size return correct value after single free, multiple free, staggered multiple frees.
