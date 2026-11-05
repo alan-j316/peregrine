@@ -19,6 +19,9 @@
 #include <bitset>
 #include <cstdint>
 
+// Allocates memory manager on the stack
+// #define PMM_ALLOC_MEM_MGR_ON_STACK
+// By default the internal stack is allocated on the OS heap(in front of the requested memory pool)
 
 /**
  * @addtogroup PMM_Core
@@ -29,12 +32,10 @@ namespace pmm
 {
     using AllocateTag = uint32_t;
 
-
     /// mt    - multithreadable
     /// local - must not be called in a multithreaded environment.
     /// safe  - non-critical checks like nullptr free are guarded against.
     ///         These will not be present in release mode with the "non-safe" variants.
-
     struct MemoryManagerConfig
     {
         /// <--------- ARENA --------->
@@ -63,10 +64,10 @@ namespace pmm
 
         /// <------- TODO: RESERVED WIP --------->
         /// <--------- DOUBLE STACK --------->
-        size_t localDStackCount;
-        size_t safeLocalDStackCount;
-        size_t mtDStackCount;
-        size_t safeMtDStackCount;
+        size_t localDequeCount;
+        size_t safeLocalDequeCount;
+        size_t mtDequeCount;
+        size_t safeMtDequeCount;
 
         /// <------- TODO: RESERVED WIP --------->
         /// <--------- TAGGED POOL STACK --------->
@@ -76,6 +77,7 @@ namespace pmm
         size_t safeMtTaggedPoolCount;
     };
 
+    /// Default configuration for memory manager. Must be adapted to engine needs at compile time.
     constexpr MemoryManagerConfig DefaultMemoryManagerConfig{ /// <--------- ARENA --------->
                                                               .localArenaCount     = 16,
                                                               .safeLocalArenaCount = 16,
@@ -102,10 +104,10 @@ namespace pmm
 
                                                               /// <------- TODO: RESERVED WIP --------->
                                                               /// <--------- DOUBLE STACK --------->
-                                                              .localDStackCount     = 0,
-                                                              .safeLocalDStackCount = 0,
-                                                              .mtDStackCount        = 0,
-                                                              .safeMtDStackCount    = 0,
+                                                              .localDequeCount     = 0,
+                                                              .safeLocalDequeCount = 0,
+                                                              .mtDequeCount        = 0,
+                                                              .safeMtDequeCount    = 0,
 
                                                               /// <------- TODO: RESERVED WIP --------->
                                                               /// <--------- TAGGED POOL STACK --------->
@@ -114,6 +116,40 @@ namespace pmm
                                                               .mtTaggedPoolCount        = 0,
                                                               .safeMtTaggedPoolCount    = 0
     };
+
+
+    template <TelPolicy Telemetry, MemoryManagerConfig Config>
+    struct MemoryContext
+    {
+        /// <--------- ARENA --------->
+        PoolRegistry<LocalArena<MemPolicy::External, Telemetry>, Config.localArenaCount> localArenas{};
+        PoolRegistry<SafeLocalArena<MemPolicy::External, Telemetry>, Config.safeLocalArenaCount> safeLocalArenas{};
+        PoolRegistry<MTArena<MemPolicy::External, Telemetry>, Config.mtArenaCount> mtArenas{};
+        PoolRegistry<SafeMTArena<MemPolicy::External, Telemetry>, Config.safeMtArenaCount> safeMTArenas{};
+
+        /// <--------- POOL --------->
+        PoolRegistry<LocalPool<MemPolicy::External, Telemetry>, Config.localPoolCount> localPools{};
+        PoolRegistry<SafeLocalPool<MemPolicy::External, Telemetry>, Config.safeLocalPoolCount> safeLocalPools{};
+        PoolRegistry<MTPool<MemPolicy::External, Telemetry>, Config.mtPoolCount> mtPools{};
+        PoolRegistry<SafeMTPool<MemPolicy::External, Telemetry>, Config.safeMtPoolCount> safeMTPools{};
+
+        /// <--------- STACK --------->
+        PoolRegistry<LocalStack<MemPolicy::External, Telemetry>, Config.localStackCount> localStacks{};
+        PoolRegistry<SafeLocalStack<MemPolicy::External, Telemetry>, Config.safeLocalStackCount> safeLocalStacks{};
+        PoolRegistry<MTStack<MemPolicy::External, Telemetry>, Config.mtStackCount> mtStacks{};
+        PoolRegistry<SafeMTStack<MemPolicy::External, Telemetry>, Config.safeMtStackCount> safeMTStacks{};
+
+        /// <--------- TLSF --------->
+        PoolRegistry<LocalTLSF<MemPolicy::External, Telemetry>, Config.localTLSFCount> localTLSFs{};
+        PoolRegistry<SafeLocalTLSF<MemPolicy::External, Telemetry>, Config.safeLocalTLSFCount> safeLocalTLSFs{};
+        PoolRegistry<MTTLSF<MemPolicy::External, Telemetry>, Config.mtTLSFCount> mtTLSFs{};
+        PoolRegistry<SafeMTTLSF<MemPolicy::External, Telemetry>, Config.safeMtTLSFCount> safeMTTLSFs{};
+
+
+        /// <--------- TODO: Reserved Double Stack --------->
+        /// <--------- TODO: Reserved Tagged Pool --------->
+    };
+
 
     /// Multithreadable memory manager.
     /// @tparam TelemetryPolicy Telemetry policy used by the memory manager. Enabled by default.
@@ -125,13 +161,21 @@ namespace pmm
               MemoryManagerConfig Config = DefaultMemoryManagerConfig>
     class MemoryManager
     {
-
     public:
         // BLOCK OUT
     private:
-        struct MemoryContext* _ctx{};
+#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
+        MemoryContext<TelemetryPolicy, Config> _ctx{};
+#else
+        MemoryContext<TelemetryPolicy, Config>* _ctx{};
+#endif
     };
 } // namespace pmm
+
+
+// Size profile
+// pmm::MemoryManager manager{};
+// static_assert(sizeof(manager) == 217328);
 
 /** @} */
 
