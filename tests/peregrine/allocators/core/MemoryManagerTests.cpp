@@ -18,9 +18,12 @@
 namespace
 {
 
+    using namespace pmm::constants;
     class InternalMemoryManagerTests: public testing::Test
     {
     public:
+        static constexpr size_t SIZE = 50_MB;
+        pmm::MemoryManager<> manager{ SIZE };
     };
 
     /// +---------------------------------------------------------------------------------------+
@@ -58,4 +61,123 @@ TEST_F(InternalMemoryManagerTests, Ctor_InitializesTheMemoryManager)
     //       but we can just ensure that the program doesn't crash.
     EXPECT_NO_FATAL_FAILURE(
         (pmm::MemoryManager<pmm::TelPolicy::Disabled, pmm::DefaultMemoryManagerConfig, pmm::MemPolicy::Internal>(500)));
+}
+
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                               ARENA TESTS                                             |
+/// +---------------------------------------------------------------------------------------+
+
+// TODO: Add death tests for maximum memory usage
+// TODO: Add death test for allocating more maximum possible arena.
+TEST_F(InternalMemoryManagerTests, CreateArena_CreatesAnArena)
+{
+    const auto arena = manager.createLocalArena(1_KB);
+    EXPECT_NE(nullptr, arena);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateArena_CanAllocateBuffer)
+{
+    const auto arena  = manager.createLocalArena(1_KB);
+    const auto buffer = arena->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateArena_CanCreateSpecifiedNumberOfArenas)
+{
+    constexpr auto maxArenaCount = pmm::DefaultMemoryManagerConfig.localArenaCount;
+    for (size_t i{ 0 }; i < maxArenaCount; ++i)
+    {
+        const auto arena = manager.createLocalArena(1_KB);
+        EXPECT_NE(nullptr, arena);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalArena_CreatesAnArena)
+{
+    const auto arena = manager.createSafeLocalArena(1_KB);
+    EXPECT_NE(nullptr, arena);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalArena_CanAllocateBuffer)
+{
+    const auto arena  = manager.createSafeLocalArena(1_KB);
+    const auto buffer = arena->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalArena_CanCreateSpecifiedNumberOfArenas)
+{
+    constexpr auto maxArenaCount = pmm::DefaultMemoryManagerConfig.safeLocalArenaCount;
+    for (size_t i{ 0 }; i < maxArenaCount; ++i)
+    {
+        const auto arena = manager.createSafeLocalArena(1_KB);
+        EXPECT_NE(nullptr, arena);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTArena_CreatesAnArena)
+{
+    const auto arena = manager.createMTArena(1_KB);
+    EXPECT_NE(nullptr, arena);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTArena_CanAllocateBuffer)
+{
+    const auto arena  = manager.createMTArena(1_KB);
+    const auto buffer = arena->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTArena_CanCreateSpecifiedNumberOfArenas)
+{
+    constexpr auto maxArenaCount = pmm::DefaultMemoryManagerConfig.mtArenaCount;
+    for (size_t i{ 0 }; i < maxArenaCount; ++i)
+    {
+        const auto arena = manager.createMTArena(1_KB);
+        EXPECT_NE(nullptr, arena);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CreatesAnArena)
+{
+    const auto arena = manager.createSafeMTArena(1_KB);
+    EXPECT_NE(nullptr, arena);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanAllocateBuffer)
+{
+    auto arena        = manager.createSafeMTArena(1_KB);
+    const auto buffer = arena->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanCreateSpecifiedNumberOfArenas)
+{
+    constexpr auto maxArenaCount = pmm::DefaultMemoryManagerConfig.safeMtArenaCount;
+    for (size_t i{ 0 }; i < maxArenaCount; ++i)
+    {
+        const auto arena = manager.createSafeMTArena(1_KB);
+        EXPECT_NE(nullptr, arena);
+    }
 }

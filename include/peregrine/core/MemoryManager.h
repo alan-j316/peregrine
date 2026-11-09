@@ -194,10 +194,48 @@ namespace pmm
          */
         [[nodiscard]] static constexpr size_t getContextSize() noexcept;
 
+
+        /**
+         * @brief Create a thread local arena.
+         * @param size The size of the arena. Must be less than the total available size.
+         * @return A pointer to an arena instance.
+         */
+        [[nodiscard]] LocalArena<MemPolicy::External, TelemetryPolicy>* createLocalArena(size_t size) noexcept;
+
+        /**
+         * @brief Create a thread local arena with safe mode.
+         * @param size The size of the arena. Must be less than the total available size.
+         * @return A pointer to an arena instance.
+         */
+        [[nodiscard]] SafeLocalArena<MemPolicy::External, TelemetryPolicy>* createSafeLocalArena(size_t size) noexcept;
+
+        /**
+         * @brief Create a multithreading safe arena.
+         * @param size The size of the arena. Must be less than the total available size.
+         * @return A pointer to an arena instance.
+         */
+        [[nodiscard]] MTArena<MemPolicy::External, TelemetryPolicy>* createMTArena(size_t size) noexcept;
+
+
+        /**
+         * @brief Create a multithreading safe arena with safe mode.
+         * @param size The size of the arena. Must be less than the total available size.
+         * @return A pointer to an arena instance.
+         */
+        [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy>* createSafeMTArena(size_t size) noexcept;
+
+
+        // createLocalArena
+        // createLocalSafeArena
+        // createMTArena
+        // createMTSafeArena
+
         // BLOCK OUT
         // TODO: add death tests
     private:
         uint8_t* _buffer{};
+        size_t _usedSize{ 0 };
+        size_t _totalSize;
         /// Internal TLSF allocator for managing memory for the other allocators.
         MTTLSF<MemPolicy::External, TelemetryPolicy> internalAllocator;
 
