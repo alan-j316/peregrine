@@ -21,7 +21,7 @@
 
 // Allocates memory manager on the stack
 // #define PMM_ALLOC_MEM_MGR_ON_STACK
-// By default the internal stack is allocated on the OS heap(in front of the requested memory pool)
+// By default the internal stack is allocated on the OS heap (in front of the requested memory pool)
 
 /**
  * @addtogroup PMM_Core
@@ -118,6 +118,7 @@ namespace pmm
     };
 
 
+    /// @brief Internal context store for the memory manager.
     template <TelPolicy Telemetry, MemoryManagerConfig Config>
     struct MemoryContext
     {
@@ -151,19 +152,55 @@ namespace pmm
     };
 
 
+
     /// Multithreadable memory manager.
     /// @tparam TelemetryPolicy Telemetry policy used by the memory manager. Enabled by default.
     ///                         Enabling Telemetry can consume more memory and can have a mild impact on performance.
     /// @tparam MemoryPolicy    Dictates whether the buffer is supplied externally or owned internally.
     ///                         Internally managed by default.
     /// @tparam Config          The configuration for the memory manager.
-    template <TelPolicy TelemetryPolicy = TelPolicy::Enabled, MemPolicy MemoryPolicy = MemPolicy::Internal,
-              MemoryManagerConfig Config = DefaultMemoryManagerConfig>
+    template <TelPolicy TelemetryPolicy = TelPolicy::Enabled, MemoryManagerConfig Config = DefaultMemoryManagerConfig,
+              MemPolicy MemoryPolicy = MemPolicy::Internal>
     class MemoryManager
     {
     public:
+        /**
+         * @brief Initialize a memory manager with the given @p size.
+         * @param size Size in bytes.
+         *
+         * @note API special for MemPolicy::Internal.
+         * @note The buffer will be owned and managed internally.
+         */
+        explicit constexpr MemoryManager(size_t size) noexcept
+            requires(MemoryPolicy == MemPolicy::Internal);
+
+
+        /**
+         * @brief Initialize a memory manager with the given @p size and buffer.
+         * @param pBuffer A pointer to the buffer to use.
+         * @param size    Size in bytes.
+         *
+         * @note API special for MemPolicy::External.
+         * @note The pBuffer should account for the internal context's size, which can be queried with
+         *       @ref MemoryManager<...>::getContextSize() if `PMM_ALLOC_MEM_MGR_ON_STACK` is not defined.
+         */
+        constexpr MemoryManager(void* pBuffer, size_t size) noexcept
+            requires(MemoryPolicy == MemPolicy::External);
+
+
+        /**
+         * @brief Get the internal context's memory requirement.
+         * @return The context size in bytes.
+         */
+        [[nodiscard]] static constexpr size_t getContextSize() noexcept;
+
         // BLOCK OUT
+        // TODO: add death tests
     private:
+        uint8_t* _buffer{};
+        /// Internal TLSF allocator for managing memory for the other allocators.
+        MTTLSF<MemPolicy::External, TelemetryPolicy> internalAllocator;
+
 #ifdef PMM_ALLOC_MEM_MGR_ON_STACK
         MemoryContext<TelemetryPolicy, Config> _ctx{};
 #else
