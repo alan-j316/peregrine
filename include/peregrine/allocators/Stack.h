@@ -106,7 +106,7 @@ namespace pmm
          *
          * @warning This allocator is Linear and is NOT thread-safe by default.
          */
-        [[nodiscard]] explicit constexpr Stack(uint8_t* buffer, std::size_t bufferSize) noexcept
+        [[nodiscard]] explicit constexpr Stack(void* buffer, std::size_t bufferSize) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 
 

@@ -170,7 +170,7 @@ namespace pmm
      * @return An arena telemetry instance suited for the telemetry policy.
      */
     template <TelPolicy Policy>
-    constexpr ArenaTelemetryType<Policy> getTelemetryInstance(const std::size_t arenaSize) noexcept
+    constexpr ArenaTelemetryType<Policy> getArenaTelemetryInstance(const std::size_t arenaSize) noexcept
     {
         if constexpr (Policy == TelPolicy::Disabled)
         {

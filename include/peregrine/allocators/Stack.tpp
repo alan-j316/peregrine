@@ -31,19 +31,19 @@ namespace pmm
         : _buffer{ static_cast<uint8_t*>(memAlloc(stackSize)) },
           _stackSize{ stackSize },
           _prevOffset{},
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(stackSize) }
+          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(stackSize) }
     { PMM_ASSERT_MSG(stackSize > 0, "Cannot allocate a zero size stack"); }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Stack(
-        uint8_t* buffer, const std::size_t bufferSize) noexcept
+        void* buffer, const std::size_t bufferSize) noexcept
         requires(MemoryPolicy == MemPolicy::External)
-        : _buffer{ buffer },
+        : _buffer{ static_cast<uint8_t*>(buffer) },
           _stackSize{ bufferSize },
           _prevOffset{},
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(bufferSize) }
+          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(bufferSize) }
     {
         PMM_ASSERT_MSG(bufferSize > 0, "Cannot allocate a zero size stack");
         PMM_ASSERT_MSG(buffer != nullptr, "Stack backing buffer must not be a nullptr");
@@ -57,7 +57,7 @@ namespace pmm
         : _buffer{ std::exchange(stack._buffer, nullptr) },
           _stackSize{ stack._stackSize },
           _offset{ stack._offset },
-          _telemetry{ std::exchange(stack._telemetry, getTelemetryInstance<TelemetryPolicy>(_stackSize)) }
+          _telemetry{ std::exchange(stack._telemetry, getStackTelemetryInstance<TelemetryPolicy>(_stackSize)) }
     {
         if constexpr ((Type == StackPolicy::Strict))
         {
@@ -89,7 +89,7 @@ namespace pmm
         _buffer    = std::exchange(stack._buffer, nullptr);
         _offset    = stack._offset;
         _stackSize = stack._stackSize;
-        _telemetry = std::exchange(stack._telemetry, getTelemetryInstance<TelemetryPolicy>(_stackSize));
+        _telemetry = std::exchange(stack._telemetry, getStackTelemetryInstance<TelemetryPolicy>(_stackSize));
         if constexpr ((Type == StackPolicy::Strict))
         {
             _prevOffset = stack._prevOffset;

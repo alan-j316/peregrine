@@ -225,10 +225,36 @@ namespace pmm
         [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy>* createSafeMTArena(size_t size) noexcept;
 
 
-        // createLocalArena
-        // createLocalSafeArena
-        // createMTArena
-        // createMTSafeArena
+        /**
+         * @brief Create a thread local stack.
+         * @param size The size of the stack. Must be less than the total available size.
+         * @return A pointer to an stack instance.
+         */
+        [[nodiscard]] LocalStack<MemPolicy::External, TelemetryPolicy>* createLocalStack(size_t size) noexcept;
+
+        /**
+         * @brief Create a thread local stack with safe mode.
+         * @param size The size of the stack. Must be less than the total available size.
+         * @return A pointer to an stack instance.
+         */
+        [[nodiscard]] SafeLocalStack<MemPolicy::External, TelemetryPolicy>* createSafeLocalStack(size_t size) noexcept;
+
+        /**
+         * @brief Create a multithreading safe stack.
+         * @param size The size of the stack. Must be less than the total available size.
+         * @return A pointer to an stack instance.
+         */
+        [[nodiscard]] MTStack<MemPolicy::External, TelemetryPolicy>* createMTStack(size_t size) noexcept;
+
+
+        /**
+         * @brief Create a multithreading safe stack with safe mode.
+         * @param size The size of the stack. Must be less than the total available size.
+         * @return A pointer to an stack instance.
+         */
+        [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy>* createSafeMTStack(size_t size) noexcept;
+
+
 
         // BLOCK OUT
         // TODO: add death tests

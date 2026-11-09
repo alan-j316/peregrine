@@ -36,9 +36,7 @@ namespace
 
 
     /**************************************
-     *                                    *
      *            STATIC TESTS            *
-     *                                    *
      **************************************/
 
     namespace static_tests
@@ -59,13 +57,14 @@ namespace
         namespace telemetry_helpers
         {
             /// @test Verify that getTelemetryInstance returns a real stack when the telemetry policy is Managed.
-            [[maybe_unused]] constexpr auto STACK_TEL_MANAGED = pmm::getTelemetryInstance<pmm::TelPolicy::Enabled>(512);
+            [[maybe_unused]] constexpr auto STACK_TEL_MANAGED =
+                pmm::getStackTelemetryInstance<pmm::TelPolicy::Enabled>(512);
             static_assert(std::is_same_v<decltype(STACK_TEL_MANAGED), const pmm::StackTelemetry> == true);
 
 
             /// @test Verify that getTelemetryInstance returns a real stack when the telemetry policy is Disabled.
             [[maybe_unused]] constexpr auto STACK_TEL_DISABLED =
-                pmm::getTelemetryInstance<pmm::TelPolicy::Disabled>(512);
+                pmm::getStackTelemetryInstance<pmm::TelPolicy::Disabled>(512);
             static_assert(std::is_same_v<decltype(STACK_TEL_DISABLED), const pmm::DummyStackTelemetry> == true);
 
         } // namespace telemetry_helpers

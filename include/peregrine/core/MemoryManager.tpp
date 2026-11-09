@@ -120,4 +120,78 @@ namespace pmm
         return _ctx->safeMTArenas.create(buffer, size);
 #endif
     }
+
+
+
+    /// +---------------------------------------------------------------------------------------+
+    /// |                                STACK                                                  |
+    /// +---------------------------------------------------------------------------------------+
+
+    template <TelPolicy TelemetryPolicy, MemoryManagerConfig Config, MemPolicy MemoryPolicy>
+    PMM_INLINE LocalStack<MemPolicy::External, TelemetryPolicy>* MemoryManager<
+        TelemetryPolicy, Config, MemoryPolicy>::createLocalStack(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
+        PMM_ASSERT_MSG(!_ctx->localStacks.full(), "Maximum number of local stacks already allocated");
+        return _ctx.localStacks.create(buffer, size);
+#else
+        PMM_ASSERT_MSG(!_ctx->localStacks.full(), "Maximum number of local stacks already allocated");
+        return _ctx->localStacks.create(buffer, size);
+#endif
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemoryManagerConfig Config, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeLocalStack<MemPolicy::External, TelemetryPolicy>* MemoryManager<
+        TelemetryPolicy, Config, MemoryPolicy>::createSafeLocalStack(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
+        PMM_ASSERT_MSG(!_ctx->safeLocalStacks.full(), "Maximum number of safe local stacks already allocated");
+        return _ctx.safeLocalStacks.create(buffer, size);
+#else
+        PMM_ASSERT_MSG(!_ctx->safeLocalStacks.full(), "Maximum number of safe local stacks already allocated");
+        return _ctx->safeLocalStacks.create(buffer, size);
+#endif
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemoryManagerConfig Config, MemPolicy MemoryPolicy>
+    PMM_INLINE MTStack<MemPolicy::External, TelemetryPolicy>* MemoryManager<
+        TelemetryPolicy, Config, MemoryPolicy>::createMTStack(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
+        PMM_ASSERT_MSG(!_ctx->mtStacks.full(), "Maximum number of multithreaded stacks already allocated");
+        return _ctx.mtStacks.create(buffer, size);
+#else
+        PMM_ASSERT_MSG(!_ctx->mtStacks.full(), "Maximum number of multithreaded stacks already allocated");
+        return _ctx->mtStacks.create(buffer, size);
+#endif
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemoryManagerConfig Config, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeMTStack<MemPolicy::External, TelemetryPolicy>* MemoryManager<
+        TelemetryPolicy, Config, MemoryPolicy>::createSafeMTStack(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
+        PMM_ASSERT_MSG(!_ctx->safeMTStacks.full(), "Maximum number of safe multithreaded stacks already allocated");
+        return _ctx.safeMTStacks.create(buffer, size);
+#else
+        PMM_ASSERT_MSG(!_ctx->safeMTStacks.full(), "Maximum number of safe multithreaded stacks already allocated");
+        return _ctx->safeMTStacks.create(buffer, size);
+#endif
+    }
+
 } // namespace pmm

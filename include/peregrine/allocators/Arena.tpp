@@ -34,7 +34,7 @@ namespace pmm
           _arenaSize(arenaSize),
           _offset(0),
           _prevOffset(0),
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(arenaSize) }
+          _telemetry{ getArenaTelemetryInstance<TelemetryPolicy>(arenaSize) }
     { PMM_ASSERT_MSG(arenaSize > 0, "Cannot allocate zero size arena"); }
 
 
@@ -47,7 +47,7 @@ namespace pmm
           _arenaSize(bufferSize),
           _offset(0),
           _prevOffset(0),
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(bufferSize) }
+          _telemetry{ getArenaTelemetryInstance<TelemetryPolicy>(bufferSize) }
     {
         PMM_ASSERT_MSG(backingBuffer != nullptr, "Backing buffer cannot be a nullptr");
         PMM_ASSERT_MSG(bufferSize > 0, "Cannot allocate zero size arena");
@@ -94,7 +94,7 @@ namespace pmm
         _offset     = arena._offset;
         _prevOffset = arena._prevOffset;
         _arenaSize  = arena._arenaSize;
-        _telemetry  = std::exchange(arena._telemetry, getTelemetryInstance<TelemetryPolicy>(_arenaSize));
+        _telemetry  = std::exchange(arena._telemetry, getArenaTelemetryInstance<TelemetryPolicy>(_arenaSize));
 
         return *this;
     }

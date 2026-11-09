@@ -283,7 +283,7 @@ namespace pmm
      * @return A stack telemetry instance suited for the telemetry policy.
      */
     template <TelPolicy Policy>
-    constexpr StackTelemetryType<Policy> getTelemetryInstance(const std::size_t stackSize) noexcept
+    constexpr StackTelemetryType<Policy> getStackTelemetryInstance(const std::size_t stackSize) noexcept
     {
         if constexpr (Policy == TelPolicy::Disabled)
         {

@@ -181,3 +181,123 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanCreateSpecifiedNumberOfA
         EXPECT_NE(nullptr, arena);
     }
 }
+
+
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                                  STACK TESTS                                          |
+/// +---------------------------------------------------------------------------------------+
+
+// TODO: Add death tests for maximum memory usage
+// TODO: Add death test for allocating more maximum possible stack.
+TEST_F(InternalMemoryManagerTests, CreateStack_CreatesAStack)
+{
+    const auto stack = manager.createLocalStack(1_KB);
+    EXPECT_NE(nullptr, stack);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateStack_CanAllocateBuffer)
+{
+    const auto stack  = manager.createLocalStack(1_KB);
+    const auto buffer = stack->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateStack_CanCreateSpecifiedNumberOfStacks)
+{
+    constexpr auto maxStackCount = pmm::DefaultMemoryManagerConfig.localStackCount;
+    for (size_t i{ 0 }; i < maxStackCount; ++i)
+    {
+        const auto stack = manager.createLocalStack(1_KB);
+        EXPECT_NE(nullptr, stack);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalStack_CreatesAnStack)
+{
+    const auto stack = manager.createSafeLocalStack(1_KB);
+    EXPECT_NE(nullptr, stack);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalStack_CanAllocateBuffer)
+{
+    const auto stack  = manager.createSafeLocalStack(1_KB);
+    const auto buffer = stack->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalStack_CanCreateSpecifiedNumberOfStacks)
+{
+    constexpr auto maxStackCount = pmm::DefaultMemoryManagerConfig.safeLocalStackCount;
+    for (size_t i{ 0 }; i < maxStackCount; ++i)
+    {
+        const auto stack = manager.createSafeLocalStack(1_KB);
+        EXPECT_NE(nullptr, stack);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTStack_CreatesAnStack)
+{
+    const auto stack = manager.createMTStack(1_KB);
+    EXPECT_NE(nullptr, stack);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTStack_CanAllocateBuffer)
+{
+    const auto stack  = manager.createMTStack(1_KB);
+    const auto buffer = stack->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTStack_CanCreateSpecifiedNumberOfStacks)
+{
+    constexpr auto maxStackCount = pmm::DefaultMemoryManagerConfig.mtStackCount;
+    for (size_t i{ 0 }; i < maxStackCount; ++i)
+    {
+        const auto stack = manager.createMTStack(1_KB);
+        EXPECT_NE(nullptr, stack);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CreatesAnStack)
+{
+    const auto stack = manager.createSafeMTStack(1_KB);
+    EXPECT_NE(nullptr, stack);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CanAllocateBuffer)
+{
+    auto stack        = manager.createSafeMTStack(1_KB);
+    const auto buffer = stack->malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CanCreateSpecifiedNumberOfStacks)
+{
+    constexpr auto maxStackCount = pmm::DefaultMemoryManagerConfig.safeMtStackCount;
+    for (size_t i{ 0 }; i < maxStackCount; ++i)
+    {
+        const auto stack = manager.createSafeMTStack(1_KB);
+        EXPECT_NE(nullptr, stack);
+    }
+}
