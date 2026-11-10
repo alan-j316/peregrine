@@ -624,6 +624,32 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
     }
 }
 
+TEST_F(InternallyManagedTLSF_MTTests, MoveCtor_MovesTheAllocator)
+{
+    pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
+              pmm::mt::MTPolicy::SpinLock>
+        tlsf2 = std::move(tlsf);
+    // Without testing internal states, we can only allocate a block with the new allocator and check if its
+    // non-null to ensure that the move worked.
+    const auto allocation = tlsf2.malloc(950_KB);
+    EXPECT_NE(nullptr, allocation);
+}
+
+
+TEST_F(InternallyManagedTLSF_MTTests, MoveAssignment_MovesTheAllocator)
+{
+    constexpr size_t size2{ 1024 };
+    pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
+              pmm::mt::MTPolicy::SpinLock>
+        tlsf2{ size2 };
+
+    tlsf2 = std::move(tlsf);
+    // Without testing internal states, we can only allocate a block with the new allocator and check if its
+    // non-null to ensure that the move worked.
+    const auto allocation = tlsf2.malloc(950_KB);
+    EXPECT_NE(nullptr, allocation);
+}
+
 
 /// +-----------------------------------+
 ///       EXTERNALLY MANAGED TLSF
@@ -1192,4 +1218,33 @@ TEST_F(ExternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
     {
         EXPECT_NE(nullptr, allocation);
     }
+}
+
+
+TEST_F(ExternallyManagedTLSF_MTTests, MoveCtor_MovesTheAllocator)
+{
+    pmm::TLSF<pmm::MemPolicy::External, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
+              pmm::mt::MTPolicy::SpinLock>
+        tlsf2 = std::move(tlsf);
+    // Without testing internal states, we can only allocate a block with the new allocator and check if its
+    // non-null to ensure that the move worked.
+    const auto allocation = tlsf2.malloc(950_KB);
+    EXPECT_NE(nullptr, allocation);
+}
+
+
+TEST_F(ExternallyManagedTLSF_MTTests, MoveAssignment_MovesTheAllocator)
+{
+    constexpr size_t size2{ 1024 };
+    const auto mem2 = new uint8_t[size2];
+    pmm::TLSF<pmm::MemPolicy::External, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
+              pmm::mt::MTPolicy::SpinLock>
+        tlsf2{ mem2, size2 };
+
+    tlsf2 = std::move(tlsf);
+    // Without testing internal states, we can only allocate a block with the new allocator and check if its
+    // non-null to ensure that the move worked.
+    const auto allocation = tlsf2.malloc(950_KB);
+    EXPECT_NE(nullptr, allocation);
+    delete[] mem2;
 }

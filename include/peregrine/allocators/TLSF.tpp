@@ -19,18 +19,18 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
-        void* pBuffer, const size_t memorySize) noexcept
+        void* pBuffer, const size_t size) noexcept
         requires(MemoryPolicy == MemPolicy::External)
         : _slBitmap{},
-          _size{ memorySize },
+          _size{ size },
           _usedSize{ 0 },
           _flBitmap{ 0 },
           _buffer{ static_cast<uint8_t*>(pBuffer) },
-          _telemetry(memorySize),
+          _telemetry(size),
           _mutex{}
     {
         PMM_ASSERT_MSG(pBuffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
-        PMM_ASSERT_MSG(memorySize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
+        PMM_ASSERT_MSG(size > 0, "[TLSF]: Cannot create an allocator with zero memory size");
         clear();
     }
 
@@ -57,13 +57,12 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(TLSF&& tlsf) noexcept
-        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
         : _size{ tlsf._size },
           _usedSize{ tlsf._usedSize },
           _flBitmap{ tlsf._flBitmap },
           _buffer{ std::exchange(tlsf._buffer, nullptr) },
           _telemetry{ tlsf._telemetry },
-          _mutex{} // NOTE: This is dummy mutex as for thread safe TLSF move ctor is deleted.
+          _mutex{}
     {
         std::memcpy(_freeList, tlsf._freeList, sizeof(_freeList));
         std::move(tlsf._slBitmap.begin(), tlsf._slBitmap.end(), _slBitmap.begin());
@@ -74,7 +73,6 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>& TLSF<
         MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::operator=(TLSF&& tlsf) noexcept
-        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         // If the memory is internally managed, we need to free it before moving over the other allocator's
         // internal buffer.

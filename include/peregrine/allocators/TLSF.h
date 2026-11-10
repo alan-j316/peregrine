@@ -156,12 +156,12 @@ namespace pmm
         /**
          * @brief Create a TLSF allocator with user managed memory.
          *
-         * @param[in] buffer     The buffer to use for allocations.
-         * @param[in] memorySize The size of the buffer, which will also acts as the allocator's size.
+         * @param[in] pBuffer The buffer to use for allocations.
+         * @param[in] size    The size of the buffer, which will also acts as the allocator's size.
          *
          * @remarks API specialized for @ref pmm::UnmanagedMemory.
          */
-        constexpr TLSF(void* pBuffer, size_t memorySize) noexcept
+        constexpr TLSF(void* pBuffer, size_t size) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 
 
@@ -194,40 +194,27 @@ namespace pmm
 
         /**
          * @brief Transfer a TLSF allocator's memory to a this object.
+         * @note Moving allocators with mutex in locked state(malloc, mfree,... haven't returned)
+         *       is Undefined Behavior as the mutex won't transfer.
          *
          * @param[in,out] tlsf The TLSF allocator to move into this object.
          */
-        constexpr TLSF(TLSF&& tlsf) noexcept
-            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
-
-
-        /**
-         * @brief Move construction is only available for non-multithreaded allocators.
-         */
-        constexpr TLSF(TLSF&& tlsf) noexcept
-            requires(MultithreadingPolicy == mt::MTPolicy::SpinLock)
-        = delete;
+        constexpr TLSF(TLSF&& tlsf) noexcept;
 
 
         /**
          * @brief Transfer a TLSF allocator's memory to this object.
          *
-         * @warning This will delete any buffers held by the allocator on the left hand side of the assingment.
+         * @warning This will delete any buffers held by the allocator on the left hand side of the assignment.
+         * @note Moving allocators with mutex in locked state(malloc, mfree,... haven't returned)
+         *       is Undefined Behavior as the mutex won't transfer.
          *
          * @param[in,out] tlsf The TLSF allocator to move into this object.
          *
          * @return The current TLSF allocator instance.
          */
-        constexpr TLSF& operator=(TLSF&& tlsf) noexcept
-            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
+        constexpr TLSF& operator=(TLSF&& tlsf) noexcept;
 
-
-        /**
-         * @brief Move assignment is only available for non-multithreaded allocators.
-         */
-        constexpr TLSF& operator=(TLSF&& tlsf) noexcept
-            requires(MultithreadingPolicy == mt::MTPolicy::SpinLock)
-        = delete;
 
 
         /**
