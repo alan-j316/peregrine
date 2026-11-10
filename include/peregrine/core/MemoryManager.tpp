@@ -128,4 +128,75 @@ namespace pmm
         return SafeMTStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE LocalPool<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createLocalPool(const size_t capacity, const size_t chunkSize,
+                                                        const size_t chunkAlignment) noexcept
+    {
+        // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
+        // Hackers Delight [3-2]
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        const auto totalSize        = alignedChunkSize * capacity;
+
+        PMM_ASSERT_MSG(totalSize + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += totalSize;
+
+        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        return LocalPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeLocalPool<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createSafeLocalPool(const size_t capacity, const size_t chunkSize,
+                                                            const size_t chunkAlignment) noexcept
+    {
+        // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
+        // Hackers Delight [3-2]
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        const auto totalSize        = alignedChunkSize * capacity;
+
+        PMM_ASSERT_MSG(totalSize + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += totalSize;
+
+        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        return SafeLocalPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE MTPool<MemPolicy::External, TelemetryPolicy> MemoryManager<TelemetryPolicy, MemoryPolicy>::createMTPool(
+        const size_t capacity, const size_t chunkSize, const size_t chunkAlignment) noexcept
+    {
+        // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
+        // Hackers Delight [3-2]
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        const auto totalSize        = alignedChunkSize * capacity;
+
+        PMM_ASSERT_MSG(totalSize + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += totalSize;
+
+        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        return MTPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeMTPool<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createSafeMTPool(const size_t capacity, const size_t chunkSize,
+                                                         const size_t chunkAlignment) noexcept
+    {
+        // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
+        // Hackers Delight [3-2]
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        const auto totalSize        = alignedChunkSize * capacity;
+
+        PMM_ASSERT_MSG(totalSize + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += totalSize;
+
+        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        return SafeMTPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
+    }
+
 } // namespace pmm

@@ -65,17 +65,17 @@ namespace pmm
         /**
          * @brief Create a pool allocator with unmanaged memory.
          *
-         * @param[in,out] backingBuffer The memory buffer to be used by the allocator.
-         * @param[in] bufferSize         The size of the backing buffer in bytes, which will directly
-         *                              translate into the pool size.
-         * @param[in] chuckSize         The per fragment/chunk size of the pool in bytes.
-         * @param[in] chunkAlignment    The base alignment for each fragment/chunk.
+         * @param[in,out] pBuffer    The memory buffer to be used by the allocator.
+         * @param[in] bufferSize     The size of the backing buffer in bytes, which will directly
+         *                           translate into the pool size.
+         * @param[in] chuckSize      The per fragment/chunk size of the pool in bytes.
+         * @param[in] chunkAlignment The base alignment for each fragment/chunk.
          *
          * @remarks API specialized for @ref pmm::UnmanagedMemory.
          *
          * @warning This allocator is NOT thread-safe by default.
          */
-        [[nodiscard]] explicit constexpr Pool(uint8_t* backingBuffer, size_t bufferSize, size_t chuckSize,
+        [[nodiscard]] explicit constexpr Pool(void* pBuffer, size_t bufferSize, size_t chuckSize,
                                               size_t chunkAlignment) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 

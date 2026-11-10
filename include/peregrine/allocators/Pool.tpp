@@ -57,9 +57,9 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Pool(
-        uint8_t* backingBuffer, const size_t bufferSize, const size_t chuckSize, const size_t chunkAlignment) noexcept
+        void* pBuffer, const size_t bufferSize, const size_t chuckSize, const size_t chunkAlignment) noexcept
         requires(MemoryPolicy == MemPolicy::External)
-        : _buffer{ backingBuffer },
+        : _buffer{ static_cast<uint8_t*>(pBuffer) },
           _poolSize{ bufferSize },
           _chunkSize{ chuckSize },
           _chunkAlignment{ chunkAlignment },

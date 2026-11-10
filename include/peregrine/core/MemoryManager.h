@@ -61,21 +61,21 @@ namespace pmm
         /**
          * @brief Create a thread local arena.
          * @param size The size of the arena. Must be less than the total available size.
-         * @return A pointer to an arena instance.
+         * @return An arena instance.
          */
         [[nodiscard]] LocalArena<MemPolicy::External, TelemetryPolicy> createLocalArena(size_t size) noexcept;
 
         /**
          * @brief Create a thread local arena with safe mode.
          * @param size The size of the arena. Must be less than the total available size.
-         * @return A pointer to an arena instance.
+         * @return An arena instance.
          */
         [[nodiscard]] SafeLocalArena<MemPolicy::External, TelemetryPolicy> createSafeLocalArena(size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe arena.
          * @param size The size of the arena. Must be less than the total available size.
-         * @return A pointer to an arena instance.
+         * @return An arena instance.
          */
         [[nodiscard]] MTArena<MemPolicy::External, TelemetryPolicy> createMTArena(size_t size) noexcept;
 
@@ -83,7 +83,7 @@ namespace pmm
         /**
          * @brief Create a multithreading safe arena with safe mode.
          * @param size The size of the arena. Must be less than the total available size.
-         * @return A pointer to an arena instance.
+         * @return An arena instance.
          */
         [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy> createSafeMTArena(size_t size) noexcept;
 
@@ -91,21 +91,21 @@ namespace pmm
         /**
          * @brief Create a thread local stack.
          * @param size The size of the stack. Must be less than the total available size.
-         * @return A pointer to an stack instance.
+         * @return A stack instance.
          */
         [[nodiscard]] LocalStack<MemPolicy::External, TelemetryPolicy> createLocalStack(size_t size) noexcept;
 
         /**
          * @brief Create a thread local stack with safe mode.
          * @param size The size of the stack. Must be less than the total available size.
-         * @return A pointer to an stack instance.
+         * @return A stack instance.
          */
         [[nodiscard]] SafeLocalStack<MemPolicy::External, TelemetryPolicy> createSafeLocalStack(size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe stack.
          * @param size The size of the stack. Must be less than the total available size.
-         * @return A pointer to an stack instance.
+         * @return A stack instance.
          */
         [[nodiscard]] MTStack<MemPolicy::External, TelemetryPolicy> createMTStack(size_t size) noexcept;
 
@@ -113,10 +113,51 @@ namespace pmm
         /**
          * @brief Create a multithreading safe stack with safe mode.
          * @param size The size of the stack. Must be less than the total available size.
-         * @return A pointer to an stack instance.
+         * @return A stack instance.
          */
         [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy> createSafeMTStack(size_t size) noexcept;
 
+        /**
+         * @brief Create a thread local pool.
+         * @param capacity       The total number of element every held by the pool.
+         * @param chunkSize      Size requirement of the element.
+         * @param chunkAlignment Alignment requirement of the element.
+         * @return A pool instance.
+         */
+        [[nodiscard]] LocalPool<MemPolicy::External, TelemetryPolicy> createLocalPool(
+            size_t capacity, size_t chunkSize, size_t chunkAlignment = sizeof(void*)) noexcept;
+
+        /**
+         * @brief Create a thread local pool with safe mode.
+         * @param capacity       The total number of element every held by the pool.
+         * @param chunkSize      Size requirement of the element.
+         * @param chunkAlignment Alignment requirement of the element.
+         * @return A pool instance.
+         */
+        [[nodiscard]] SafeLocalPool<MemPolicy::External, TelemetryPolicy> createSafeLocalPool(
+            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
+
+        /**
+         * @brief Create a multithreading safe pool.
+         * @param capacity       The total number of element every held by the pool.
+         * @param chunkSize      Size requirement of the element.
+         * @param chunkAlignment Alignment requirement of the element.
+         * @return A pool instance.
+         */
+        [[nodiscard]] MTPool<MemPolicy::External, TelemetryPolicy> createMTPool(size_t capacity, size_t chunkSize,
+                                                                                size_t chunkAlignment) noexcept;
+
+
+        /**
+         * @brief Create a multithreading safe pool with safe mode.
+         * @param capacity       The number of elements in the pool.
+         * @param chunkSize      Size requirement of the element.
+         * @param chunkAlignment Alignment requirement of the element.
+         * @return A pool instance.
+         */
+        [[nodiscard]] SafeMTPool<MemPolicy::External, TelemetryPolicy> createSafeMTPool(size_t capacity,
+                                                                                        size_t chunkSize,
+                                                                                        size_t chunkAlignment) noexcept;
 
 
         // BLOCK OUT
