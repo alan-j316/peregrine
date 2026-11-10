@@ -158,9 +158,7 @@ namespace pmm
     ///                         Enabling Telemetry can consume more memory and can have a mild impact on performance.
     /// @tparam MemoryPolicy    Dictates whether the buffer is supplied externally or owned internally.
     ///                         Internally managed by default.
-    /// @tparam Config          The configuration for the memory manager.
-    template <TelPolicy TelemetryPolicy = TelPolicy::Enabled, MemoryManagerConfig Config = DefaultMemoryManagerConfig,
-              MemPolicy MemoryPolicy = MemPolicy::Internal>
+    template <TelPolicy TelemetryPolicy = TelPolicy::Enabled, MemPolicy MemoryPolicy = MemPolicy::Internal>
     class MemoryManager
     {
     public:
@@ -189,32 +187,25 @@ namespace pmm
 
 
         /**
-         * @brief Get the internal context's memory requirement.
-         * @return The context size in bytes.
-         */
-        [[nodiscard]] static constexpr size_t getContextSize() noexcept;
-
-
-        /**
          * @brief Create a thread local arena.
          * @param size The size of the arena. Must be less than the total available size.
          * @return A pointer to an arena instance.
          */
-        [[nodiscard]] LocalArena<MemPolicy::External, TelemetryPolicy>* createLocalArena(size_t size) noexcept;
+        [[nodiscard]] LocalArena<MemPolicy::External, TelemetryPolicy> createLocalArena(size_t size) noexcept;
 
         /**
          * @brief Create a thread local arena with safe mode.
          * @param size The size of the arena. Must be less than the total available size.
          * @return A pointer to an arena instance.
          */
-        [[nodiscard]] SafeLocalArena<MemPolicy::External, TelemetryPolicy>* createSafeLocalArena(size_t size) noexcept;
+        [[nodiscard]] SafeLocalArena<MemPolicy::External, TelemetryPolicy> createSafeLocalArena(size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe arena.
          * @param size The size of the arena. Must be less than the total available size.
          * @return A pointer to an arena instance.
          */
-        [[nodiscard]] MTArena<MemPolicy::External, TelemetryPolicy>* createMTArena(size_t size) noexcept;
+        [[nodiscard]] MTArena<MemPolicy::External, TelemetryPolicy> createMTArena(size_t size) noexcept;
 
 
         /**
@@ -222,7 +213,7 @@ namespace pmm
          * @param size The size of the arena. Must be less than the total available size.
          * @return A pointer to an arena instance.
          */
-        [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy>* createSafeMTArena(size_t size) noexcept;
+        [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy> createSafeMTArena(size_t size) noexcept;
 
 
         /**
@@ -230,21 +221,21 @@ namespace pmm
          * @param size The size of the stack. Must be less than the total available size.
          * @return A pointer to an stack instance.
          */
-        [[nodiscard]] LocalStack<MemPolicy::External, TelemetryPolicy>* createLocalStack(size_t size) noexcept;
+        [[nodiscard]] LocalStack<MemPolicy::External, TelemetryPolicy> createLocalStack(size_t size) noexcept;
 
         /**
          * @brief Create a thread local stack with safe mode.
          * @param size The size of the stack. Must be less than the total available size.
          * @return A pointer to an stack instance.
          */
-        [[nodiscard]] SafeLocalStack<MemPolicy::External, TelemetryPolicy>* createSafeLocalStack(size_t size) noexcept;
+        [[nodiscard]] SafeLocalStack<MemPolicy::External, TelemetryPolicy> createSafeLocalStack(size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe stack.
          * @param size The size of the stack. Must be less than the total available size.
          * @return A pointer to an stack instance.
          */
-        [[nodiscard]] MTStack<MemPolicy::External, TelemetryPolicy>* createMTStack(size_t size) noexcept;
+        [[nodiscard]] MTStack<MemPolicy::External, TelemetryPolicy> createMTStack(size_t size) noexcept;
 
 
         /**
@@ -252,7 +243,7 @@ namespace pmm
          * @param size The size of the stack. Must be less than the total available size.
          * @return A pointer to an stack instance.
          */
-        [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy>* createSafeMTStack(size_t size) noexcept;
+        [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy> createSafeMTStack(size_t size) noexcept;
 
 
 
@@ -264,12 +255,7 @@ namespace pmm
         size_t _totalSize;
         /// Internal TLSF allocator for managing memory for the other allocators.
         MTTLSF<MemPolicy::External, TelemetryPolicy> internalAllocator;
-
-#ifdef PMM_ALLOC_MEM_MGR_ON_STACK
-        MemoryContext<TelemetryPolicy, Config> _ctx{};
-#else
-        MemoryContext<TelemetryPolicy, Config>* _ctx{};
-#endif
+        // TODO: Add allocator tags(make tags owned by allocators)
     };
 } // namespace pmm
 
