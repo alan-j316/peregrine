@@ -129,42 +129,135 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CanAllocateBuffer)
 
 // TODO: Add death tests for maximum memory usage
 
-
-TEST_F(InternalMemoryManagerTests, CreatePool_CanAllocateBuffer)
+TEST_F(InternalMemoryManagerTests, CreateLocalPool_CanAllocateBuffer)
 {
     auto pool         = manager.createLocalPool(100, sizeof(Vec4), alignof(Vec4));
     const auto buffer = pool.malloc();
     EXPECT_NE(nullptr, buffer);
     // Ensure the memory copy completes successfully without segfault.
-    memset(buffer, 12, 64);
+    memset(buffer, 12, sizeof(Vec4));
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateLocalPool_CanAllocateMaximumNumberOfElements)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createLocalPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = pool.malloc();
+        EXPECT_NE(nullptr, buffer);
+    }
+}
+
+TEST_F(InternalMemoryManagerTests, CreateLocalPool_AllocationsAreAlignedToCustomAlignment)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createLocalPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = static_cast<uint8_t*>(pool.malloc());
+        EXPECT_EQ(0, reinterpret_cast<uintptr_t>(buffer) % alignof(Vec4));
+    }
 }
 
 
 TEST_F(InternalMemoryManagerTests, CreateSafeLocalPool_CanAllocateBuffer)
 {
-    auto pool         = manager.createLocalPool(100, sizeof(Vec4), alignof(Vec4));
+    auto pool         = manager.createSafeLocalPool(100, sizeof(Vec4), alignof(Vec4));
     const auto buffer = pool.malloc();
     EXPECT_NE(nullptr, buffer);
     // Ensure the memory copy completes successfully without segfault.
-    memset(buffer, 12, 64);
+    memset(buffer, 12, sizeof(Vec4));
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalPool_CanAllocateMaximumNumberOfElements)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createSafeLocalPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = pool.malloc();
+        EXPECT_NE(nullptr, buffer);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalPool_AllocationsAreAlignedToCustomAlignment)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createSafeLocalPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = static_cast<uint8_t*>(pool.malloc());
+        EXPECT_EQ(0, reinterpret_cast<uintptr_t>(buffer) % alignof(Vec4));
+    }
 }
 
 
 TEST_F(InternalMemoryManagerTests, CreateMTPool_CanAllocateBuffer)
 {
-    auto pool         = manager.createLocalPool(100, sizeof(Vec4), alignof(Vec4));
+    auto pool         = manager.createMTPool(100, sizeof(Vec4), alignof(Vec4));
     const auto buffer = pool.malloc();
     EXPECT_NE(nullptr, buffer);
     // Ensure the memory copy completes successfully without segfault.
-    memset(buffer, 12, 64);
+    memset(buffer, 12, sizeof(Vec4));
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTPool_CanAllocateMaximumNumberOfElements)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createMTPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = pool.malloc();
+        EXPECT_NE(nullptr, buffer);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTPool_AllocationsAreAlignedToCustomAlignment)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createMTPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = static_cast<uint8_t*>(pool.malloc());
+        EXPECT_EQ(0, reinterpret_cast<uintptr_t>(buffer) % alignof(Vec4));
+    }
 }
 
 
 TEST_F(InternalMemoryManagerTests, CreateSafeMTPool_CanAllocateBuffer)
 {
-    auto pool         = manager.createLocalPool(100, sizeof(Vec4), alignof(Vec4));
+    auto pool         = manager.createSafeMTPool(100, sizeof(Vec4), alignof(Vec4));
     const auto buffer = pool.malloc();
     EXPECT_NE(nullptr, buffer);
     // Ensure the memory copy completes successfully without segfault.
-    memset(buffer, 12, 64);
+    memset(buffer, 12, sizeof(Vec4));
+}
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTPool_CanAllocateMaximumNumberOfElements)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createSafeMTPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = pool.malloc();
+        EXPECT_NE(nullptr, buffer);
+    }
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTPool_AllocationsAreAlignedToCustomAlignment)
+{
+    constexpr auto maxAlloc = 100;
+    auto pool               = manager.createSafeMTPool(maxAlloc, sizeof(Vec4), alignof(Vec4));
+    for (size_t i = 0; i < maxAlloc; ++i)
+    {
+        const auto buffer = static_cast<uint8_t*>(pool.malloc());
+        EXPECT_EQ(0, reinterpret_cast<uintptr_t>(buffer) % alignof(Vec4));
+    }
 }
