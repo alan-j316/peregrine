@@ -253,6 +253,7 @@ namespace pmm
         uint8_t* _buffer{};
         size_t _usedSize{ 0 };
         size_t _totalSize;
+        mt::SpinLock _lock{}; // TODO: Add MT support and tests
         /// Internal TLSF allocator for managing memory for the other allocators.
         MTTLSF<MemPolicy::External, TelemetryPolicy> internalAllocator;
         // TODO: Add allocator tags(make tags owned by allocators)

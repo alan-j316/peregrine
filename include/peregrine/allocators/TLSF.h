@@ -161,7 +161,7 @@ namespace pmm
          *
          * @remarks API specialized for @ref pmm::UnmanagedMemory.
          */
-        constexpr TLSF(uint8_t* buffer, size_t memorySize) noexcept
+        constexpr TLSF(void* pBuffer, size_t memorySize) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 
 

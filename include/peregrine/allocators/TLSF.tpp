@@ -19,17 +19,17 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TLSF(
-        uint8_t* buffer, const size_t memorySize) noexcept
+        void* pBuffer, const size_t memorySize) noexcept
         requires(MemoryPolicy == MemPolicy::External)
         : _slBitmap{},
           _size{ memorySize },
           _usedSize{ 0 },
           _flBitmap{ 0 },
-          _buffer{ buffer },
+          _buffer{ static_cast<uint8_t*>(pBuffer) },
           _telemetry(memorySize),
           _mutex{}
     {
-        PMM_ASSERT_MSG(buffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
+        PMM_ASSERT_MSG(pBuffer != nullptr, "[TLSF]: Cannot create an allocator a nullptr for backing buffer");
         PMM_ASSERT_MSG(memorySize > 0, "[TLSF]: Cannot create an allocator with zero memory size");
         clear();
     }
