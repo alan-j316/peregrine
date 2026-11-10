@@ -18,7 +18,7 @@ namespace
     class StackAlignmentNonPowersOfTwo: public testing::TestWithParam<std::size_t>
     {};
     INSTANTIATE_TEST_SUITE_P(LooseStackAllocationAlignmentNonPowerOfTwo, StackAlignmentNonPowersOfTwo,
-                             ::testing::Values(0, 1, 3, 5, 111));
+                             ::testing::Values(0, 3, 5, 111));
 
 } // namespace
 

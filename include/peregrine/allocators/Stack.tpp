@@ -148,7 +148,7 @@ namespace pmm
         const std::size_t size, const std::size_t alignment) noexcept
         requires(Type == StackPolicy::Loose)
     {
-        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment != 1, "Alignment must be a power of 2");
+        PMM_ASSERT_MSG(std::has_single_bit(alignment), "Alignment must be a power of 2");
 
         const auto padding = _calcAlignment(alignment);
         PMM_ASSERT_MSG(_offset + size + padding <= _stackSize, "Stack capacity exceeded. Cannot assign memory!");
@@ -158,7 +158,7 @@ namespace pmm
                        "Alignment exceeded maximum permissible size of padding.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (!std::has_single_bit(alignment) || alignment == 1 || _offset + size + padding > _stackSize)
+            if (!std::has_single_bit(alignment) || _offset + size + padding > _stackSize)
             {
                 return nullptr;
             }
@@ -187,7 +187,7 @@ namespace pmm
         const std::size_t size, const std::size_t alignment) noexcept
         requires(Type == StackPolicy::Strict)
     {
-        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment != 1, "Alignment must be a power of 2");
+        PMM_ASSERT_MSG(std::has_single_bit(alignment), "Alignment must be a power of 2");
 
         const auto padding = _calcAlignment(alignment);
         PMM_ASSERT_MSG(_offset + size + padding <= _stackSize, "Stack capacity exceeded. Cannot assign memory!");
@@ -197,7 +197,7 @@ namespace pmm
                        "Alignment exceeded maximum permissible size of padding.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (!std::has_single_bit(alignment) || alignment == 1 || _offset + size + padding > _stackSize)
+            if (!std::has_single_bit(alignment) || _offset + size + padding > _stackSize)
             {
                 return nullptr;
             }
@@ -273,7 +273,7 @@ namespace pmm
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 2)
+            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
             {
                 return nullptr;
             }
@@ -312,7 +312,7 @@ namespace pmm
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
             if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || !std::has_single_bit(alignment) ||
-                alignment < 2)
+                alignment < 1)
             {
                 return nullptr;
             }
@@ -381,7 +381,7 @@ namespace pmm
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 2)
+            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
             {
                 return nullptr;
             }

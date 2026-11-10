@@ -136,11 +136,11 @@ namespace pmm
     PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
         const size_t size, const size_t alignment) noexcept
     {
-        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment > 1, "[TLSF]: Alignment must be a power of 2");
+        PMM_ASSERT_MSG(std::has_single_bit(alignment), "[TLSF]: Alignment must be a power of 2");
         PMM_ASSERT_MSG(size > 0, "[TLSF]: Cannot allocate a zero sized block");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (!std::has_single_bit(alignment) || alignment < 2 || size < 1)
+            if (!std::has_single_bit(alignment) || size < 1)
             {
                 return nullptr;
             }
@@ -552,12 +552,11 @@ namespace pmm
         PMM_ASSERT_MSG(block != nullptr && oldSize > 0,
                        "[TLSF]: Cannot resize a nullptr or a zero sized block. Use `malloc` for creating a new block");
         PMM_ASSERT_MSG(newSize > 0, "[TLSF]: Cannot resize to 0 bytes. Use `mfree` for freeing memory.");
-        PMM_ASSERT_MSG(std::has_single_bit(alignment) && alignment > 1,
-                       "[TLSF]: Cannot resize to a non-power of 2 alignment");
+        PMM_ASSERT_MSG(std::has_single_bit(alignment), "[TLSF]: Cannot resize to a non-power of 2 alignment");
 
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (block == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment) || alignment < 2)
+            if (block == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment))
             {
                 return nullptr;
             }
