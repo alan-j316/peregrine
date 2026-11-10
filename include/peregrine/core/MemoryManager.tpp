@@ -128,6 +128,9 @@ namespace pmm
         return SafeMTStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
+    /// +---------------------------------------------------------------------------------------+
+    /// |                                POOL                                                   |
+    /// +---------------------------------------------------------------------------------------+
 
     template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
     PMM_INLINE LocalPool<MemPolicy::External, TelemetryPolicy> MemoryManager<
@@ -197,6 +200,59 @@ namespace pmm
 
         const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
         return SafeMTPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
+    }
+
+
+
+    /// +---------------------------------------------------------------------------------------+
+    /// |                                 TLSF                                                  |
+    /// +---------------------------------------------------------------------------------------+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE LocalTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createLocalTLSF(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+
+        return LocalTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeLocalTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createSafeLocalTLSF(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+
+        return SafeLocalTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE MTTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<TelemetryPolicy, MemoryPolicy>::createMTTLSF(
+        const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+
+        return MTTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
+    }
+
+
+    template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
+    PMM_INLINE SafeMTTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
+        TelemetryPolicy, MemoryPolicy>::createSafeMTTLSF(const size_t size) noexcept
+    {
+        PMM_ASSERT_MSG(size + _usedSize <= _totalSize, "Memory manager full!");
+        _usedSize += size;
+        const auto buffer = internalAllocator.malloc(size);
+
+        return SafeMTTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
 } // namespace pmm

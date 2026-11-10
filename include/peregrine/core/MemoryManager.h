@@ -117,6 +117,7 @@ namespace pmm
          */
         [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy> createSafeMTStack(size_t size) noexcept;
 
+
         /**
          * @brief Create a thread local pool.
          * @param capacity       The total number of element every held by the pool.
@@ -159,8 +160,41 @@ namespace pmm
                                                                                         size_t chunkSize,
                                                                                         size_t chunkAlignment) noexcept;
 
+        /**
+         * @brief Create a thread local TLSF.
+         * @param size The size of the TLSF. Must be less than the total available size.
+         * @return A TLSF instance.
+         */
+        [[nodiscard]] LocalTLSF<MemPolicy::External, TelemetryPolicy> createLocalTLSF(size_t size) noexcept;
 
-        // BLOCK OUT
+
+        /**
+         * @brief Create a thread local TLSF with safe mode.
+         * @param size The size of the TLSF. Must be less than the total available size.
+         * @return A TLSF instance.
+         */
+        [[nodiscard]] SafeLocalTLSF<MemPolicy::External, TelemetryPolicy> createSafeLocalTLSF(size_t size) noexcept;
+
+
+        /**
+         * @brief Create a multithreading safe TLSF.
+         * @param size The size of the TLSF. Must be less than the total available size.
+         * @return A TLSF instance.
+         */
+        [[nodiscard]] MTTLSF<MemPolicy::External, TelemetryPolicy> createMTTLSF(size_t size) noexcept;
+
+
+        /**
+         * @brief Create a multithreading safe TLSF with safe mode.
+         * @param size The size of the TLSF. Must be less than the total available size.
+         * @return A TLSF instance.
+         */
+        [[nodiscard]] SafeMTTLSF<MemPolicy::External, TelemetryPolicy> createSafeMTTLSF(size_t size) noexcept;
+
+
+
+        // TODO: Add resize
+        // TODO: Add free
         // TODO: add death tests
     private:
         uint8_t* _buffer{};

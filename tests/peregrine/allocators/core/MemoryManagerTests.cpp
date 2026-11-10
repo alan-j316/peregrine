@@ -261,3 +261,50 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTPool_AllocationsAreAlignedToCusto
         EXPECT_EQ(0, reinterpret_cast<uintptr_t>(buffer) % alignof(Vec4));
     }
 }
+
+
+
+/// +---------------------------------------------------------------------------------------+
+/// |                                   TLSF TESTS                                          |
+/// +---------------------------------------------------------------------------------------+
+
+// TODO: Add death tests for maximum memory usage
+
+TEST_F(InternalMemoryManagerTests, CreateTLSF_CanAllocateBuffer)
+{
+    auto tlsf         = manager.createLocalTLSF(1_KB);
+    const auto buffer = tlsf.malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeLocalTLSF_CanAllocateBuffer)
+{
+    auto tlsf         = manager.createSafeLocalTLSF(1_KB);
+    const auto buffer = tlsf.malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateMTTLSF_CanAllocateBuffer)
+{
+    auto tlsf         = manager.createMTTLSF(1_KB);
+    const auto buffer = tlsf.malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
+
+
+TEST_F(InternalMemoryManagerTests, CreateSafeMTTLSF_CanAllocateBuffer)
+{
+    auto tlsf         = manager.createSafeMTTLSF(1_KB);
+    const auto buffer = tlsf.malloc(64);
+    EXPECT_NE(nullptr, buffer);
+    // Ensure the memory copy completes successfully without segfault.
+    memset(buffer, 12, 64);
+}
