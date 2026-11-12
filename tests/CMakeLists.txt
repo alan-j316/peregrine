@@ -41,6 +41,7 @@ add_subdirectory(peregrine/allocators)
 add_subdirectory(peregrine/telemetry)
 add_subdirectory(peregrine/utils)
 add_subdirectory(peregrine/memory)
+add_subdirectory(peregrine/core)
 
 
 target_link_libraries(
@@ -51,6 +52,7 @@ target_link_libraries(
         TelemetryTests
         UtilsTests
         MemoryTests
+        PMMCoreTests
 
         # Setup
         PeregrineTestSetup
@@ -63,6 +65,7 @@ target_link_libraries(
         # Intermediates
         AllocatorDeathTests
         MemoryDeathTests
+        PMMCoreDeathTests
 
         # Setup
         PeregrineTestSetup
@@ -78,5 +81,7 @@ set_target_properties(AllocatorTests
         MemoryTests
         AllocatorDeathTests
         MemoryDeathTests
+        PMMCoreTests
+        PMMCoreDeathTests
         PROPERTIES FOLDER "Test Intermediates/"
 )

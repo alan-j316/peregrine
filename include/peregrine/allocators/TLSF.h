@@ -45,7 +45,6 @@ namespace pmm
         /// TLSF Block Header
         struct Header
         {
-
             /**
              * @note Flag bits are stored in the MSB(Most Significant Bits) since we don't anticipate the allocator
              *       being used with sizes in the 2^62 - 2^64 range and most modern hardware doesn't implement beyond
@@ -216,12 +215,11 @@ namespace pmm
         constexpr TLSF& operator=(TLSF&& tlsf) noexcept;
 
 
-
         /**
          * @brief TLSF Destructor.
          *
-         * @note TODO: For clearing the TLSF allocator use @ref clear or
-         *       use @ref free to free individual allocations.
+         * @note For clearing the TLSF allocator use @ref clear or
+         *       use @ref mfree / @ref free / @ref freeV to free individual allocations.
          *
          * @warning Will not free the backing buffer since it is managed by the user.
          *
@@ -235,8 +233,8 @@ namespace pmm
         /**
          * @brief TLSF Destructor. Frees the internal buffer.
          *
-         * @note TODO: For clearing the TLSF allocator use @ref clear or
-         *       use @ref free to free individual allocations.
+         * @note For clearing the TLSF allocator use @ref clear or
+         *       use @ref mfree / @ref free / @ref freeV to free individual allocations.
          *
          * @remarks API specialized for @ref pmm::ManagedMemory.
          */

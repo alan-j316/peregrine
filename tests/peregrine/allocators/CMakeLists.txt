@@ -30,10 +30,6 @@ target_sources(
 
         TempArenaTests.cpp
 
-        core/AliasTests.cpp
-        core/MemoryManagerTests.cpp
-        core/PoolRegistry.cpp
-
         # Headers
         pool/PoolTestSetup.h
         stack/StackTestSetup.h

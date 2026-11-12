@@ -18,6 +18,9 @@
 #include <bitset>
 #include <cstdint>
 
+
+// TODO: #define PMM_ENFORCE_NO_OUT_OF_BOUNDS_FREE: Perform checks to ensure that the memory is not freed out-of-bounds
+
 /**
  * @addtogroup PMM_Core
  * @{
@@ -213,7 +216,6 @@ namespace pmm
         { return _internalAllocator.getTelemetry(); }
 
         // TODO: Add resize
-        // TODO: Add free
         // TODO: add death tests
     private:
         uint8_t* _buffer{};
