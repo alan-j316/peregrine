@@ -177,7 +177,6 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CanAllocateBuffer)
 }
 
 
-
 TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByLocalStack)
 {
     // For verifying free we allocate a large stack, free it
@@ -373,6 +372,60 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTPool_AllocationsAreAlignedToCusto
 }
 
 
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByLocalPool)
+{
+    // For verifying free we allocate a large pool, free it
+    // and try to allocate another pool that is near the memory buffer size.
+    auto pool = manager.createLocalPool(40, 1_MB);
+    manager.free(pool);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newPool   = manager.createLocalPool(45, 1_MB);
+    const auto ptr = newPool.malloc();
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeLocalPool)
+{
+    // For verifying free we allocate a large pool, free it
+    // and try to allocate another pool that is near the memory buffer size.
+    auto pool = manager.createSafeLocalPool(40, 1_MB);
+    manager.free(pool);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newPool   = manager.createSafeLocalPool(45, 1_MB);
+    const auto ptr = newPool.malloc();
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTPool)
+{
+    // For verifying free we allocate a large pool, free it
+    // and try to allocate another pool that is near the memory buffer size.
+    auto pool = manager.createMTPool(40, 1_MB);
+    manager.free(pool);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newPool   = manager.createMTPool(45, 1_MB);
+    const auto ptr = newPool.malloc();
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTPool)
+{
+    // For verifying free we allocate a large pool, free it
+    // and try to allocate another pool that is near the memory buffer size.
+    auto pool = manager.createSafeMTPool(40, 1_MB);
+    manager.free(pool);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newPool   = manager.createSafeMTPool(45, 1_MB);
+    const auto ptr = newPool.malloc();
+    EXPECT_NE(nullptr, ptr);
+}
 
 /// +---------------------------------------------------------------------------------------+
 /// |                                   TLSF TESTS                                          |

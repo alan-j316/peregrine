@@ -244,6 +244,9 @@ namespace pmm
         size_t _poolSize, _chunkSize, _chunkAlignment, _initialAlignmentPadding, _chunkCount;
         PoolFreeNode* _head;
         PMM_NO_UNIQUE_ADDR PoolTelemetryType<TelemetryPolicy> _telemetry{ 0 };
+        // For freeing the allocators from memory manager
+        template <TelPolicy, MemPolicy>
+        friend class MemoryManager;
 
 
 

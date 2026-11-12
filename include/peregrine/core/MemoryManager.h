@@ -141,7 +141,7 @@ namespace pmm
          * @return A pool instance.
          */
         [[nodiscard]] constexpr SafeLocalPool<MemPolicy::External, TelemetryPolicy> createSafeLocalPool(
-            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
+            size_t capacity, size_t chunkSize, size_t chunkAlignment = sizeof(void*)) noexcept;
 
         /**
          * @brief Create a multithreading safe pool.
@@ -151,7 +151,7 @@ namespace pmm
          * @return A pool instance.
          */
         [[nodiscard]] constexpr MTPool<MemPolicy::External, TelemetryPolicy> createMTPool(
-            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
+            size_t capacity, size_t chunkSize, size_t chunkAlignment = sizeof(void*)) noexcept;
 
 
         /**
@@ -162,7 +162,7 @@ namespace pmm
          * @return A pool instance.
          */
         [[nodiscard]] constexpr SafeMTPool<MemPolicy::External, TelemetryPolicy> createSafeMTPool(
-            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
+            size_t capacity, size_t chunkSize, size_t chunkAlignment = sizeof(void*)) noexcept;
 
         /**
          * @brief Create a thread local TLSF.
