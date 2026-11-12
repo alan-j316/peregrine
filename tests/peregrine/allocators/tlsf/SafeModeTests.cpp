@@ -19,7 +19,7 @@ namespace
     class SafeTLSFAlignmentNonPowersOfTwo: public testing::TestWithParam<size_t>
     {};
     INSTANTIATE_TEST_SUITE_P(TLSFAllocationAlignmentNonPowerOfTwo, SafeTLSFAlignmentNonPowersOfTwo,
-                             ::testing::Values(0, 1, 3, 5, 111));
+                             ::testing::Values(0, 3, 5, 111));
 
 
 
