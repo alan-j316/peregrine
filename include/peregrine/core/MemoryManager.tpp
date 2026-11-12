@@ -230,6 +230,7 @@ namespace pmm
             allocator.~Allocator();
         }
         // Free the memory held by the arena.
+        // Arena
         if constexpr (std::is_same_v<Allocator, LocalArena<MemPolicy::External, TelemetryPolicy>> ||
                       std::is_same_v<Allocator, SafeLocalArena<MemPolicy::External, TelemetryPolicy>> ||
                       std::is_same_v<Allocator, MTArena<MemPolicy::External, TelemetryPolicy>> ||
@@ -237,6 +238,19 @@ namespace pmm
         {
             internalAllocator.mfree(allocator._buffer);
         }
+        // Stack
+        else if constexpr (std::is_same_v<Allocator, LocalStack<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, SafeLocalStack<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, MTStack<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, SafeMTStack<MemPolicy::External, TelemetryPolicy>>)
+        {
+            internalAllocator.mfree(allocator._buffer);
+        }
+        // Pool
+
+        // TLSF
+
+        // Unsupported allocators/classes
         else
         {
             static_assert(false && "[Memory Manager/Free]: Unsupported allocator!");

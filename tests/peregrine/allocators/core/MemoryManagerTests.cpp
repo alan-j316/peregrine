@@ -104,7 +104,6 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeLocalArena)
 }
 
 
-
 TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTArena)
 {
     // For verifying free we allocate a large arena, free it
@@ -119,7 +118,6 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTArena)
 }
 
 
-
 TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTArena)
 {
     // For verifying free we allocate a large arena, free it
@@ -132,37 +130,6 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTArena)
     const auto ptr = newArena.malloc(5_MB);
     EXPECT_NE(nullptr, ptr);
 }
-
-//
-// TEST_F(InternalMemoryManagerTests, CreateSafeLocalArena_CanAllocateBuffer)
-// {
-//     auto arena        = manager.createSafeLocalArena(1_KB);
-//     const auto buffer = arena.malloc(64);
-//     EXPECT_NE(nullptr, buffer);
-//     // Ensure the memory copy completes successfully without segfault.
-//     memset(buffer, 12, 64);
-// }
-//
-//
-// TEST_F(InternalMemoryManagerTests, CreateMTArena_CanAllocateBuffer)
-// {
-//     auto arena        = manager.createMTArena(1_KB);
-//     const auto buffer = arena.malloc(64);
-//     EXPECT_NE(nullptr, buffer);
-//     // Ensure the memory copy completes successfully without segfault.
-//     memset(buffer, 12, 64);
-// }
-//
-//
-// TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanAllocateBuffer)
-// {
-//     auto arena        = manager.createSafeMTArena(1_KB);
-//     const auto buffer = arena.malloc(64);
-//     EXPECT_NE(nullptr, buffer);
-//     // Ensure the memory copy completes successfully without segfault.
-//     memset(buffer, 12, 64);
-// }
-
 
 /// +---------------------------------------------------------------------------------------+
 /// |                                  STACK TESTS                                          |
@@ -209,6 +176,62 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTStack_CanAllocateBuffer)
     memset(buffer, 12, 64);
 }
 
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByLocalStack)
+{
+    // For verifying free we allocate a large stack, free it
+    // and try to allocate another stack that is near the memory buffer size.
+    auto stack = manager.createLocalStack(40_MB);
+    manager.free(stack);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newStack  = manager.createLocalStack(45_MB);
+    const auto ptr = newStack.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeLocalStack)
+{
+    // For verifying free we allocate a large stack, free it
+    // and try to allocate another stack that is near the memory buffer size.
+    auto stack = manager.createSafeLocalStack(40_MB);
+    manager.free(stack);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newStack  = manager.createSafeLocalStack(45_MB);
+    const auto ptr = newStack.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTStack)
+{
+    // For verifying free we allocate a large stack, free it
+    // and try to allocate another stack that is near the memory buffer size.
+    auto stack = manager.createMTStack(40_MB);
+    manager.free(stack);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newStack  = manager.createMTStack(45_MB);
+    const auto ptr = newStack.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTStack)
+{
+    // For verifying free we allocate a large stack, free it
+    // and try to allocate another stack that is near the memory buffer size.
+    auto stack = manager.createSafeMTStack(40_MB);
+    manager.free(stack);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newStack  = manager.createSafeMTStack(45_MB);
+    const auto ptr = newStack.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
 
 /// +---------------------------------------------------------------------------------------+
 /// |                                  POOL TESTS                                           |

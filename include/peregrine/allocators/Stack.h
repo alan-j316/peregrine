@@ -544,6 +544,10 @@ namespace pmm
         std::size_t _stackSize, _offset{ 0 };
         PMM_NO_UNIQUE_ADDR PreviousOffsetType _prevOffset;
         PMM_NO_UNIQUE_ADDR StackTelemetryType<TelemetryPolicy> _telemetry;
+        
+        // For freeing the allocators from memory manager
+        template <TelPolicy, MemPolicy>
+        friend class MemoryManager;
 
 
 
