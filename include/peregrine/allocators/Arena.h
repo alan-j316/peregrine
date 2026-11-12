@@ -320,6 +320,9 @@ namespace pmm
 
         // For internal variable access
         friend struct TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>;
+        // For freeing the allocators from memory manager
+        template <TelPolicy, MemPolicy>
+        friend class MemoryManager;
 
 #ifdef ENABLE_PMM_TESTS
     // FRIEND TEST macros for verifying internal states

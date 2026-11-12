@@ -76,6 +76,93 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanAllocateBuffer)
 }
 
 
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByLocalArena)
+{
+    // For verifying free we allocate a large arena, free it
+    // and try to allocate another arena that is near the memory buffer size.
+    auto arena = manager.createLocalArena(40_MB);
+    manager.free(arena);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newArena  = manager.createLocalArena(45_MB);
+    const auto ptr = newArena.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeLocalArena)
+{
+    // For verifying free we allocate a large arena, free it
+    // and try to allocate another arena that is near the memory buffer size.
+    auto arena = manager.createSafeLocalArena(40_MB);
+    manager.free(arena);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newArena  = manager.createSafeLocalArena(45_MB);
+    const auto ptr = newArena.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTArena)
+{
+    // For verifying free we allocate a large arena, free it
+    // and try to allocate another arena that is near the memory buffer size.
+    auto arena = manager.createMTArena(40_MB);
+    manager.free(arena);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newArena  = manager.createMTArena(45_MB);
+    const auto ptr = newArena.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTArena)
+{
+    // For verifying free we allocate a large arena, free it
+    // and try to allocate another arena that is near the memory buffer size.
+    auto arena = manager.createSafeMTArena(40_MB);
+    manager.free(arena);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newArena  = manager.createSafeMTArena(45_MB);
+    const auto ptr = newArena.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+//
+// TEST_F(InternalMemoryManagerTests, CreateSafeLocalArena_CanAllocateBuffer)
+// {
+//     auto arena        = manager.createSafeLocalArena(1_KB);
+//     const auto buffer = arena.malloc(64);
+//     EXPECT_NE(nullptr, buffer);
+//     // Ensure the memory copy completes successfully without segfault.
+//     memset(buffer, 12, 64);
+// }
+//
+//
+// TEST_F(InternalMemoryManagerTests, CreateMTArena_CanAllocateBuffer)
+// {
+//     auto arena        = manager.createMTArena(1_KB);
+//     const auto buffer = arena.malloc(64);
+//     EXPECT_NE(nullptr, buffer);
+//     // Ensure the memory copy completes successfully without segfault.
+//     memset(buffer, 12, 64);
+// }
+//
+//
+// TEST_F(InternalMemoryManagerTests, CreateSafeMTArena_CanAllocateBuffer)
+// {
+//     auto arena        = manager.createSafeMTArena(1_KB);
+//     const auto buffer = arena.malloc(64);
+//     EXPECT_NE(nullptr, buffer);
+//     // Ensure the memory copy completes successfully without segfault.
+//     memset(buffer, 12, 64);
+// }
+
 
 /// +---------------------------------------------------------------------------------------+
 /// |                                  STACK TESTS                                          |

@@ -63,21 +63,23 @@ namespace pmm
          * @param size The size of the arena. Must be less than the total available size.
          * @return An arena instance.
          */
-        [[nodiscard]] LocalArena<MemPolicy::External, TelemetryPolicy> createLocalArena(size_t size) noexcept;
+        [[nodiscard]] constexpr LocalArena<MemPolicy::External, TelemetryPolicy> createLocalArena(size_t size) noexcept;
+
 
         /**
          * @brief Create a thread local arena with safe mode.
          * @param size The size of the arena. Must be less than the total available size.
          * @return An arena instance.
          */
-        [[nodiscard]] SafeLocalArena<MemPolicy::External, TelemetryPolicy> createSafeLocalArena(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeLocalArena<MemPolicy::External, TelemetryPolicy> createSafeLocalArena(
+            size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe arena.
          * @param size The size of the arena. Must be less than the total available size.
          * @return An arena instance.
          */
-        [[nodiscard]] MTArena<MemPolicy::External, TelemetryPolicy> createMTArena(size_t size) noexcept;
+        [[nodiscard]] constexpr MTArena<MemPolicy::External, TelemetryPolicy> createMTArena(size_t size) noexcept;
 
 
         /**
@@ -85,7 +87,8 @@ namespace pmm
          * @param size The size of the arena. Must be less than the total available size.
          * @return An arena instance.
          */
-        [[nodiscard]] SafeMTArena<MemPolicy::External, TelemetryPolicy> createSafeMTArena(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeMTArena<MemPolicy::External, TelemetryPolicy> createSafeMTArena(
+            size_t size) noexcept;
 
 
         /**
@@ -93,21 +96,22 @@ namespace pmm
          * @param size The size of the stack. Must be less than the total available size.
          * @return A stack instance.
          */
-        [[nodiscard]] LocalStack<MemPolicy::External, TelemetryPolicy> createLocalStack(size_t size) noexcept;
+        [[nodiscard]] constexpr LocalStack<MemPolicy::External, TelemetryPolicy> createLocalStack(size_t size) noexcept;
 
         /**
          * @brief Create a thread local stack with safe mode.
          * @param size The size of the stack. Must be less than the total available size.
          * @return A stack instance.
          */
-        [[nodiscard]] SafeLocalStack<MemPolicy::External, TelemetryPolicy> createSafeLocalStack(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeLocalStack<MemPolicy::External, TelemetryPolicy> createSafeLocalStack(
+            size_t size) noexcept;
 
         /**
          * @brief Create a multithreading safe stack.
          * @param size The size of the stack. Must be less than the total available size.
          * @return A stack instance.
          */
-        [[nodiscard]] MTStack<MemPolicy::External, TelemetryPolicy> createMTStack(size_t size) noexcept;
+        [[nodiscard]] constexpr MTStack<MemPolicy::External, TelemetryPolicy> createMTStack(size_t size) noexcept;
 
 
         /**
@@ -115,7 +119,8 @@ namespace pmm
          * @param size The size of the stack. Must be less than the total available size.
          * @return A stack instance.
          */
-        [[nodiscard]] SafeMTStack<MemPolicy::External, TelemetryPolicy> createSafeMTStack(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeMTStack<MemPolicy::External, TelemetryPolicy> createSafeMTStack(
+            size_t size) noexcept;
 
 
         /**
@@ -125,7 +130,7 @@ namespace pmm
          * @param chunkAlignment Alignment requirement of the element.
          * @return A pool instance.
          */
-        [[nodiscard]] LocalPool<MemPolicy::External, TelemetryPolicy> createLocalPool(
+        [[nodiscard]] constexpr LocalPool<MemPolicy::External, TelemetryPolicy> createLocalPool(
             size_t capacity, size_t chunkSize, size_t chunkAlignment = sizeof(void*)) noexcept;
 
         /**
@@ -135,7 +140,7 @@ namespace pmm
          * @param chunkAlignment Alignment requirement of the element.
          * @return A pool instance.
          */
-        [[nodiscard]] SafeLocalPool<MemPolicy::External, TelemetryPolicy> createSafeLocalPool(
+        [[nodiscard]] constexpr SafeLocalPool<MemPolicy::External, TelemetryPolicy> createSafeLocalPool(
             size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
 
         /**
@@ -145,8 +150,8 @@ namespace pmm
          * @param chunkAlignment Alignment requirement of the element.
          * @return A pool instance.
          */
-        [[nodiscard]] MTPool<MemPolicy::External, TelemetryPolicy> createMTPool(size_t capacity, size_t chunkSize,
-                                                                                size_t chunkAlignment) noexcept;
+        [[nodiscard]] constexpr MTPool<MemPolicy::External, TelemetryPolicy> createMTPool(
+            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
 
 
         /**
@@ -156,16 +161,15 @@ namespace pmm
          * @param chunkAlignment Alignment requirement of the element.
          * @return A pool instance.
          */
-        [[nodiscard]] SafeMTPool<MemPolicy::External, TelemetryPolicy> createSafeMTPool(size_t capacity,
-                                                                                        size_t chunkSize,
-                                                                                        size_t chunkAlignment) noexcept;
+        [[nodiscard]] constexpr SafeMTPool<MemPolicy::External, TelemetryPolicy> createSafeMTPool(
+            size_t capacity, size_t chunkSize, size_t chunkAlignment) noexcept;
 
         /**
          * @brief Create a thread local TLSF.
          * @param size The size of the TLSF. Must be less than the total available size.
          * @return A TLSF instance.
          */
-        [[nodiscard]] LocalTLSF<MemPolicy::External, TelemetryPolicy> createLocalTLSF(size_t size) noexcept;
+        [[nodiscard]] constexpr LocalTLSF<MemPolicy::External, TelemetryPolicy> createLocalTLSF(size_t size) noexcept;
 
 
         /**
@@ -173,7 +177,8 @@ namespace pmm
          * @param size The size of the TLSF. Must be less than the total available size.
          * @return A TLSF instance.
          */
-        [[nodiscard]] SafeLocalTLSF<MemPolicy::External, TelemetryPolicy> createSafeLocalTLSF(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeLocalTLSF<MemPolicy::External, TelemetryPolicy> createSafeLocalTLSF(
+            size_t size) noexcept;
 
 
         /**
@@ -181,7 +186,7 @@ namespace pmm
          * @param size The size of the TLSF. Must be less than the total available size.
          * @return A TLSF instance.
          */
-        [[nodiscard]] MTTLSF<MemPolicy::External, TelemetryPolicy> createMTTLSF(size_t size) noexcept;
+        [[nodiscard]] constexpr MTTLSF<MemPolicy::External, TelemetryPolicy> createMTTLSF(size_t size) noexcept;
 
 
         /**
@@ -189,16 +194,17 @@ namespace pmm
          * @param size The size of the TLSF. Must be less than the total available size.
          * @return A TLSF instance.
          */
-        [[nodiscard]] SafeMTTLSF<MemPolicy::External, TelemetryPolicy> createSafeMTTLSF(size_t size) noexcept;
+        [[nodiscard]] constexpr SafeMTTLSF<MemPolicy::External, TelemetryPolicy> createSafeMTTLSF(size_t size) noexcept;
 
 
+        template <typename Allocator>
+        constexpr void free(Allocator& allocator) noexcept;
 
         // TODO: Add resize
         // TODO: Add free
         // TODO: add death tests
     private:
         uint8_t* _buffer{};
-        size_t _usedSize{ 0 };
         size_t _totalSize;
         mt::SpinLock _lock{}; // TODO: Add MT support and tests
         /// Internal TLSF allocator for managing memory for the other allocators.
