@@ -34,8 +34,6 @@ namespace
 /// |                               ARENA TESTS                                             |
 /// +---------------------------------------------------------------------------------------+
 
-// TODO: Add death tests for maximum memory usage
-
 TEST_F(InternalMemoryManagerTests, CreateArena_CanAllocateBuffer)
 {
     auto arena        = manager.createLocalArena(1_KB);
@@ -131,11 +129,10 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTArena)
     EXPECT_NE(nullptr, ptr);
 }
 
+
 /// +---------------------------------------------------------------------------------------+
 /// |                                  STACK TESTS                                          |
 /// +---------------------------------------------------------------------------------------+
-
-// TODO: Add death tests for maximum memory usage
 
 TEST_F(InternalMemoryManagerTests, CreateStack_CanAllocateBuffer)
 {
@@ -232,11 +229,11 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTStack)
     EXPECT_NE(nullptr, ptr);
 }
 
+
+
 /// +---------------------------------------------------------------------------------------+
 /// |                                  POOL TESTS                                           |
 /// +---------------------------------------------------------------------------------------+
-
-// TODO: Add death tests for maximum memory usage
 
 TEST_F(InternalMemoryManagerTests, CreateLocalPool_CanAllocateBuffer)
 {
@@ -427,11 +424,10 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTPool)
     EXPECT_NE(nullptr, ptr);
 }
 
+
 /// +---------------------------------------------------------------------------------------+
 /// |                                   TLSF TESTS                                          |
 /// +---------------------------------------------------------------------------------------+
-
-// TODO: Add death tests for maximum memory usage
 
 TEST_F(InternalMemoryManagerTests, CreateTLSF_CanAllocateBuffer)
 {

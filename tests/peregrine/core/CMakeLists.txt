@@ -33,7 +33,7 @@ add_library(PMMCoreDeathTests OBJECT)
 target_sources(
         PMMCoreDeathTests
         PRIVATE
-        memory-manager/MemoryManagerDeathTests.cpp
+        memory-manager/DeathTests.cpp
 )
 
 target_include_directories(
