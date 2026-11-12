@@ -13,8 +13,12 @@
 #include "Memory.h"
 
 #ifdef PMM_PLATFORM_WINDOWS
-    #define WIN32_LEAN_AND_MEAN
-    #define NOMINMAX // Prevent windows from hijacking min and max functions
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX // Prevent windows from hijacking min and max functions
+    #endif
     #include <Windows.h>
 
 namespace pmm
