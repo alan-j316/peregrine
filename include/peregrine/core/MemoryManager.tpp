@@ -16,7 +16,7 @@ namespace pmm
     template <TelPolicy TelemetryPolicy, MemPolicy MemoryPolicy>
     PMM_INLINE constexpr MemoryManager<TelemetryPolicy, MemoryPolicy>::MemoryManager(const size_t size) noexcept
         requires(MemoryPolicy == MemPolicy::Internal)
-        : _buffer{ static_cast<uint8_t*>(memAlloc(size)) }, _totalSize{ size }, internalAllocator(_buffer, size)
+        : _buffer{ static_cast<uint8_t*>(memAlloc(size)) }, _totalSize{ size }, _internalAllocator(_buffer, size)
     {}
 
 
@@ -24,7 +24,7 @@ namespace pmm
     PMM_INLINE constexpr MemoryManager<TelemetryPolicy, MemoryPolicy>::MemoryManager(void* pBuffer,
                                                                                      const size_t size) noexcept
         requires(MemoryPolicy == MemPolicy::External)
-        : _buffer{ static_cast<uint8_t*>(pBuffer) }, _totalSize{ size }, internalAllocator(pBuffer, size)
+        : _buffer{ static_cast<uint8_t*>(pBuffer) }, _totalSize{ size }, _internalAllocator(pBuffer, size)
     {}
 
 
@@ -36,7 +36,7 @@ namespace pmm
     PMM_INLINE constexpr LocalArena<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createLocalArena(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
         return LocalArena<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
@@ -45,7 +45,7 @@ namespace pmm
     PMM_INLINE constexpr SafeLocalArena<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeLocalArena(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
         return SafeLocalArena<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
@@ -54,7 +54,7 @@ namespace pmm
     PMM_INLINE constexpr MTArena<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createMTArena(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
         return MTArena<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
@@ -63,7 +63,7 @@ namespace pmm
     PMM_INLINE constexpr SafeMTArena<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeMTArena(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
         return SafeMTArena<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
 
@@ -77,7 +77,7 @@ namespace pmm
     PMM_INLINE constexpr LocalStack<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createLocalStack(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return LocalStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -87,7 +87,7 @@ namespace pmm
     PMM_INLINE constexpr SafeLocalStack<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeLocalStack(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return SafeLocalStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -97,7 +97,7 @@ namespace pmm
     PMM_INLINE constexpr MTStack<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createMTStack(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return MTStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -107,7 +107,7 @@ namespace pmm
     PMM_INLINE constexpr SafeMTStack<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeMTStack(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return SafeMTStack<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -126,7 +126,7 @@ namespace pmm
         const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
         const auto totalSize        = alignedChunkSize * capacity;
 
-        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
         return LocalPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
     }
 
@@ -141,7 +141,7 @@ namespace pmm
         const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
         const auto totalSize        = alignedChunkSize * capacity;
 
-        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
         return SafeLocalPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
     }
 
@@ -156,7 +156,7 @@ namespace pmm
         const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
         const auto totalSize        = alignedChunkSize * capacity;
 
-        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
         return MTPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
     }
 
@@ -171,7 +171,7 @@ namespace pmm
         const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
         const auto totalSize        = alignedChunkSize * capacity;
 
-        const auto buffer = internalAllocator.malloc(totalSize, chunkAlignment);
+        const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
         return SafeMTPool<MemPolicy::External, TelemetryPolicy>(buffer, totalSize, alignedChunkSize, chunkAlignment);
     }
 
@@ -185,7 +185,7 @@ namespace pmm
     PMM_INLINE constexpr LocalTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createLocalTLSF(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return LocalTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -195,7 +195,7 @@ namespace pmm
     PMM_INLINE constexpr SafeLocalTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeLocalTLSF(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return SafeLocalTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -205,7 +205,7 @@ namespace pmm
     PMM_INLINE constexpr MTTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createMTTLSF(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return MTTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -215,7 +215,7 @@ namespace pmm
     PMM_INLINE constexpr SafeMTTLSF<MemPolicy::External, TelemetryPolicy> MemoryManager<
         TelemetryPolicy, MemoryPolicy>::createSafeMTTLSF(const size_t size) noexcept
     {
-        const auto buffer = internalAllocator.malloc(size);
+        const auto buffer = _internalAllocator.malloc(size);
 
         return SafeMTTLSF<MemPolicy::External, TelemetryPolicy>(buffer, size);
     }
@@ -225,6 +225,7 @@ namespace pmm
     template <typename Allocator>
     PMM_INLINE constexpr void MemoryManager<TelemetryPolicy, MemoryPolicy>::free(Allocator& allocator) noexcept
     {
+        // PMM_ASSERT_MSG
         if constexpr (!std::is_trivially_destructible_v<Allocator>)
         {
             allocator.~Allocator();
@@ -236,7 +237,7 @@ namespace pmm
                       std::is_same_v<Allocator, MTArena<MemPolicy::External, TelemetryPolicy>> ||
                       std::is_same_v<Allocator, SafeMTArena<MemPolicy::External, TelemetryPolicy>>)
         {
-            internalAllocator.mfree(allocator._buffer);
+            _internalAllocator.mfree(allocator._buffer);
         }
         // Stack
         else if constexpr (std::is_same_v<Allocator, LocalStack<MemPolicy::External, TelemetryPolicy>> ||
@@ -244,7 +245,7 @@ namespace pmm
                            std::is_same_v<Allocator, MTStack<MemPolicy::External, TelemetryPolicy>> ||
                            std::is_same_v<Allocator, SafeMTStack<MemPolicy::External, TelemetryPolicy>>)
         {
-            internalAllocator.mfree(allocator._buffer);
+            _internalAllocator.mfree(allocator._buffer);
         }
         // Pool
         else if constexpr (std::is_same_v<Allocator, LocalPool<MemPolicy::External, TelemetryPolicy>> ||
@@ -252,7 +253,7 @@ namespace pmm
                            std::is_same_v<Allocator, MTPool<MemPolicy::External, TelemetryPolicy>> ||
                            std::is_same_v<Allocator, SafeMTPool<MemPolicy::External, TelemetryPolicy>>)
         {
-            internalAllocator.mfree(allocator._buffer);
+            _internalAllocator.mfree(allocator._buffer);
         }
         // TLSF
         else if constexpr (std::is_same_v<Allocator, LocalTLSF<MemPolicy::External, TelemetryPolicy>> ||
@@ -260,7 +261,7 @@ namespace pmm
                            std::is_same_v<Allocator, MTTLSF<MemPolicy::External, TelemetryPolicy>> ||
                            std::is_same_v<Allocator, SafeMTTLSF<MemPolicy::External, TelemetryPolicy>>)
         {
-            internalAllocator.mfree(allocator._buffer);
+            _internalAllocator.mfree(allocator._buffer);
         }
         // Unsupported allocators/classes
         else

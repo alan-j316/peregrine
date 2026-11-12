@@ -197,8 +197,20 @@ namespace pmm
         [[nodiscard]] constexpr SafeMTTLSF<MemPolicy::External, TelemetryPolicy> createSafeMTTLSF(size_t size) noexcept;
 
 
+        /**
+         * @brief Free an allocator created from this memory manager.
+         * @tparam Allocator The type of allocator to free.
+         * @param allocator The allocator to free. Must be an allocator allocated from the memory manager.
+         */
         template <typename Allocator>
         constexpr void free(Allocator& allocator) noexcept;
+
+        /**
+         * @brief Get telemetry data for the memory manager.
+         * @return A TLSF telemetry instance that measures the memory footprint of the manager's allocations.
+         */
+        constexpr const TLSFTelemetry_t<TelemetryPolicy>& getTelemetry() const noexcept
+        { return _internalAllocator.getTelemetry(); }
 
         // TODO: Add resize
         // TODO: Add free
@@ -208,7 +220,7 @@ namespace pmm
         size_t _totalSize;
         mt::SpinLock _lock{}; // TODO: Add MT support and tests
         /// Internal TLSF allocator for managing memory for the other allocators.
-        MTTLSF<MemPolicy::External, TelemetryPolicy> internalAllocator;
+        MTTLSF<MemPolicy::External, TelemetryPolicy> _internalAllocator;
         // TODO: Add allocator tags(make tags owned by allocators)
     };
 } // namespace pmm

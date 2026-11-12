@@ -527,3 +527,12 @@ TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTTLSF)
     const auto ptr = newTLSF.malloc(5_MB);
     EXPECT_NE(nullptr, ptr);
 }
+
+
+TEST_F(InternalMemoryManagerTests, GetTelemetry_ReturnsATelemetryInstance)
+{
+    static_cast<void>(manager.createLocalArena(20_MB));
+    const auto& tel = manager.getTelemetry();
+    EXPECT_EQ(1, tel.getActiveAllocations());
+    EXPECT_EQ(20_MB, tel.getCurrentPayloadUsage());
+}
