@@ -471,3 +471,59 @@ TEST_F(InternalMemoryManagerTests, CreateSafeMTTLSF_CanAllocateBuffer)
     // Ensure the memory copy completes successfully without segfault.
     memset(buffer, 12, 64);
 }
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByLocalTLSF)
+{
+    // For verifying free we allocate a large tlsf, free it
+    // and try to allocate another tlsf that is near the memory buffer size.
+    auto tlsf = manager.createLocalTLSF(40_MB);
+    manager.free(tlsf);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newTLSF   = manager.createLocalTLSF(45_MB);
+    const auto ptr = newTLSF.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeLocalTLSF)
+{
+    // For verifying free we allocate a large tlsf, free it
+    // and try to allocate another tlsf that is near the memory buffer size.
+    auto tlsf = manager.createSafeLocalTLSF(40_MB);
+    manager.free(tlsf);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newTLSF   = manager.createSafeLocalTLSF(45_MB);
+    const auto ptr = newTLSF.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldByMTTLSF)
+{
+    // For verifying free we allocate a large tlsf, free it
+    // and try to allocate another tlsf that is near the memory buffer size.
+    auto tlsf = manager.createMTTLSF(40_MB);
+    manager.free(tlsf);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newTLSF   = manager.createMTTLSF(45_MB);
+    const auto ptr = newTLSF.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}
+
+
+TEST_F(InternalMemoryManagerTests, Free_FreesMemoryHeldBySafeMTTLSF)
+{
+    // For verifying free we allocate a large tlsf, free it
+    // and try to allocate another tlsf that is near the memory buffer size.
+    auto tlsf = manager.createSafeMTTLSF(40_MB);
+    manager.free(tlsf);
+    // Ensure that the allocation is successful. Set the value is returned by copy
+    // we can try mallocing a small chunk and it shouldn't be a nulltpr.
+    auto newTLSF   = manager.createSafeMTTLSF(45_MB);
+    const auto ptr = newTLSF.malloc(5_MB);
+    EXPECT_NE(nullptr, ptr);
+}

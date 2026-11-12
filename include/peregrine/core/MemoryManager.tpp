@@ -255,7 +255,13 @@ namespace pmm
             internalAllocator.mfree(allocator._buffer);
         }
         // TLSF
-
+        else if constexpr (std::is_same_v<Allocator, LocalTLSF<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, SafeLocalTLSF<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, MTTLSF<MemPolicy::External, TelemetryPolicy>> ||
+                           std::is_same_v<Allocator, SafeMTTLSF<MemPolicy::External, TelemetryPolicy>>)
+        {
+            internalAllocator.mfree(allocator._buffer);
+        }
         // Unsupported allocators/classes
         else
         {

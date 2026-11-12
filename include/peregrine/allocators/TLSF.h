@@ -400,6 +400,10 @@ namespace pmm
         PMM_NO_UNIQUE_ADDR TLSFTelemetry_t<TelemetryPolicy> _telemetry;
         PMM_NO_UNIQUE_ADDR mt::Mutex_t<MultithreadingPolicy> _mutex;
 
+        // For freeing the allocators from memory manager
+        template <TelPolicy, MemPolicy>
+        friend class MemoryManager;
+
         /// Structure used for exchanging bit mask indices internally.
         struct BitmapIndices
         {
