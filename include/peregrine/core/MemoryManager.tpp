@@ -123,7 +123,10 @@ namespace pmm
     {
         // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
         // Hackers Delight [3-2]
-        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        // NOTE: The original equation is (x + 7) & -8, where 8 is the rounding factor.
+        //       But MSVC gives warnings about "unary minus applied to unsigned type",
+        //       so, we can use ~(chunkAlignment - 1) which gives the same result.
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & ~(chunkAlignment - 1);
         const auto totalSize        = alignedChunkSize * capacity;
 
         const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
@@ -138,7 +141,10 @@ namespace pmm
     {
         // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
         // Hackers Delight [3-2]
-        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        // NOTE: The original equation is (x + 7) & -8, where 8 is the rounding factor.
+        //       But MSVC gives warnings about "unary minus applied to unsigned type",
+        //       so, we can use ~(chunkAlignment - 1) which gives the same result.
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & ~(chunkAlignment - 1);
         const auto totalSize        = alignedChunkSize * capacity;
 
         const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
@@ -153,7 +159,10 @@ namespace pmm
     {
         // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
         // Hackers Delight [3-2]
-        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        // NOTE: The original equation is (x + 7) & -8, where 8 is the rounding factor.
+        //       But MSVC gives warnings about "unary minus applied to unsigned type",
+        //       so, we can use ~(chunkAlignment - 1) which gives the same result.
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & ~(chunkAlignment - 1);
         const auto totalSize        = alignedChunkSize * capacity;
 
         const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
@@ -168,7 +177,10 @@ namespace pmm
     {
         // [Chunk 0 + Chunk Misalignment][Chunk 1 + Chunk Misalignment]...
         // Hackers Delight [3-2]
-        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & -chunkAlignment;
+        // NOTE: The original equation is (x + 7) & -8, where 8 is the rounding factor.
+        //       But MSVC gives warnings about "unary minus applied to unsigned type",
+        //       so, we can use ~(chunkAlignment - 1) which gives the same result.
+        const auto alignedChunkSize = (chunkSize + (chunkAlignment - 1)) & ~(chunkAlignment - 1);
         const auto totalSize        = alignedChunkSize * capacity;
 
         const auto buffer = _internalAllocator.malloc(totalSize, chunkAlignment);
