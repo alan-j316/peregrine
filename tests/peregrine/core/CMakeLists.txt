@@ -9,6 +9,7 @@ target_sources(
         PoolRegistry.cpp
 
         memory-manager/InternalMemoryManagerTests.cpp
+        memory-manager/ExternalMemoryManagerTests.cpp
 )
 
 # Disable padded warning for Mock.h
