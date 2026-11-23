@@ -1005,7 +1005,7 @@ namespace pmm
 
     TEST_F(ExternallyManagedTLSFTests, Ctor_WritesAppropriateHeaderToBuffer)
     {
-        TLSF<pmm::MemPolicy::External>::TLSFFreeNode* freeNode;
+        TLSF<pmm::MemPolicy::External>::TLSFFreeNode* freeNode{};
         // While we can directly query the buffer(_buffer member variable), it is better to iterate and get the buffer
         // since a) there is only one TLSFFreeNode that is non-null and b) _buffer internal variable may get removed
         // due to its redundancy.
@@ -1245,7 +1245,7 @@ namespace pmm
         // To check where the FL and SL entries in the free is updated
         // we can make 1 allocation and ensure that the entries are updated
         // from the initial location to the new location.
-        size_t initialNonNullFL, initialNonNullSL, updatedNonNullFL, updatedNonNullSL;
+        size_t initialNonNullFL{}, initialNonNullSL{}, updatedNonNullFL{}, updatedNonNullSL{};
 
         // Gather initial indices
         for (size_t i = 0; i < tlsf.FL_SIZE; ++i)
@@ -1300,7 +1300,7 @@ namespace pmm
 
         // Get the internal free node by iterating the freelist
         // Invariant: After first allocation there should only be 1 buffer in freelist.
-        TLSF<pmm::MemPolicy::External>::TLSFFreeNode* freeNode;
+        TLSF<pmm::MemPolicy::External>::TLSFFreeNode* freeNode{};
         for (const auto& flList : tlsf._freeList)
         {
             for (auto& slList : flList)

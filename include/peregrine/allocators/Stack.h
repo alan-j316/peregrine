@@ -565,7 +565,19 @@ namespace pmm
          * @return A pointer to the base address of the allocated memory.
          * @return Nullptr if allocation failed in *Release Mode* with SafeMode turned on.
          */
-        void* _mallocInternal(size_t size, size_t alignment) noexcept;
+        [[nodiscard]] void* _mallocInternal(size_t size, size_t alignment) noexcept
+            requires(Type == StackPolicy::Loose);
+
+
+        /**
+         * @brief Internal helper for allocating memory from the stack.
+         * @param size      The size of allocation in bytes.
+         * @param alignment The alignment of the allocation.
+         * @return A pointer to the base address of the allocated memory.
+         * @return Nullptr if allocation failed in *Release Mode* with SafeMode turned on.
+         */
+        [[nodiscard]] void* _mallocInternal(size_t size, size_t alignment) noexcept
+            requires(Type == StackPolicy::Strict);
 
 
         /**
