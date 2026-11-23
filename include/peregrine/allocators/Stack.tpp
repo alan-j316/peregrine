@@ -175,7 +175,7 @@ namespace pmm
 
         const auto padding = _calcAlignment(alignment);
         PMM_ASSERT_MSG(_offset + size + padding <= _stackSize, "Stack capacity exceeded. Cannot assign memory!");
-        // NOTE: This assertion is redundant since we are using size_t and it's impossible to pad that amount of memory
+        // NOTE: This assertion is redundant since we are using size_t, and it's impossible to pad that amount of memory
         // realistically
         PMM_ASSERT_MSG(padding <= std::numeric_limits<decltype(StrictStackHeader::padding)>::max(),
                        "Alignment exceeded maximum permissible size of padding.");
@@ -247,125 +247,69 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
-        void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
+        void* pBuffer, const size_t oldSize, const size_t newSize, const size_t alignment)
         requires(Type == StackPolicy::Loose)
     {
         PMM_ASSERT_MSG(
-            oldMemory != nullptr,
+            pBuffer != nullptr,
             "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
         PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
-            {
-                return nullptr;
-            }
+            [[maybe_unused]] const mt::LockGuard guard(_mutex);
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
-
-        // If the current allocation requires a resize to a smaller buffer
-        if (oldSize >= newSize)
+        else
         {
-            return oldMemory; // Return the old address
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
-
-        // Else make new allocations
-        auto newPtr = malloc(newSize, alignment);
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            if (newPtr == nullptr)
-            {
-                return nullptr;
-            }
-        }
-        return memmove(newPtr, oldMemory, oldSize);
     }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
-        void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
+        void* pBuffer, const size_t oldSize, const size_t newSize, const size_t alignment)
         requires(Type == StackPolicy::Strict)
     {
         PMM_ASSERT_MSG(
-            oldMemory != nullptr,
+            pBuffer != nullptr,
             "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
         PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || !std::has_single_bit(alignment) ||
-                alignment < 1)
+            if (pBuffer == nullptr || newSize == 0 || oldSize == 0 || !std::has_single_bit(alignment) || alignment < 1)
             {
                 return nullptr;
             }
         }
-        // Used for comparing if two offsets are matching giving us whether the resize is of the latest
-        // allocation
-        const auto currentOffset = reinterpret_cast<uintptr_t>(oldMemory) - reinterpret_cast<uintptr_t>(_buffer);
-
-        // If the current allocation requires a resize to a smaller buffer
-        // Since current offset retrieve the top of the start address exclusive of header size
-        // We need to account for that.
-        const size_t isLatestAllocation = _prevOffset == currentOffset - sizeof(StrictStackHeader);
-        if (oldSize >= newSize)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            // Move the offset by the difference
-            // If the allocation is not the latest don't move the offset.
-            _offset -= isLatestAllocation * (oldSize - newSize);
-            if constexpr (TelemetryPolicy == TelPolicy::Enabled)
-            {
-                _telemetry.decStackUsage(isLatestAllocation * (oldSize - newSize), 0);
-            }
-            return oldMemory; // Return the old address
+            [[maybe_unused]] const mt::LockGuard guard(_mutex);
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
-
-        // Larger allocation can either be added to (in case of lastest allocation)
-        // or provided with a new memory address
-        if (isLatestAllocation)
+        else
         {
-            PMM_ASSERT_MSG(_offset + (newSize - oldSize) <= _stackSize, "Insufficient memory for resize.");
-            if constexpr (SafeMode == SafeModePolicy::Safe)
-            {
-                if (_offset + (newSize - oldSize) > _stackSize)
-                {
-                    return nullptr;
-                }
-            }
-            _offset += newSize - oldSize; // Size difference
-            if constexpr (TelemetryPolicy == TelPolicy::Enabled)
-            {
-                _telemetry.incStackUsage(newSize - oldSize, 0);
-            }
-            return oldMemory;
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
-
-        auto newPtr = malloc(newSize, alignment);
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            if (newPtr == nullptr)
-            {
-                return nullptr;
-            }
-        }
-        return memmove(newPtr, oldMemory, oldSize);
     }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeFast(
-        const void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
+        const void* pBuffer, const size_t oldSize, const size_t newSize, const size_t alignment)
     {
         PMM_ASSERT_MSG(
-            oldMemory != nullptr,
+            pBuffer != nullptr,
             "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
         PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
+            if (pBuffer == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
             {
                 return nullptr;
             }
@@ -380,24 +324,24 @@ namespace pmm
             }
         }
 
-        return memmove(newPtr, oldMemory, oldSize);
+        return memmove(newPtr, pBuffer, oldSize);
     }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
-        void* oldMemory, const size_t oldSize, const size_t newSize)
+        void* pBuffer, const size_t oldSize, const size_t newSize)
         requires(Type == StackPolicy::Loose)
     {
         PMM_ASSERT_MSG(
-            oldMemory != nullptr,
+            pBuffer != nullptr,
             "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
         PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 ||
+            if (pBuffer == nullptr || newSize == 0 || oldSize == 0 ||
                 (newSize > oldSize && _offset + (newSize - oldSize) > _stackSize))
             {
                 return nullptr;
@@ -418,28 +362,28 @@ namespace pmm
                 _telemetry.decStackUsage(oldSize - newSize, 0);
             }
         }
-        return oldMemory;
+        return pBuffer;
     }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
-        void* oldMemory, const size_t oldSize, const size_t newSize)
+        void* pBuffer, const size_t oldSize, const size_t newSize)
         requires(Type == StackPolicy::Strict)
     {
         PMM_ASSERT_MSG(
-            oldMemory != nullptr,
+            pBuffer != nullptr,
             "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
         PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
         PMM_ASSERT_MSG(oldSize != 0, "Cannot resize from 0 size.");
-        PMM_ASSERT_MSG(reinterpret_cast<uintptr_t>(oldMemory) ==
+        PMM_ASSERT_MSG(reinterpret_cast<uintptr_t>(pBuffer) ==
                            reinterpret_cast<uintptr_t>(_buffer) + _prevOffset + sizeof(StrictStackHeader),
                        "Out-of-order resize. resizeLast will only allow resizing the latest allocation.");
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (oldMemory == nullptr || newSize == 0 || oldSize == 0 ||
-                reinterpret_cast<uintptr_t>(oldMemory) !=
+            if (pBuffer == nullptr || newSize == 0 || oldSize == 0 ||
+                reinterpret_cast<uintptr_t>(pBuffer) !=
                     reinterpret_cast<uintptr_t>(_buffer) + _prevOffset + sizeof(StrictStackHeader) ||
                 (newSize > oldSize && _offset + (newSize - oldSize) > _stackSize))
             {
@@ -461,7 +405,7 @@ namespace pmm
                 _telemetry.decStackUsage(oldSize - newSize, 0);
             }
         }
-        return oldMemory;
+        return pBuffer;
     }
 
 
@@ -574,7 +518,6 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::clear()
-        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         _offset = 0;
         if constexpr (Type == StackPolicy::Strict)
@@ -591,7 +534,6 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::zeroOut() const noexcept
-        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     { std::memset(_buffer, 0, _stackSize); }
 
 
@@ -600,6 +542,7 @@ namespace pmm
     PMM_INLINE Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::~Stack() noexcept
         requires(MemoryPolicy == MemPolicy::Internal)
     { memFree(_buffer, _stackSize); }
+
 
 
     /**************************************
@@ -681,5 +624,96 @@ namespace pmm
         return currentAddress;
     }
 
+
+    template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_resizeInternal(
+        void* pBuffer, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+        requires(Type == StackPolicy::Loose)
+    {
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (pBuffer == nullptr || newSize == 0 || oldSize == 0 || std::has_single_bit(alignment) || alignment < 1)
+            {
+                return nullptr;
+            }
+        }
+
+        // If the current allocation requires a resize to a smaller buffer
+        if (oldSize >= newSize)
+        {
+            return pBuffer; // Return the old address
+        }
+
+        // Else make new allocations
+        auto newPtr = malloc(newSize, alignment);
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (newPtr == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        return memmove(newPtr, pBuffer, oldSize);
+    }
+
+
+    template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_resizeInternal(
+        void* pBuffer, size_t oldSize, size_t newSize, size_t alignment) noexcept
+        requires(Type == StackPolicy::Strict)
+    {
+
+        // Used for comparing if two offsets are matching giving us whether the resize is of the latest
+        // allocation
+        const auto currentOffset = reinterpret_cast<uintptr_t>(pBuffer) - reinterpret_cast<uintptr_t>(_buffer);
+
+        // If the current allocation requires a resize to a smaller buffer
+        // Since current offset retrieve the top of the start address exclusive of header size
+        // We need to account for that.
+        const size_t isLatestAllocation = _prevOffset == currentOffset - sizeof(StrictStackHeader);
+        if (oldSize >= newSize)
+        {
+            // Move the offset by the difference
+            // If the allocation is not the latest don't move the offset.
+            _offset -= isLatestAllocation * (oldSize - newSize);
+            if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+            {
+                _telemetry.decStackUsage(isLatestAllocation * (oldSize - newSize), 0);
+            }
+            return pBuffer; // Return the old address
+        }
+
+        // Larger allocation can either be added to (in case of lastest allocation)
+        // or provided with a new memory address
+        if (isLatestAllocation)
+        {
+            PMM_ASSERT_MSG(_offset + (newSize - oldSize) <= _stackSize, "Insufficient memory for resize.");
+            if constexpr (SafeMode == SafeModePolicy::Safe)
+            {
+                if (_offset + (newSize - oldSize) > _stackSize)
+                {
+                    return nullptr;
+                }
+            }
+            _offset += newSize - oldSize; // Size difference
+            if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+            {
+                _telemetry.incStackUsage(newSize - oldSize, 0);
+            }
+            return pBuffer;
+        }
+
+        auto newPtr = malloc(newSize, alignment);
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (newPtr == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        return memmove(newPtr, pBuffer, oldSize);
+    }
 
 } // namespace pmm

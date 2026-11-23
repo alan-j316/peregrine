@@ -190,7 +190,7 @@ namespace pmm
 
         /**
          * @brief Free the entire pool, resetting to a fresh state.
-         * @warning The method is not thread-safe under any thread-safe policy.
+         * @warning Clearing in multithreaded environments is Undefined Behavior.
          *
          * @relatedalso  free
          * @relatedalso  mfree

@@ -367,17 +367,17 @@ namespace pmm
          * @note Resize is a slow method due to potential branch mispredictions
          *       and must be used judiciously.
          *
-         * @param block     The starting memory address of the memory.
+         * @param pBuffer   The starting memory address of the memory.
          * @param oldSize   The originally allocated size of the block.
          * @param newSize   The size to resize to.
          * @param alignment The new alignment.
          */
-        [[nodiscard]] constexpr void* resize(void* block, size_t oldSize, size_t newSize,
+        [[nodiscard]] constexpr void* resize(void* pBuffer, size_t oldSize, size_t newSize,
                                              size_t alignment = sizeof(void*)) noexcept;
 
 
         /// @brief Invalidates and resets all allocations made by TLSF.
-        /// @warning The method is not thread-safe under any thread-safe policy
+        /// @warning Clearing in multithreaded environments is Undefined Behavior.
         constexpr void clear() noexcept;
 
 

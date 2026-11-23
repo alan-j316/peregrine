@@ -33,7 +33,7 @@ namespace
     class InternallyManagedStrictStack_MTTests: public testing::Test // NOLINT
     {
     public:
-        static constexpr size_t SIZE = 1_MB;
+        static constexpr size_t SIZE = 2_MB;
         pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled,
                    pmm::SafeModePolicy::Unsafe, pmm::mt::MTPolicy::SpinLock>
             stack{ SIZE };
@@ -42,7 +42,7 @@ namespace
     class ExternallyManagedStrictStack_MTTests: public testing::Test // NOLINT
     {
     public:
-        static constexpr size_t SIZE = 1_MB;
+        static constexpr size_t SIZE = 2_MB;
         uint8_t* mem                 = new uint8_t[SIZE];
         pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Enabled,
                    pmm::SafeModePolicy::Unsafe, pmm::mt::MTPolicy::SpinLock>
@@ -367,136 +367,272 @@ TEST_F(InternallyManagedStrictStack_MTTests, AllocV_ConcurrentAllocationsDoNotCo
 }
 
 
-// TEST_F(InternallyManagedStrictStack_MTTests, ResizeToSmallerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 32;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(InternallyManagedStrictStack_MTTests, ResizeToSameSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, allocSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(InternallyManagedStrictStack_MTTests, ResizeToLargerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 700;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 128;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
+TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
 
 TEST_F(InternallyManagedStrictStack_MTTests, MoveCtor_MovesTheAllocator)
 {
@@ -800,136 +936,270 @@ TEST_F(ExternallyManagedStrictStack_MTTests, AllocV_ConcurrentAllocationsDoNotCo
 }
 
 
-// TEST_F(ExternallyManagedStrictStack_MTTests, ResizeToSmallerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 32;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(ExternallyManagedStrictStack_MTTests, ResizeToSameSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, allocSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(ExternallyManagedStrictStack_MTTests, ResizeToLargerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 700;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 128;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(stack.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
+TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(stack.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = stack.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
 
 
 TEST_F(ExternallyManagedStrictStack_MTTests, MoveCtor_MovesTheAllocator)

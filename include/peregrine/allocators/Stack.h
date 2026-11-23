@@ -271,7 +271,7 @@ namespace pmm
          *
          * @warning In **Release Mode** safety checks for nullptr, and 0 sizes are disabled.
          *
-         * @param[in] oldMemory The pointer to the memory to resize.
+         * @param[in] pBuffer   The pointer to the memory to resize.
          * @param[in] oldSize   The current size of @p oldMemory.
          * @param[in] newSize   The size to resize @p oldMemory to.
          * @param[in] alignment The required alignment.
@@ -284,7 +284,7 @@ namespace pmm
          * @relatedalso resizeFast
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resize(void* oldMemory, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
+        [[nodiscard]] void* resize(void* pBuffer, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
             requires(Type == StackPolicy::Loose);
 
 
@@ -298,7 +298,7 @@ namespace pmm
          *
          * @warning In **Release Mode** safety checks for nullptr, and 0 sizes are disabled.
          *
-         * @param[in] oldMemory The pointer to the memory to resize.
+         * @param[in] pBuffer   The pointer to the memory to resize.
          * @param[in] oldSize   The current size of @p oldMemory.
          * @param[in] newSize   The size to resize @p oldMemory to.
          * @param[in] alignment The required alignment.
@@ -311,7 +311,7 @@ namespace pmm
          * @relatedalso resizeFast
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resize(void* oldMemory, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
+        [[nodiscard]] void* resize(void* pBuffer, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
             requires(Type == StackPolicy::Strict);
 
 
@@ -328,7 +328,7 @@ namespace pmm
          * @warning Never use this for the latest allocations, as this method bypasses all checks and
          *          allocate a new buffer.
          *
-         * @param[in] oldMemory The pointer to the memory to resize.
+         * @param[in] pBuffer   The pointer to the memory to resize.
          * @param[in] oldSize   The current size of @p oldMemory.
          * @param[in] newSize   The size to resize @p oldMemory to.
          * @param[in] alignment The required alignment.
@@ -339,7 +339,7 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resizeFast(const void* oldMemory, size_t oldSize, size_t newSize,
+        [[nodiscard]] void* resizeFast(const void* pBuffer, size_t oldSize, size_t newSize,
                                        size_t alignment = sizeof(void*));
 
 
@@ -352,9 +352,9 @@ namespace pmm
          * @warning In **Release Mode** safety checks for `nullptr`, and 0 sizes are disabled.
          * @warning Use only on latest allocations.
          *
-         * @param[in] oldMemory The pointer to the memory to resize.
-         * @param[in] oldSize   The current size of @p oldMemory.
-         * @param[in] newSize   The size to resize @p oldMemory to.
+         * @param[in] pBuffer Pointer to the memory to resize.
+         * @param[in] oldSize The current size of @p oldMemory.
+         * @param[in] newSize The size to resize @p oldMemory to.
          *
          * @return A reference to the passed-in memory location.
          *
@@ -363,7 +363,7 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeFast
          */
-        [[nodiscard]] void* resizeLast(void* oldMemory, size_t oldSize, size_t newSize)
+        [[nodiscard]] void* resizeLast(void* pBuffer, size_t oldSize, size_t newSize)
             requires(Type == StackPolicy::Loose);
 
 
@@ -377,9 +377,9 @@ namespace pmm
          * @warning In **Release Mode** safety checks for `nullptr`, and 0 sizes are disabled.
          * @warning Use only on latest allocations, otherwise memory corruption can occur.
          *
-         * @param[in] oldMemory The pointer to the memory to resize.
-         * @param[in] oldSize   The current size of @p oldMemory.
-         * @param[in] newSize   The size to resize @p oldMemory to.
+         * @param[in] pBuffer Pointer to the memory to resize.
+         * @param[in] oldSize The current size of @p oldMemory.
+         * @param[in] newSize The size to resize @p oldMemory to.
          *
          * @return A reference to the passed-in memory location.
          *
@@ -388,7 +388,7 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeFast
          */
-        [[nodiscard]] void* resizeLast(void* oldMemory, size_t oldSize, size_t newSize)
+        [[nodiscard]] void* resizeLast(void* pBuffer, size_t oldSize, size_t newSize)
             requires(Type == StackPolicy::Strict);
 
 
@@ -487,13 +487,12 @@ namespace pmm
         /**
          * @brief Free the entire stack, resetting to a fresh state.
          *
-         * @warning Clearing is disallowed in multithreaded environments.
+         * @warning Clearing in multithreaded environments is Undefined Behavior.
          *
          * @relatedalso  free
          * @relatedalso  mfree
          */
-        void clear()
-            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
+        void clear();
 
 
         /**
@@ -501,10 +500,9 @@ namespace pmm
          *
          * @warning This will completely overwrite the stack entire buffer with zeroes. Only call this method if you
          *          want a zero-ed out stack after clearing.
-         * @warning Zeroing out from the stack is disallowed in multithreaded environments.
+         * @warning Zeroing out in multithreaded environments is Undefined Behavior.
          */
-        void zeroOut() const noexcept
-            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
+        void zeroOut() const noexcept;
 
 
         /**
@@ -566,6 +564,31 @@ namespace pmm
          * @return Nullptr if allocation failed in *Release Mode* with SafeMode turned on.
          */
         void* _mallocInternal(size_t size, size_t alignment) noexcept;
+
+
+        /**
+         * @brief Internal helper for resizing an allocated memory.
+         * @param pBuffer   Pointer to the memory to resize.
+         * @param oldSize   The old size.
+         * @param newSize   The new size.
+         * @param alignment The new alignment.
+         * @return A pointer to the resized memory.
+         */
+        [[nodiscard]] void* _resizeInternal(void* pBuffer, size_t oldSize, size_t newSize,
+                                            size_t alignment = sizeof(void*)) noexcept
+            requires(Type == StackPolicy::Loose);
+
+        /**
+         * @brief Internal helper for resizing an allocated memory.
+         * @param pBuffer   Pointer to the memory to resize.
+         * @param oldSize   The old size.
+         * @param newSize   The new size.
+         * @param alignment The new alignment.
+         * @return A pointer to the resized memory.
+         */
+        [[nodiscard]] void* _resizeInternal(void* pBuffer, size_t oldSize, size_t newSize,
+                                            size_t alignment = sizeof(void*)) noexcept
+            requires(Type == StackPolicy::Strict);
 
 
 #ifdef ENABLE_PMM_TESTS

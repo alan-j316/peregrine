@@ -285,7 +285,7 @@ namespace pmm
          *
          * @note This is not a hard reset.
          *       All memory states may/may not get erased.
-         *
+         * @warning Zeroing out in multithreaded environments is Undefined Behavior.
          */
         void clear() noexcept;
 
@@ -295,6 +295,7 @@ namespace pmm
          *
          * @warning This will completely overwrite the arena entire buffer with zeroes. Only call this method if you
          *          want a zero-ed out arena after clearing.
+         * @warning Zeroing out in multithreaded environments is Undefined Behavior.
          */
         void zeroOut() const noexcept;
 

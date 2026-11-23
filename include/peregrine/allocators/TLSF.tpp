@@ -547,16 +547,16 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr void* TLSF<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
-        void* block, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+        void* pBuffer, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
     {
-        PMM_ASSERT_MSG(block != nullptr && oldSize > 0,
+        PMM_ASSERT_MSG(pBuffer != nullptr && oldSize > 0,
                        "[TLSF]: Cannot resize a nullptr or a zero sized block. Use `malloc` for creating a new block");
         PMM_ASSERT_MSG(newSize > 0, "[TLSF]: Cannot resize to 0 bytes. Use `mfree` for freeing memory.");
         PMM_ASSERT_MSG(std::has_single_bit(alignment), "[TLSF]: Cannot resize to a non-power of 2 alignment");
 
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (block == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment))
+            if (pBuffer == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment))
             {
                 return nullptr;
             }
@@ -564,11 +564,11 @@ namespace pmm
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
-            return _resizeInternal(block, oldSize, newSize, alignment);
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
         else
         {
-            return _resizeInternal(block, oldSize, newSize, alignment);
+            return _resizeInternal(pBuffer, oldSize, newSize, alignment);
         }
     }
 
