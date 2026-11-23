@@ -14,7 +14,6 @@
 #include "../memory/Memory.h"
 
 #include <bit>
-#include <cassert>
 #include <cstring>
 #include <span>
 #include <utility>
@@ -88,7 +87,7 @@ namespace pmm
             return *this;
         }
 
-        if constexpr ((MemoryPolicy == MemPolicy::Internal))
+        if constexpr (MemoryPolicy == MemPolicy::Internal)
         {
             memFree(_buffer, _arenaSize);
         }
@@ -182,10 +181,10 @@ namespace pmm
     PMM_INLINE T* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(Args... args) noexcept
     {
         // Allocate memory in the arena.
-        void* raw = malloc(sizeof(T), alignof(T));
+        void* pRaw = malloc(sizeof(T), alignof(T));
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (raw == nullptr)
+            if (pRaw == nullptr)
             {
                 return nullptr;
             }
@@ -193,7 +192,7 @@ namespace pmm
 
 
         // Instantiate the object with arguments.
-        return new (raw) T(std::forward<Args>(args)...);
+        return new (pRaw) T(std::forward<Args>(args)...);
     }
 
 
@@ -298,12 +297,6 @@ namespace pmm
     }
 
 
-    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
-              mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr const ArenaTelemetryType<TelemetryPolicy>& Arena<
-        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getTelemetry() const noexcept
-    { return _telemetry; }
-
 
     /// +---------------------------------------------------------------------------------------+
     /// |                                HELPER METHODS                                         |
@@ -378,9 +371,9 @@ namespace pmm
             }
         }
 
-        void* newLocation = _mallocInternal(newSize, alignment);
-        memmove(newLocation, pOldMemory, oldSize);
-        return newLocation;
+        void* pNewLocation = _mallocInternal(newSize, alignment);
+        memmove(pNewLocation, pOldMemory, oldSize);
+        return pNewLocation;
     }
 
 } // namespace pmm

@@ -39,16 +39,16 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Stack(
-        void* buffer, const size_t bufferSize) noexcept
+        void* pBuffer, const size_t bufferSize) noexcept
         requires(MemoryPolicy == MemPolicy::External)
-        : _buffer{ static_cast<uint8_t*>(buffer) },
+        : _buffer{ static_cast<uint8_t*>(pBuffer) },
           _stackSize{ bufferSize },
           _prevOffset{},
           _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(bufferSize) },
           _mutex{}
     {
         PMM_ASSERT_MSG(bufferSize > 0, "Cannot allocate a zero size stack");
-        PMM_ASSERT_MSG(buffer != nullptr, "Stack backing buffer must not be a nullptr");
+        PMM_ASSERT_MSG(pBuffer != nullptr, "Stack backing buffer must not be a nullptr");
     }
 
 
@@ -191,15 +191,15 @@ namespace pmm
     PMM_INLINE T* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::alloc(
         Args... args) noexcept
     {
-        auto rawMemory = malloc(sizeof(T), alignof(T));
+        auto pRawMem = malloc(sizeof(T), alignof(T));
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (rawMemory == nullptr)
+            if (pRawMem == nullptr)
             {
                 return nullptr;
             }
         }
-        return new (rawMemory) T(std::forward<Args>(args)...);
+        return new (pRawMem) T(std::forward<Args>(args)...);
     }
 
 
@@ -293,16 +293,16 @@ namespace pmm
             }
         }
 
-        auto newPtr = malloc(newSize, alignment);
+        auto pRawMem = malloc(newSize, alignment);
         if constexpr (SafeMode == SafeModePolicy::Safe)
         {
-            if (newPtr == nullptr)
+            if (pRawMem == nullptr)
             {
                 return nullptr;
             }
         }
 
-        return memmove(newPtr, pBuffer, oldSize);
+        return memmove(pRawMem, pBuffer, oldSize);
     }
 
 
@@ -594,8 +594,8 @@ namespace pmm
 
         // Store the header behind the allocated address
         const auto currentAddress = _buffer + _offset;
-        auto* header              = reinterpret_cast<LooseStackHeader*>(currentAddress - sizeof(LooseStackHeader));
-        header->padding           = padding;
+        auto* pHeader             = reinterpret_cast<LooseStackHeader*>(currentAddress - sizeof(LooseStackHeader));
+        pHeader->padding          = padding;
 
         _offset += size;
         if constexpr (TelemetryPolicy == TelPolicy::Enabled)
@@ -634,9 +634,9 @@ namespace pmm
 
         // Store the header behind the allocated address
         const auto currentAddress = _buffer + _offset;
-        auto* header              = reinterpret_cast<StrictStackHeader*>(currentAddress - sizeof(StrictStackHeader));
-        header->padding           = padding;
-        header->prevOffset        = prevAllocOffset;
+        auto* pHeader             = reinterpret_cast<StrictStackHeader*>(currentAddress - sizeof(StrictStackHeader));
+        pHeader->padding          = padding;
+        pHeader->prevOffset       = prevAllocOffset;
 
         _offset += size;
         if constexpr (TelemetryPolicy == TelPolicy::Enabled)

@@ -305,7 +305,8 @@ namespace pmm
          * @brief Get the telemetry instance associated with this arena.
          * @return A const reference to the @ref ArenaTelemetry instance.
          */
-        [[nodiscard]] constexpr const ArenaTelemetryType<TelemetryPolicy>& getTelemetry() const noexcept;
+        [[nodiscard]] PMM_INLINE constexpr const ArenaTelemetryType<TelemetryPolicy>& getTelemetry() const noexcept
+        { return _telemetry; };
 
 
     private:

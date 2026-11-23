@@ -27,7 +27,7 @@ namespace
     class TLSFTelemetryTests: public testing::Test
     {
     public:
-        std::size_t size{ 10240 };
+        size_t size{ 10240 };
         pmm::TLSFTelemetry telemetry{ size };
     };
 

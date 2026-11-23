@@ -228,7 +228,8 @@ namespace pmm
          *
          * @return A telemetry instance if telemetry policy is not Disabled, else an empty struct.
          */
-        [[nodiscard]] constexpr const PoolTelemetryType<TelemetryPolicy>& getTelemetry() const noexcept;
+        [[nodiscard]] PMM_INLINE constexpr const PoolTelemetryType<TelemetryPolicy>& getTelemetry() const noexcept
+        { return _telemetry; };
 
 
         /**

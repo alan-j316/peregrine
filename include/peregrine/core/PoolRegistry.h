@@ -42,10 +42,10 @@ namespace pmm
         {
             // For a registry reset we can update the bitset to 0xFFFFFFFF
             // indicating all the "slots" are free.
-            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            for (size_t i = 0; i < BITSET_ARRAY_SIZE; ++i)
             {
                 _bitset[i] = static_cast<RegistryBitset_t>(~0ULL);
-                std::memset(_data, 0, sizeof(Klass) * Count);
+                std::memset(_data.data(), 0, sizeof(Klass) * Count);
             }
         }
 
@@ -74,7 +74,7 @@ namespace pmm
             }
 #endif
             // Get the index of the next free block
-            const auto blockIdx = getNextIndex();
+            const auto blockIdx = _getNextIndex();
             // Map pure block index to a proper memory location index.
             const auto trueIdx = blockIdx * sizeof(Klass);
             // Example:
@@ -89,14 +89,14 @@ namespace pmm
          * @brief Destroy the object allocate with @ref create and free the memory.
          * @note  The method will call the object's destructor.
          *
-         * @param klass The class instance to free.
+         * @param pKlass The class instance to free.
          */
-        constexpr void free(const Klass* klass) noexcept
+        constexpr void free(const Klass* pKlass) noexcept
         {
             // Call the dtor if the klass is not trivially destructible.
             if constexpr (!std::is_trivially_destructible_v<Klass>)
             {
-                klass->~Klass();
+                pKlass->~Klass();
             }
 
             // For freeing an instance we can get the bitset index from the memory address
@@ -104,13 +104,13 @@ namespace pmm
             // and then invert the bit at that location to 1 to indicate a free.
 
             // Calculate the true offset for the class's pointer
-            const auto trueIdx = reinterpret_cast<uintptr_t>(klass) - reinterpret_cast<uintptr_t>(_data);
+            const auto trueIdx = reinterpret_cast<uintptr_t>(pKlass) - reinterpret_cast<uintptr_t>(_data.data());
             // Use the size of the class to compute the bitset
             // Optimization: If the Klass has a size of power of 2, then we can use shifts instead of pure division
-            size_t bitsetIdx = 0;
+            size_t bitsetIdx;
             if constexpr (std::has_single_bit(sizeof(Klass)))
             {
-                bitsetIdx = trueIdx >> std::countr_zero(sizeof(Klass));
+                bitsetIdx = trueIdx >> std::countr_zero(sizeof(Klass)); // NOLINT
             }
             else
             {
@@ -120,7 +120,7 @@ namespace pmm
             constexpr auto typeSizeInBits = sizeof(RegistryBitset_t) * 8;
             // To divide by power of 2, we need to get the n(typeSizeBitPosition) from 2^n.
             constexpr auto typeSizeBitPosition = std::countr_zero(typeSizeInBits);
-            const auto arrIdx                  = bitsetIdx >> typeSizeBitPosition;
+            const auto arrIdx                  = bitsetIdx >> typeSizeBitPosition; // NOLINT
             // Modulo: x & (n - 1) (where n is the divisor)
             const auto trueBitIdx = bitsetIdx & (typeSizeInBits - 1);
             // std::cout << std::format("Trying to free [{}] | {}", arrIdx, trueBitIdx) << std::endl;
@@ -150,7 +150,7 @@ namespace pmm
         /**
          * @brief Get the total number of elements the container is able to hold.
          */
-        [[nodiscard]] constexpr size_t capacity() const noexcept { return Count; }
+        [[nodiscard]] static constexpr size_t capacity() noexcept { return Count; }
 
 
         /**
@@ -160,7 +160,7 @@ namespace pmm
         {
             bool isEmpty = true;
             PEREGRINE_LOOP_UNROLL()
-            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            for (size_t i = 0; i < BITSET_ARRAY_SIZE; ++i)
             {
                 isEmpty = isEmpty && _bitset[i] == static_cast<RegistryBitset_t>(~0ULL);
             }
@@ -175,7 +175,7 @@ namespace pmm
         {
             bool isFull = true;
             PEREGRINE_LOOP_UNROLL()
-            for (size_t i = 0; i < _BitsetArraySize; ++i)
+            for (size_t i = 0; i < BITSET_ARRAY_SIZE; ++i)
             {
                 isFull = isFull && _bitset[i] == 0;
             }
@@ -188,7 +188,7 @@ namespace pmm
          * @brief Returns the next free index and mark it as used.
          * @return The next free block index; not the pure offset for memory location.
          */
-        [[nodiscard]] constexpr size_t getNextIndex() noexcept
+        [[nodiscard]] constexpr size_t _getNextIndex() noexcept
         {
             constexpr size_t fullZero = sizeof(RegistryBitset_t) * 8; // 64 for a 64-bit integral indicating full zeros;
             size_t idx                = fullZero;
@@ -198,7 +198,7 @@ namespace pmm
             // NOTE: Bitset's LSB is the 0th bit of the value at zeroth index.
             size_t i = 0;
             PEREGRINE_LOOP_UNROLL()
-            for (; i < _BitsetArraySize && idx == fullZero; ++i)
+            for (; i < BITSET_ARRAY_SIZE && idx == fullZero; ++i)
             {
                 // Get the minimum index from the bit set block where there is a 1(free slot)
                 idx = std::min<size_t>(std::countl_zero(_bitset[i]), idx);
@@ -213,14 +213,14 @@ namespace pmm
         }
 
     private:
-        static constexpr size_t _Bit = sizeof(RegistryBitset_t) * 8;
+        static constexpr size_t BIT = sizeof(RegistryBitset_t) * 8;
         /// Count clamped to a minimum of 1 to prevent zero-sized array in struct/union error.
-        static constexpr size_t MinCount = (Count == 0) ? 1 : Count;
+        static constexpr size_t MIN_COUNT = (Count == 0) ? 1 : Count;
         /// Array size for storing the bitsets.
-        static constexpr size_t _BitsetArraySize = (MinCount + _Bit - 1) / _Bit;
+        static constexpr size_t BITSET_ARRAY_SIZE = (MIN_COUNT + BIT - 1) / BIT;
 
-        alignas(Klass) uint8_t _data[sizeof(Klass) * MinCount]{}; /// Storage
-        RegistryBitset_t _bitset[_BitsetArraySize]{};             /// Bitset
+        alignas(Klass) std::array<uint8_t, sizeof(Klass) * MIN_COUNT> _data{}; /// Storage
+        std::array<RegistryBitset_t, BITSET_ARRAY_SIZE> _bitset{};             /// Bitset
     };
 } // namespace pmm
 

@@ -20,11 +20,11 @@
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
     #include <immintrin.h>
-    #define _PMM_MT_YIELD() _mm_pause()
+    #define PMM_MT_YIELD() _mm_pause()
 #elif defined(__arm64__) || defined(_M_ARM64)
-    #define _PMM_MT_YIELD() __asm__ __volatile__("isb sy" : : : "memory")
+    #define PMM_MT_YIELD() __asm__ __volatile__("isb sy" : : : "memory")
 #else
-    #define _PMM_MT_YIELD()
+    #define PMM_MT_YIELD()
 #endif
 
 namespace pmm::mt
@@ -48,7 +48,7 @@ namespace pmm::mt
         {
             while (_flag.test_and_set(std::memory_order_acquire))
             {
-                _PMM_MT_YIELD();
+                PMM_MT_YIELD();
             }
         }
         void unlock() { _flag.clear(std::memory_order_release); }
@@ -69,8 +69,8 @@ namespace pmm::mt
     {
     public:
         DummySpinLock() noexcept = default;
-        void lock() noexcept {}
-        void unlock() noexcept {}
+        void lock() noexcept {}   // NOLINT
+        void unlock() noexcept {} // NOLINT
 
         DummySpinLock(const DummySpinLock& other)                = delete;
         DummySpinLock(DummySpinLock&& other) noexcept            = delete;

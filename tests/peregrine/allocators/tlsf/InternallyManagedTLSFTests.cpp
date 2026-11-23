@@ -950,7 +950,7 @@ namespace pmm
     TEST_F(InternallyManagedTLSFTests, Ctor_CreatesValidFLAndSLBitmaps)
     {
         // Get the FL and SL bitmaps corresponding to our size.
-        const auto [flIndex, slIndex] = tlsf.mappingInsert(tlsfSize);
+        const auto [flIndex, slIndex] = tlsf._mappingInsert(tlsfSize);
         const auto expectedFLBitmap   = 1ULL << flIndex;
         const auto expectedSLBitmap   = 1ULL << slIndex;
 
@@ -1020,7 +1020,7 @@ namespace pmm
         }
 
         ASSERT_NE(nullptr, freeNode);
-        const auto header = TLSF<>::getHeader(freeNode);
+        const auto header = TLSF<>::_getHeader(freeNode);
 
         EXPECT_EQ(tlsfSize, header->getSize());
         EXPECT_TRUE(header->isFree());
@@ -1142,7 +1142,7 @@ namespace pmm
     TEST_P(InternallyManagedTLSF_MappingInsertTests, ReturnsValidFLAndSLIndices)
     {
         const auto [size, expectedFl, expectedSl] = GetParam();
-        const auto [fl, sl]                       = TLSF<>::mappingInsert(size);
+        const auto [fl, sl]                       = TLSF<>::_mappingInsert(size);
         EXPECT_EQ(expectedFl, fl);
         EXPECT_EQ(expectedSl, sl);
     }
@@ -1152,7 +1152,7 @@ namespace pmm
     TEST_P(InternallyManagedTLSF_MappingSearchTests, ReturnsValidFLAndSLIndices)
     {
         const auto [size, expectedFl, expectedSl] = GetParam();
-        const auto [fl, sl]                       = TLSF<>::mappingSearch(size);
+        const auto [fl, sl]                       = TLSF<>::_mappingSearch(size);
         EXPECT_EQ(expectedFl, fl);
         EXPECT_EQ(expectedSl, sl);
     }
@@ -1296,7 +1296,7 @@ namespace pmm
         }
 
         ASSERT_NE(nullptr, freeNode);
-        const auto freeHeader = TLSF<>::getHeader(freeNode);
+        const auto freeHeader = TLSF<>::_getHeader(freeNode);
 
         // Then the size of the header must be totalsize - allocatedSize(this will not be actual size
         // requested by the user, due to padding and metadata requirements).

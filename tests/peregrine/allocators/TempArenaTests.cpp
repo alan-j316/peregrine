@@ -30,8 +30,8 @@ namespace
     class TempArenaTests: public testing::Test
     {
     protected:
-        std::size_t _arenaSize = 2048;
-        pmm::Arena<>* _arena   = nullptr;
+        size_t _arenaSize    = 2048;
+        pmm::Arena<>* _arena = nullptr;
 
         void SetUp() override { _arena = new pmm::Arena(_arenaSize); }
     };

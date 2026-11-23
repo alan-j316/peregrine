@@ -30,7 +30,7 @@ namespace
     class ManagedLooseStackTelemetryIntegrationTests: public testing::Test
     {
     public:
-        std::size_t size = 2_MB;
+        size_t size = 2_MB;
         pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack{ size };
     };
 
@@ -39,7 +39,7 @@ namespace
     class ManagedStrictStackTelemetryIntegrationTests: public testing::Test
     {
     public:
-        std::size_t size = 2_MB;
+        size_t size = 2_MB;
         pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled> stack{ size };
     };
 
@@ -48,8 +48,8 @@ namespace
     class UnmanagedLooseStackTelemetryIntegrationTests: public testing::Test
     {
     public:
-        static constexpr std::size_t size = 2_MB;
-        uint8_t* buffer                   = new uint8_t[size];
+        static constexpr size_t size = 2_MB;
+        uint8_t* buffer              = new uint8_t[size];
         pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External, pmm::TelPolicy::Enabled> stack{ buffer, size };
 
     protected:
@@ -61,8 +61,8 @@ namespace
     class UnmanagedStrictStackTelemetryIntegrationTests: public testing::Test
     {
     public:
-        static constexpr std::size_t size = 2_MB;
-        uint8_t* buffer                   = new uint8_t[size];
+        static constexpr size_t size = 2_MB;
+        uint8_t* buffer              = new uint8_t[size];
         pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External, pmm::TelPolicy::Enabled> stack{ buffer, size };
 
     protected:

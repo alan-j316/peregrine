@@ -218,7 +218,7 @@ namespace pmm
          * @brief Get telemetry data for the memory manager.
          * @return A TLSF telemetry instance that measures the memory footprint of the manager's allocations.
          */
-        constexpr const TLSFTelemetry_t<TelemetryPolicy>& getTelemetry() const noexcept
+        [[nodiscard]] constexpr const TLSFTelemetry_t<TelemetryPolicy>& getTelemetry() const noexcept
         { return _internalAllocator.getTelemetry(); }
 
         // TODO: Add resize

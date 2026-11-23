@@ -96,15 +96,15 @@ namespace pmm
         /**
          * @brief Allocate a new physical memory vault from the Operating System.
          *
-         * @param[in,out] buffer The starting address to the backing buffer.
-         * @param[in] bufferSize The size of the backing buffer in bytes, which will directly
-         *                       translate into the stack size.
+         * @param[in,out] pBuffer The starting address to the backing buffer.
+         * @param[in] bufferSize  The size of the backing buffer in bytes, which will directly
+         *                        translate into the stack size.
          *
          * @remarks API specialized for @ref pmm::UnmanagedMemory.
          *
          * @warning This allocator is Linear and is NOT thread-safe by default.
          */
-        [[nodiscard]] explicit constexpr Stack(void* buffer, size_t bufferSize) noexcept
+        [[nodiscard]] explicit constexpr Stack(void* pBuffer, size_t bufferSize) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 
 

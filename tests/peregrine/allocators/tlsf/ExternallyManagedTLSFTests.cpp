@@ -952,7 +952,7 @@ namespace pmm
     TEST_F(ExternallyManagedTLSFTests, Ctor_CreatesValidFLAndSLBitmaps)
     {
         // Get the FL and SL bitmaps corresponding to our size.
-        const auto [flIndex, slIndex] = tlsf.mappingInsert(tlsfSize);
+        const auto [flIndex, slIndex] = tlsf._mappingInsert(tlsfSize);
         const auto expectedFLBitmap   = 1ULL << flIndex;
         const auto expectedSLBitmap   = 1ULL << slIndex;
 
@@ -1021,7 +1021,7 @@ namespace pmm
         }
 
         ASSERT_NE(nullptr, freeNode);
-        const auto header = TLSF<pmm::MemPolicy::External>::getHeader(freeNode);
+        const auto header = TLSF<pmm::MemPolicy::External>::_getHeader(freeNode);
 
         EXPECT_EQ(tlsfSize, header->getSize());
         EXPECT_TRUE(header->isFree());
@@ -1160,7 +1160,7 @@ namespace pmm
     TEST_P(ExternallyManagedTLSF_MappingInsertTests, ReturnsValidFLAndSLIndices)
     {
         const auto [size, expectedFl, expectedSl] = GetParam();
-        const auto [fl, sl]                       = TLSF<pmm::MemPolicy::External>::mappingInsert(size);
+        const auto [fl, sl]                       = TLSF<pmm::MemPolicy::External>::_mappingInsert(size);
         EXPECT_EQ(expectedFl, fl);
         EXPECT_EQ(expectedSl, sl);
     }
@@ -1170,7 +1170,7 @@ namespace pmm
     TEST_P(ExternallyManagedTLSF_MappingSearchTests, ReturnsValidFLAndSLIndices)
     {
         const auto [size, expectedFl, expectedSl] = GetParam();
-        const auto [fl, sl]                       = TLSF<pmm::MemPolicy::External>::mappingSearch(size);
+        const auto [fl, sl]                       = TLSF<pmm::MemPolicy::External>::_mappingSearch(size);
         EXPECT_EQ(expectedFl, fl);
         EXPECT_EQ(expectedSl, sl);
     }
@@ -1313,7 +1313,7 @@ namespace pmm
         }
 
         ASSERT_NE(nullptr, freeNode);
-        const auto freeHeader = TLSF<pmm::MemPolicy::External>::getHeader(freeNode);
+        const auto freeHeader = TLSF<pmm::MemPolicy::External>::_getHeader(freeNode);
 
         // Then the size of the header must be totalsize - allocatedSize(this will not be actual size
         // requested by the user, due to padding and metadata requirements).

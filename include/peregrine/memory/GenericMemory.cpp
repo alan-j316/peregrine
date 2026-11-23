@@ -20,7 +20,7 @@
 
 namespace pmm
 {
-    void* memAlloc(const std::size_t byteSize) noexcept // NOLINT(bugprone-exception-escape)
+    void* memAlloc(const size_t byteSize) noexcept // NOLINT(bugprone-exception-escape)
     {
         PMM_ASSERT_MSG(byteSize > 0, "Cannot allocate 0 bytes!");
         auto buffer = std::malloc(byteSize);
@@ -28,7 +28,7 @@ namespace pmm
     }
 
 
-    bool memFree(void* start, std::size_t) noexcept // NOLINT(bugprone-exception-escape)
+    bool memFree(void* start, size_t) noexcept // NOLINT(bugprone-exception-escape)
     {
         if (start == nullptr || size == 0)
         {

@@ -23,8 +23,8 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::TempArena(
-        Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>* arena) noexcept
-        : targetArena(arena), prevOffset(arena->_prevOffset), currentOffset(arena->_offset)
+        Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>* pArena) noexcept
+        : targetArena(pArena), prevOffset(pArena->_prevOffset), currentOffset(pArena->_offset)
     {}
 
 

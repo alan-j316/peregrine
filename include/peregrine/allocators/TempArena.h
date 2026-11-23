@@ -50,10 +50,10 @@ namespace pmm
         /**
          * @brief Create a temporary snapshot of the @p arena.
          *
-         * @param arena The arena to take a snapshot of.
+         * @param pArena The arena to take a snapshot of.
          */
         [[nodiscard]] explicit constexpr TempArena(
-            Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>* arena) noexcept;
+            Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>* pArena) noexcept;
 
 
         /**

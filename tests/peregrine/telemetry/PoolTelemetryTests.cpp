@@ -30,7 +30,7 @@ namespace
     class PoolTelemetryTests: public ::testing::Test
     {
     public:
-        std::size_t poolSize{ 10240 }, chunkSize{ 8 }, alignment{ 8 };
+        size_t poolSize{ 10240 }, chunkSize{ 8 }, alignment{ 8 };
         pmm::PoolTelemetry telemetry{ poolSize, chunkSize, alignment };
     };
 

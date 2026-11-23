@@ -20,21 +20,10 @@ namespace pmm
 {
 
     PMM_INLINE constexpr TLSFTelemetry::TLSFTelemetry(const size_t size) noexcept
-        : _currentBufferUsage(0),
-          _minBufferUsage(std::numeric_limits<size_t>::max()),
-          _peakBufferUsage(0),
-          _currentMetadataUsage(0),
+        : _minBufferUsage(std::numeric_limits<size_t>::max()),
           _minMetadataUsage(std::numeric_limits<size_t>::max()),
-          _peakMetadataUsage(0),
-          _currentPayloadUsage(0),
           _minPayloadUsage(std::numeric_limits<size_t>::max()),
-          _peakPayloadUsage(0),
-          _allocatorSize(size),
-          _largestFreeBlockSize(0),
-          _freeBlockCount(0),
-          _activeAllocationCount(0),
-          _lifetimeAllocationCount(0),
-          _lifetimeFreeCount(0)
+          _allocatorSize(size)
     {}
 
 
@@ -80,7 +69,7 @@ namespace pmm
     }
 
 
-    PMM_INLINE constexpr void TLSFTelemetry::incPayloadUsage(size_t size) noexcept
+    PMM_INLINE constexpr void TLSFTelemetry::incPayloadUsage(const size_t size) noexcept
     {
         _currentPayloadUsage += size;
         _currentBufferUsage += size;

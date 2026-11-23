@@ -241,14 +241,6 @@ namespace pmm
     { memFree(_buffer, _poolSize); }
 
 
-
-    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
-              mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr const PoolTelemetryType<TelemetryPolicy>& Pool<
-        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getTelemetry() const noexcept
-    { return _telemetry; }
-
-
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode,

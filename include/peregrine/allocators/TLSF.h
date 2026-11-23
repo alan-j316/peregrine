@@ -149,7 +149,7 @@ namespace pmm
         static constexpr size_t L = 6;
 
         static constexpr size_t FL_SIZE              = sizeof(Bitmask_t) * 8; // 64-bytes
-        static constexpr size_t SL_SIZE              = 1 << L;                // 2^L = 64 slots per FL
+        static constexpr size_t SL_SIZE              = 1u << L;               // 2^L = 64 slots per FL
         static constexpr size_t SPLIT_SIZE_THRESHOLD = 1ULL << FL_OFFSET;     // 64-bytes
 
 
@@ -312,12 +312,12 @@ namespace pmm
          *
          * @note Use @ref free to free object allocated with @ref alloc.
          *
-         * @param[in] block The block to free.
+         * @param[in] pBlock The block to free.
          *
          * @relatedalso free
          * @relatedalso clear
          */
-        constexpr void mfree(void* block) noexcept;
+        constexpr void mfree(void* pBlock) noexcept;
 
 
         /**
@@ -415,7 +415,7 @@ namespace pmm
          * @param[in] blockSize The block to search a match for.
          * @return The FL, and SL index for the rounded block size.
          */
-        static constexpr BitmapIndices mappingInsert(size_t blockSize) noexcept;
+        [[nodiscard]] static constexpr BitmapIndices _mappingInsert(size_t blockSize) noexcept;
 
 
         /**
@@ -432,7 +432,7 @@ namespace pmm
          * @param[in] blockSize The block to search a match for.
          * @return The FL, and SL index for the rounded block size.
          */
-        static constexpr BitmapIndices mappingSearch(size_t blockSize) noexcept;
+        [[nodiscard]] static constexpr BitmapIndices _mappingSearch(size_t blockSize) noexcept;
 
 
         /**
@@ -445,24 +445,24 @@ namespace pmm
          * @return A FreeNode pointer to the block at the given index, or to the adjacent block
          *         if the provided indices doesn't contain a free block.
          */
-        constexpr TLSFFreeNode* searchSuitableBlock(BitmapIndices& index) const noexcept;
+        [[nodiscard]] constexpr TLSFFreeNode* _searchSuitableBlock(BitmapIndices& index) const noexcept;
 
         /**
          * @brief Insert @p block into the freelist.
-         * @param[in] block     The memory block to insert.
+         * @param[in] pBlock    The memory block to insert.
          * @param[in] blockSize The size of the block.
          */
-        constexpr void insertBlock(uint8_t* block, size_t blockSize) noexcept;
+        constexpr void _insertBlock(uint8_t* pBlock, size_t blockSize) noexcept;
 
 
         /**
          * @brief Get the header from a freenode.
          *
-         * @param[in] node The node whose free node is to be found.
+         * @param[in] pNode The node whose free node is to be found.
          *
          * @return A pointer to header.
          */
-        static constexpr Header* getHeader(TLSFFreeNode* node) noexcept;
+        [[nodiscard]] static constexpr Header* _getHeader(TLSFFreeNode* pNode) noexcept;
 
 
         /**
@@ -470,45 +470,46 @@ namespace pmm
          *
          * @note The function expects the header to be placed at the start of @p block.
          *
-         * @param block The block to join with the previous block.
+         * @param pBlock The block to join with the previous block.
          *
          * @return The starting address of the previous block if it's free.
          * @return The given @p block address, otherwise.
          */
-        constexpr uint8_t* mergePrevious(uint8_t* block) noexcept;
+        [[nodiscard]] constexpr uint8_t* _mergePrevious(uint8_t* pBlock) noexcept;
 
         /**
          * @brief Merge this block with its next block if it's free.
          *
          * @note The function expects the header to be placed at the start of @p block.
          *
-         * @param block The block to join with the next block.
+         * @param pBlock The block to join with the next block.
          *
          * @return The given @p block address.
          */
-        constexpr uint8_t* mergeNext(uint8_t* block) noexcept;
+        [[nodiscard]] constexpr uint8_t* _mergeNext(uint8_t* pBlock) noexcept;
 
         /**
          * @brief Unlinks the block from the FL/SL bitmask and reset the bitmasks.
-         * @param block The block to unlink.
+         * @param pNode The block to unlink.
          */
-        constexpr void unlinkNode(TLSFFreeNode* block) noexcept;
+        constexpr void _unlinkNode(TLSFFreeNode* pNode) noexcept;
 
         /// @brief Get the largest free block size in the allocator freelist.
         /// @note This is an approximation as iterating through the allocator is expensive due to
         ///       the required while loop.
-        constexpr size_t getLargestBlockSize() noexcept;
+        [[nodiscard]] constexpr size_t _getLargestBlockSize() noexcept;
 
         /// @brief Allocate memory and update the telemetry if telemetry is ON for the allocator.
         /// @note The method is separated to reduce code duplication when using MT and non-MT pathways.
-        constexpr void* _mallocInternal(BitmapIndices& index, size_t size, size_t alignment,
-                                        size_t metadataSize) noexcept;
+        [[nodiscard]] constexpr void* _mallocInternal(BitmapIndices& index, size_t size, size_t alignment,
+                                                      size_t metadataSize) noexcept;
 
         /// @brief Free a block of memory and update the telemetry if enabled.
-        constexpr void _freeInternal(void* block) noexcept;
+        constexpr void _freeInternal(void* pBlock) noexcept;
 
         /// @brief Resize a block of memory and update the telemetry if enabled.
-        constexpr void* _resizeInternal(void* block, size_t oldSize, size_t newSize, size_t alignment) noexcept;
+        [[nodiscard]] constexpr void* _resizeInternal(void* pBlock, size_t oldSize, size_t newSize,
+                                                      size_t alignment) noexcept;
 
 
 

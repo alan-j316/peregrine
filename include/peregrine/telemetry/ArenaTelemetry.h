@@ -15,7 +15,6 @@
 #include "peregrine/allocators/Policy.h"
 
 #include <cstddef>
-#include <cstdint>
 #include <type_traits>
 
 namespace pmm
@@ -135,6 +134,7 @@ namespace pmm
      */
     struct DummyArenaTelemetry
     {
+        // NOLINTBEGIN
         [[nodiscard]] explicit constexpr DummyArenaTelemetry(size_t) noexcept {}
         constexpr void logAllocationUsage(size_t) noexcept {}
         constexpr void logPaddingUsage(size_t) noexcept {}
@@ -148,6 +148,7 @@ namespace pmm
         [[nodiscard]] constexpr size_t getUsedSize() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getMinUsage() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getPeakUsage() const noexcept { return 0; }
+        // NOEND
     };
 
 
@@ -170,7 +171,7 @@ namespace pmm
      * @return An arena telemetry instance suited for the telemetry policy.
      */
     template <TelPolicy Policy>
-    constexpr ArenaTelemetryType<Policy> getArenaTelemetryInstance(const std::size_t arenaSize) noexcept
+    constexpr ArenaTelemetryType<Policy> getArenaTelemetryInstance(const size_t arenaSize) noexcept
     {
         if constexpr (Policy == TelPolicy::Disabled)
         {

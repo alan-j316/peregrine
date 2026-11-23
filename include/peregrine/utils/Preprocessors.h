@@ -49,17 +49,17 @@ namespace pmm::internal
 /**
  * @brief Log the assertion message and status to console.
  *
- * @param condition The condition that triggered the assertion.
- * @param message   An optional message, stating the reason behind assertion failure.
- * @param file      The name of the file that triggered the assertion.
- * @param line      The line number of hte code that triggered the assertion.
+ * @param pCondition The condition that triggered the assertion.
+ * @param pMessage   An optional message, stating the reason behind assertion failure.
+ * @param pFilename  The name of the file that triggered the assertion.
+ * @param line       The line number of hte code that triggered the assertion.
  */
-inline void logAssertion(const char* condition, const char* message, const char* file, const int line)
+inline void logAssertion(const char* pCondition, const char* pMessage, const char* pFilename, const int line)
 {
     std::cerr << "[PMM ASSERTION FAILED]\n"
-              << "Condition: " << condition << '\n'
-              << "Message:   " << (message ? message : "None") << '\n'
-              << "Location:  " << file << ":" << line << '\n';
+              << "Condition: " << pCondition << '\n'
+              << "Message:   " << (pMessage ? pMessage : "None") << '\n'
+              << "Location:  " << pFilename << ":" << line << '\n';
 }
 
 

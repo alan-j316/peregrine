@@ -15,6 +15,8 @@ CheckOptions:
   - { key: readability-identifier-naming.AbstractClassCase, value: CamelCase }
   - { key: readability-identifier-naming.ClassCase, value: CamelCase }
   - { key: readability-identifier-naming.EnumCase, value: CamelCase }
+  - { key: readability-identifier-naming.EnumConstantCase, value: CamelCase }
+  - { key: readability-identifier-naming.ScopedEnumConstantCase, value: CamelCase }
   - { key: readability-identifier-naming.StructCase, value: CamelCase }
   - { key: readability-identifier-naming.UnionCase, value: CamelCase }
   - { key: readability-identifier-naming.ConceptCase, value: CamelCase }
@@ -56,7 +58,6 @@ CheckOptions:
   - { key: readability-identifier-naming.ConstantCase, value: UPPER_CASE }
   - { key: readability-identifier-naming.GlobalConstantCase, value: UPPER_CASE }
   - { key: readability-identifier-naming.ClassConstantCase, value: UPPER_CASE }
-  - { key: readability-identifier-naming.EnumConstantCase, value: UPPER_CASE }
   - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
   - { key: readability-identifier-naming.LocalConstantCase, value: camelBack }
 

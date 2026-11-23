@@ -34,14 +34,13 @@ namespace pmm
          * @param[in] alignment The byte alignment of the pool.
          *
          */
-        [[nodiscard]] explicit constexpr PoolTelemetry(std::size_t poolSize, std::size_t chunkSize,
-                                                       std::size_t alignment) noexcept;
+        [[nodiscard]] explicit constexpr PoolTelemetry(size_t poolSize, size_t chunkSize, size_t alignment) noexcept;
 
 
         /**
          * @brief Get the size of the pool allocator.
          */
-        [[nodiscard]] constexpr std::size_t getPoolSize() const noexcept;
+        [[nodiscard]] constexpr size_t getPoolSize() const noexcept;
 
 
         /**
@@ -51,7 +50,7 @@ namespace pmm
          *
          * @relatedalso getAlignedChunkSize()
          */
-        [[nodiscard]] constexpr std::size_t getChunkSize() const noexcept;
+        [[nodiscard]] constexpr size_t getChunkSize() const noexcept;
 
 
         /**
@@ -59,7 +58,7 @@ namespace pmm
          *
          * @relatedalso getAlignedChunkSize()
          */
-        [[nodiscard]] constexpr std::size_t getAlignedChunkSize() const noexcept;
+        [[nodiscard]] constexpr size_t getAlignedChunkSize() const noexcept;
 
 
         /**
@@ -68,7 +67,7 @@ namespace pmm
          * @relatedalso getUsedAllocationCount()
          * @relatedalso getFreeAllocationCount()
          */
-        [[nodiscard]] constexpr std::size_t getMaxAllocationCount() const noexcept;
+        [[nodiscard]] constexpr size_t getMaxAllocationCount() const noexcept;
 
 
         /**
@@ -77,7 +76,7 @@ namespace pmm
          * @relatedalso getMaxAllocationCount()
          * @relatedalso getFreeAllocationCount()
          */
-        [[nodiscard]] constexpr std::size_t getUsedAllocationCount() const noexcept;
+        [[nodiscard]] constexpr size_t getUsedAllocationCount() const noexcept;
 
 
         /**
@@ -86,19 +85,19 @@ namespace pmm
          * @relatedalso getMaxAllocationCount()
          * @relatedalso getUsedAllocationCount()
          */
-        [[nodiscard]] constexpr std::size_t getFreeAllocationCount() const noexcept;
+        [[nodiscard]] constexpr size_t getFreeAllocationCount() const noexcept;
 
 
         /**
          * @brief Get the pool's base alignment.
          */
-        [[nodiscard]] constexpr std::size_t getAlignment() const noexcept;
+        [[nodiscard]] constexpr size_t getAlignment() const noexcept;
 
 
         /**
          * @brief Get the padding applied to the pool buffer to ensure alignment.
          */
-        [[nodiscard]] constexpr std::size_t getPadding() const noexcept;
+        [[nodiscard]] constexpr size_t getPadding() const noexcept;
 
 
         /**
@@ -109,7 +108,7 @@ namespace pmm
          * @relatedalso getWastedSize()
          * @relatedalso getFreeSize()
          */
-        [[nodiscard]] constexpr std::size_t getUsedSize() const noexcept;
+        [[nodiscard]] constexpr size_t getUsedSize() const noexcept;
 
 
         /**
@@ -118,7 +117,7 @@ namespace pmm
          * @relatedalso getUsedSize()
          * @relatedalso getFreeSize()
          */
-        [[nodiscard]] constexpr std::size_t getWastedSize() const noexcept;
+        [[nodiscard]] constexpr size_t getWastedSize() const noexcept;
 
 
         /**
@@ -127,14 +126,14 @@ namespace pmm
          * @relatedalso getUsedSize()
          * @relatedalso getWastedSize()
          */
-        [[nodiscard]] constexpr std::size_t getFreeSize() const noexcept;
+        [[nodiscard]] constexpr size_t getFreeSize() const noexcept;
 
 
         /**
          * @brief Update the telemetry's padding with the new @p padding.
          * @param padding The padding to update with.
          */
-        constexpr void setPadding(std::size_t padding) noexcept;
+        constexpr void setPadding(size_t padding) noexcept;
 
 
         /**
@@ -144,7 +143,7 @@ namespace pmm
          *
          * @param chunkSize The aligned chunk size.
          */
-        constexpr void setAlignedChunkSize(std::size_t chunkSize) noexcept;
+        constexpr void setAlignedChunkSize(size_t chunkSize) noexcept;
 
         /**
          * @brief Log a chunk allocation in the pool
@@ -165,8 +164,8 @@ namespace pmm
 
 
     private:
-        std::size_t _poolSize, _realChunkSize, _alignedChunkSize, _basePadding, _alignment;
-        std::size_t _maxAllocationCount, _usedAllocationCount;
+        size_t _poolSize{}, _realChunkSize{}, _alignedChunkSize{}, _basePadding{}, _alignment{};
+        size_t _maxAllocationCount{}, _usedAllocationCount{};
     };
 
 
@@ -176,23 +175,25 @@ namespace pmm
      */
     struct DummyPoolTelemetry
     {
-        [[nodiscard]] explicit constexpr DummyPoolTelemetry(std::size_t, std::size_t, std::size_t) noexcept {}
-        [[nodiscard]] constexpr std::size_t getPoolSize() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getChunkSize() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getAlignedChunkSize() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getMaxAllocationCount() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getUsedAllocationCount() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getFreeAllocationCount() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getAlignment() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getPadding() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getUsedSize() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getWastedSize() const noexcept { return 0; }
-        [[nodiscard]] constexpr std::size_t getFreeSize() const noexcept { return 0; }
-        constexpr void setPadding(std::size_t) noexcept {}
-        constexpr void setAlignedChunkSize(std::size_t) noexcept {}
+        // NOLINTBEGIN
+        [[nodiscard]] explicit constexpr DummyPoolTelemetry(size_t, size_t, size_t) noexcept {}
+        [[nodiscard]] constexpr size_t getPoolSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getChunkSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getAlignedChunkSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getMaxAllocationCount() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getUsedAllocationCount() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getFreeAllocationCount() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getAlignment() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getPadding() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getUsedSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getWastedSize() const noexcept { return 0; }
+        [[nodiscard]] constexpr size_t getFreeSize() const noexcept { return 0; }
+        constexpr void setPadding(size_t) noexcept {}
+        constexpr void setAlignedChunkSize(size_t) noexcept {}
         constexpr void logAlloc() noexcept {}
         constexpr void logFree() noexcept {}
         constexpr void logClear() noexcept {}
+        // NOLINTEND
     };
 
     /**
@@ -201,8 +202,7 @@ namespace pmm
      * @tparam Policy Telemetry Policy used by the pool.
      */
     template <TelPolicy Policy>
-    using PoolTelemetryType =
-        std::conditional_t<Policy == TelPolicy::Disabled, DummyPoolTelemetry, PoolTelemetry>;
+    using PoolTelemetryType = std::conditional_t<Policy == TelPolicy::Disabled, DummyPoolTelemetry, PoolTelemetry>;
 
 
 
@@ -218,8 +218,8 @@ namespace pmm
      * @return A pool telemetry instance suited for the telemetry policy.
      */
     template <TelPolicy Policy>
-    constexpr PoolTelemetryType<Policy> getTelemetryInstance(const std::size_t poolSize, const std::size_t chunkSize,
-                                                             const std::size_t alignment) noexcept
+    constexpr PoolTelemetryType<Policy> getTelemetryInstance(const size_t poolSize, const size_t chunkSize,
+                                                             const size_t alignment) noexcept
     {
         if constexpr (Policy == TelPolicy::Disabled)
         {

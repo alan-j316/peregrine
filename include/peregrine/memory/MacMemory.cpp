@@ -19,7 +19,7 @@ namespace pmm
     #include <sys/mman.h>
     #include <unistd.h>
 
-    void* memAlloc(const std::size_t byteSize) noexcept // NOLINT(bugprone-exception-escape)
+    void* memAlloc(const size_t byteSize) noexcept // NOLINT(bugprone-exception-escape)
     {
         PMM_ASSERT_MSG(byteSize > 0, "Cannot allocate 0 bytes!");
         auto ptr = mmap(nullptr, byteSize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -27,7 +27,7 @@ namespace pmm
     }
 
 
-    bool memFree(void* start, std::size_t size) noexcept // NOLINT(bugprone-exception-escape)
+    bool memFree(void* start, size_t size) noexcept // NOLINT(bugprone-exception-escape)
     {
         if (start == nullptr || size == 0)
         {

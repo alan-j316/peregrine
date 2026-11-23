@@ -146,13 +146,13 @@ namespace pmm
         constexpr void resetTelemetry() noexcept;
 
     private:
-        size_t _currentBufferUsage, _minBufferUsage, _peakBufferUsage;
-        size_t _currentMetadataUsage, _minMetadataUsage, _peakMetadataUsage;
-        size_t _currentPayloadUsage, _minPayloadUsage, _peakPayloadUsage;
-        size_t _allocatorSize;
-        size_t _largestFreeBlockSize;
-        size_t _freeBlockCount;
-        size_t _activeAllocationCount, _lifetimeAllocationCount, _lifetimeFreeCount;
+        size_t _currentBufferUsage{}, _minBufferUsage{}, _peakBufferUsage{};
+        size_t _currentMetadataUsage{}, _minMetadataUsage{}, _peakMetadataUsage{};
+        size_t _currentPayloadUsage{}, _minPayloadUsage{}, _peakPayloadUsage{};
+        size_t _allocatorSize{};
+        size_t _largestFreeBlockSize{};
+        size_t _freeBlockCount{};
+        size_t _activeAllocationCount{}, _lifetimeAllocationCount{}, _lifetimeFreeCount{};
     };
 
 
@@ -162,7 +162,7 @@ namespace pmm
     struct DummyTLSFTelemetry
     {
         explicit constexpr DummyTLSFTelemetry(size_t) noexcept {}
-
+        // NOLINTBEGIN
         constexpr void incUsage(size_t, size_t) noexcept {}
         constexpr void decUsage(size_t, size_t) noexcept {}
         constexpr void decMemUsage(size_t) noexcept {}
@@ -190,8 +190,8 @@ namespace pmm
         [[nodiscard]] constexpr size_t getLifetimeAllocations() const noexcept { return 0; }
         [[nodiscard]] constexpr size_t getLifetimeFrees() const noexcept { return 0; }
         [[nodiscard]] constexpr bool hasMemoryLeak() const noexcept { return false; }
-
         constexpr void resetTelemetry() noexcept {};
+        // NOLINTEND
     };
 
     /**

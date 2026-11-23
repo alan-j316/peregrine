@@ -88,10 +88,10 @@ TEST_F(PoolRegistryTests, Create_InstantiatesObjectWithParameters)
 
 TEST_F(PoolRegistryTests, Free_FreesTheObject)
 {
-    const T* vec = vecPool.create(1, 2, 3, 4);
+    const T* pVec = vecPool.create(1, 2, 3, 4);
     // To check if item is freed we can use size
     // and in case of single allocation check if its free
-    vecPool.free(vec);
+    vecPool.free(pVec);
 
     EXPECT_EQ(0, vecPool.size());
     EXPECT_TRUE(vecPool.empty());
@@ -101,16 +101,16 @@ TEST_F(PoolRegistryTests, Free_FreesTheObject)
 TEST_F(PoolRegistryTests, Free_CanFreeMultipleObjects)
 {
     // Fill the pool
-    T* objects[elementCount]{};
+    T* pObjects[elementCount]{};
     for (size_t i = 0; i < elementCount; ++i)
     {
-        objects[i] = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
+        pObjects[i] = vecPool.create(1.0f, 2.0f, 3.0f, 4.0f);
     }
 
     // Free all the objects
-    for (const auto& obj : objects)
+    for (const auto& pObj : pObjects)
     {
-        vecPool.free(obj);
+        vecPool.free(pObj);
     }
 
     // Assert pool is empty
@@ -146,9 +146,7 @@ TEST_F(PoolRegistryTests, Free_CanFreeInstancesWithNonPowerOf2Sizes)
 {
     // TEST SETUP
     struct Vec3
-    {
-        float x, y, z;
-    };
+    { float x, y, z; };
     constexpr auto eleCount = 512;
 
 

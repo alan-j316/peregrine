@@ -11,7 +11,6 @@
 
 #include <bit>
 #include <concepts>
-#include <cstdint>
 
 namespace pmm::utils
 {

@@ -28,7 +28,7 @@ namespace
     class ArenaTelemetryTests: public testing::Test
     {
     public:
-        const std::size_t SIZE = 1024;
+        const size_t SIZE = 1024;
         pmm::ArenaTelemetry telemetry{ SIZE };
     };
 
@@ -44,7 +44,7 @@ TEST_F(ArenaTelemetryTests, Ctor_IntializesWithMembersWithDefaultValues)
 {
     EXPECT_EQ(SIZE, telemetry.getArenaSize());
     EXPECT_EQ(0, telemetry.getUsedSize());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinUsage());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinUsage());
     EXPECT_EQ(0, telemetry.getPeakUsage());
 }
 
@@ -65,7 +65,7 @@ TEST_F(ArenaTelemetryTests, LogAllocationUsage_UpdatesWithCorrectUsage)
 
 TEST_F(ArenaTelemetryTests, LogMinUsage_UpdatesMinimumWhenPassingInASmallerValue)
 {
-    constexpr std::size_t newMin = 5;
+    constexpr size_t newMin = 5;
 
     telemetry.logAllocationUsage(10);
     telemetry.logAllocationUsage(50);
@@ -78,7 +78,7 @@ TEST_F(ArenaTelemetryTests, LogMinUsage_UpdatesMinimumWhenPassingInASmallerValue
 
 TEST_F(ArenaTelemetryTests, LogMinUsage_DoesNotUpdateMinimumWhenPassingInALargerValue)
 {
-    constexpr std::size_t newMin = 50;
+    constexpr size_t newMin = 50;
 
     telemetry.logAllocationUsage(10);
     telemetry.logAllocationUsage(50);
@@ -92,7 +92,7 @@ TEST_F(ArenaTelemetryTests, LogMinUsage_DoesNotUpdateMinimumWhenPassingInALarger
 
 TEST_F(ArenaTelemetryTests, LogPeakUsage_UpdatesPeakUsageWhenPassingInALargerValue)
 {
-    constexpr std::size_t newPeak = 500;
+    constexpr size_t newPeak = 500;
 
     telemetry.logAllocationUsage(10);
     telemetry.logAllocationUsage(50);
@@ -104,7 +104,7 @@ TEST_F(ArenaTelemetryTests, LogPeakUsage_UpdatesPeakUsageWhenPassingInALargerVal
 
 TEST_F(ArenaTelemetryTests, LogPeakUsage_DoesNotUpdatePeakUsageWhenPassingInASmallerValue)
 {
-    constexpr std::size_t newPeak = 15;
+    constexpr size_t newPeak = 15;
 
     telemetry.logAllocationUsage(10);
     telemetry.logAllocationUsage(50);
@@ -175,7 +175,7 @@ TEST_F(ArenaTelemetryTests, ResetTelemetry_ResetsAllUsageStats)
     telemetry.resetTelemetry();
     EXPECT_EQ(0, telemetry.getUsedSize());
     EXPECT_EQ(0, telemetry.getTotalPadding());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinUsage());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinUsage());
     EXPECT_EQ(0, telemetry.getPeakUsage());
 }
 

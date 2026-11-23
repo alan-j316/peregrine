@@ -32,7 +32,7 @@ struct alignas(8) DestructionTracker
  * @brief Mock data structure to store @p Size bytes for data for mocking.
  * @tparam Size The size of the data structure.
  */
-template <std::size_t Size>
+template <size_t Size>
 struct alignas(8) LargeData
 {
     std::array<uint8_t, Size> data{};

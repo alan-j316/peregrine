@@ -29,7 +29,7 @@ namespace
     class StackTelemetryTests: public ::testing::Test
     {
     public:
-        std::size_t size{ 10240 };
+        size_t size{ 10240 };
         pmm::StackTelemetry telemetry{ size };
     };
 
@@ -88,11 +88,11 @@ TEST_F(StackTelemetryTests, IntializesWithSizeAndDefaultStats)
 
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
     EXPECT_EQ(0, telemetry.getPeakMemoryUsage());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinMemoryUsage());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinMemoryUsage());
 
     EXPECT_EQ(0, telemetry.getCurrentPadding());
     EXPECT_EQ(0, telemetry.getPeakPadding());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinPadding());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinPadding());
 }
 
 
@@ -143,7 +143,7 @@ TEST_F(StackTelemetryTests, DecTelemetryUsage_UpdatesWithCorrectUsage)
  */
 TEST_F(StackTelemetryTests, UpdateMinMemoryUsage_UpdateMinimumWhenPassingInASmallValue)
 {
-    constexpr std::size_t newMin = 5;
+    constexpr size_t newMin = 5;
 
     telemetry.incStackUsage(10, 5);
     telemetry.incStackUsage(50, 2);
@@ -159,7 +159,7 @@ TEST_F(StackTelemetryTests, UpdateMinMemoryUsage_UpdateMinimumWhenPassingInASmal
  */
 TEST_F(StackTelemetryTests, UpdateMinMemoryUsage_DoesNotUpdateMinimumWhenPassingInALargerValue)
 {
-    constexpr std::size_t newMin = 50;
+    constexpr size_t newMin = 50;
 
     telemetry.incStackUsage(10, 2);
     telemetry.incStackUsage(40, 2);
@@ -177,7 +177,7 @@ TEST_F(StackTelemetryTests, UpdateMinMemoryUsage_DoesNotUpdateMinimumWhenPassing
  */
 TEST_F(StackTelemetryTests, UpdatePeakMemoryUsage_UpdatePeakUsageWhenPassingInALargerValue)
 {
-    constexpr std::size_t newPeak = 500;
+    constexpr size_t newPeak = 500;
 
     telemetry.incStackUsage(10, 2);
     telemetry.incStackUsage(50, 2);
@@ -193,7 +193,7 @@ TEST_F(StackTelemetryTests, UpdatePeakMemoryUsage_UpdatePeakUsageWhenPassingInAL
  */
 TEST_F(StackTelemetryTests, UpdatePeakMemoryUsage_DoesNotUpdatePeakUsageWhenPassingInASmallerValue)
 {
-    constexpr std::size_t newPeak = 15;
+    constexpr size_t newPeak = 15;
 
     telemetry.incStackUsage(10, 2);
     telemetry.incStackUsage(50, 2);
@@ -211,7 +211,7 @@ TEST_F(StackTelemetryTests, UpdatePeakMemoryUsage_DoesNotUpdatePeakUsageWhenPass
  */
 TEST_F(StackTelemetryTests, UpdateMinUsage_UpdateMinimumPaddingWhenPassingInASmallValue)
 {
-    constexpr std::size_t newMin = 5;
+    constexpr size_t newMin = 5;
 
     telemetry.incStackUsage(10, 15);
     telemetry.incStackUsage(50, 12);
@@ -227,7 +227,7 @@ TEST_F(StackTelemetryTests, UpdateMinUsage_UpdateMinimumPaddingWhenPassingInASma
  */
 TEST_F(StackTelemetryTests, UpdateMinUsage_DoesNotUpdateMinimumPaddingWhenPassingInALargerValue)
 {
-    constexpr std::size_t newMin = 50;
+    constexpr size_t newMin = 50;
 
     telemetry.incStackUsage(10, 2);
     telemetry.incStackUsage(40, 2);
@@ -245,7 +245,7 @@ TEST_F(StackTelemetryTests, UpdateMinUsage_DoesNotUpdateMinimumPaddingWhenPassin
  */
 TEST_F(StackTelemetryTests, UpdatePeakUsage_UpdatePeakPaddingUsageWhenPassingInALargerValue)
 {
-    constexpr std::size_t newPeak = 500;
+    constexpr size_t newPeak = 500;
 
     telemetry.incStackUsage(10, 2);
     telemetry.incStackUsage(50, 2);
@@ -261,7 +261,7 @@ TEST_F(StackTelemetryTests, UpdatePeakUsage_UpdatePeakPaddingUsageWhenPassingInA
  */
 TEST_F(StackTelemetryTests, UpdatePeakUsage_DoesNotUpdatePeakPaddingUsageWhenPassingInASmallerValue)
 {
-    constexpr std::size_t newPeak = 12;
+    constexpr size_t newPeak = 12;
 
     telemetry.incStackUsage(10, 24);
     telemetry.incStackUsage(50, 24);
@@ -314,12 +314,12 @@ TEST_F(StackTelemetryTests, Reset_ResetsUsages)
 
     telemetry.resetTelemetry();
     EXPECT_EQ(0, telemetry.getCurrentMemoryUsage());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinMemoryUsage());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinMemoryUsage());
     EXPECT_EQ(0, telemetry.getPeakMemoryUsage());
 
 
     EXPECT_EQ(0, telemetry.getCurrentPadding());
-    EXPECT_EQ(std::numeric_limits<std::size_t>::max(), telemetry.getMinPadding());
+    EXPECT_EQ(std::numeric_limits<size_t>::max(), telemetry.getMinPadding());
     EXPECT_EQ(0, telemetry.getPeakPadding());
 }
 

@@ -23,9 +23,9 @@
 using namespace pmm::constants;
 TEST(PMMMemoryTests, MemAlloc_ReturnsReadWriteableMemory)
 {
-    constexpr std::size_t size  = 2_MB; // Greater than granularity and page size.
-    constexpr std::size_t count = size / sizeof(int);
-    const auto data             = static_cast<int*>(pmm::memAlloc(size));
+    constexpr size_t size  = 2_MB; // Greater than granularity and page size.
+    constexpr size_t count = size / sizeof(int);
+    const auto data        = static_cast<int*>(pmm::memAlloc(size));
     if (data != nullptr)
     {
         for (size_t i = 0; i < count; ++i)
@@ -47,8 +47,8 @@ TEST(PMMMemoryTests, MemAlloc_ReturnsReadWriteableMemory)
 
 TEST(PMMMemoryTests, MemAlloc_ReturnsNullptrWhenAllocationFails)
 {
-    constexpr std::size_t size = std::numeric_limits<size_t>::max();
-    const auto memory          = pmm::memAlloc(size);
+    constexpr size_t size = std::numeric_limits<size_t>::max();
+    const auto memory     = pmm::memAlloc(size);
     EXPECT_EQ(nullptr, memory);
 }
 
@@ -67,8 +67,8 @@ TEST(PMMMemoryTests, MemAlloc_ReturnsZeroedOutMemory)
 
 TEST(PMMMemoryTests, MemFree_ReturnsTrueOnSuccessfulFree)
 {
-    constexpr std::size_t size = 2_MB; // Greater than granularity and page size.
-    const auto data            = static_cast<int*>(pmm::memAlloc(size));
+    constexpr size_t size = 2_MB; // Greater than granularity and page size.
+    const auto data       = static_cast<int*>(pmm::memAlloc(size));
     if (data != nullptr)
     {
         bool result = pmm::memFree(data, size);

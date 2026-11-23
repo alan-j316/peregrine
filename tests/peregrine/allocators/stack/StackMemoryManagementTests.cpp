@@ -51,12 +51,12 @@ TEST(StackMemoryManagementTests, ManagedStack_MaintainsInternalBuffer)
     constexpr auto count = 128;
     const auto buffer    = static_cast<int*>(stack.malloc(count * sizeof(int)));
 
-    for (std::size_t i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         buffer[i] = static_cast<int>(316 + i);
     }
 
-    for (std::size_t i = 0; i < count; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         EXPECT_EQ(static_cast<int>(316 + i), buffer[i]);
     }
