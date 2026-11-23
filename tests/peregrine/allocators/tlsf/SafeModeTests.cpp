@@ -11,6 +11,10 @@
 
 #include "TLSFTestSetup.h"
 
+/**
+ * @addtogroup T_PMM_TLSF_Core
+ * @{
+ */
 
 #ifndef ENABLE_PMM_DEATH_TESTS
 
@@ -365,3 +369,5 @@ TEST_F(ExternallyManagedSafeTLSFTests, AllocV_OutofMemoryDueToFragmentation_Retu
 }
 
 #endif
+
+/** @} */

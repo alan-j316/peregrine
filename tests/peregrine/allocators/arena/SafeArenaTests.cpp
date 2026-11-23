@@ -9,6 +9,11 @@
  */
 
 
+/**
+ * @addtogroup T_PMM_Arena
+ * @{
+ */
+
 #ifndef ENABLE_PMM_DEATH_TESTS
 
     #include "Utils.h"
@@ -16,7 +21,6 @@
     #include <gtest/gtest.h>
     #include <peregrine/allocators/Arena.h>
     #include <peregrine/utils/Constants.h>
-
 
 namespace
 {
@@ -374,3 +378,5 @@ TEST_F(UnmanagedSafeArenaTests, ResizeFast_PriorToLatestsAllocation_FullArenaRet
 }
 
 #endif
+
+/** @} */

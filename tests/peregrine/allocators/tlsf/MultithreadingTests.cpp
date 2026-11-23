@@ -19,6 +19,11 @@
 #include <vector>
 
 
+/**
+ * @addtogroup T_PMM_TLSF_Core
+ * @{
+ */
+
 namespace
 {
     using namespace pmm::constants;
@@ -1248,3 +1253,5 @@ TEST_F(ExternallyManagedTLSF_MTTests, MoveAssignment_MovesTheAllocator)
     EXPECT_NE(nullptr, allocation);
     delete[] mem2;
 }
+
+/** @} */

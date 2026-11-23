@@ -10,6 +10,10 @@
 
 #include "TLSFTestSetup.h"
 
+/**
+ * @addtogroup T_PMM_TLSF_Core
+ * @{
+ */
 
 #ifdef ENABLE_PMM_DEATH_TESTS
 
@@ -244,3 +248,5 @@ TEST_F(ExternallyManagedTLSFTests, MFree_NullptrTriggersAssertionInDebugMode)
 
 
 #endif
+
+/** @} */

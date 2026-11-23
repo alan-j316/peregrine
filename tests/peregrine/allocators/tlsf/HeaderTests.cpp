@@ -10,6 +10,11 @@
 
 #include "TLSFTestSetup.h"
 
+/**
+ * @addtogroup T_PMM_TLSF_Core
+ * @{
+ */
+
 namespace
 {
     class TLSFHeaderTests: public testing::Test
@@ -21,11 +26,6 @@ namespace
 } // namespace
 
 
-
-/**
- * @addtogroup T_PMM_TLSF_Header
- * @{
- */
 
 TEST_F(TLSFHeaderTests, GetSize_ReturnsTheCorrectSize) { EXPECT_EQ(blockSize, header.getSize()); }
 

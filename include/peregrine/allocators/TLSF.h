@@ -24,6 +24,7 @@
 
 namespace pmm
 {
+
     /**
      * @brief Constant time dynamic memory allocator(Two Level Segregated Fit).
      *
@@ -243,13 +244,13 @@ namespace pmm
 
 
         /// Get the size of the allocator in bytes.
-        constexpr size_t size() const noexcept;
+        [[nodiscard]] constexpr size_t size() const noexcept;
 
         /// Get the amount of memory in use in bytes.
-        constexpr size_t usedSize() const noexcept;
+        [[nodiscard]] constexpr size_t usedSize() const noexcept;
 
         /// Get the amount of free memory in bytes.
-        constexpr size_t freeSize() const noexcept;
+        [[nodiscard]] constexpr size_t freeSize() const noexcept;
 
         /**
          * @brief Allocate a block of memory.
@@ -400,13 +401,11 @@ namespace pmm
 
         // For freeing the allocators from memory manager
         template <TelPolicy, MemPolicy>
-        friend class MemoryManager;
+        friend class MemoryManager; // NOLINT
 
         /// Structure used for exchanging bit mask indices internally.
         struct BitmapIndices
-        {
-            Bitmask_t flIndex{}, slIndex{};
-        };
+        { Bitmask_t flIndex{}, slIndex{}; };
 
 
         /**

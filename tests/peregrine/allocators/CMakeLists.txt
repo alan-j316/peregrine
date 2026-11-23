@@ -9,6 +9,7 @@ target_sources(
         arena/ManagedArenaTests.cpp
         arena/UnmanagedArenaTests.cpp
         arena/SafeArenaTests.cpp
+        arena/MultithreadingTests.cpp
 
         stack/LooseStackTests.cpp
         stack/StrictStackTests.cpp

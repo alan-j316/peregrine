@@ -27,9 +27,6 @@ namespace pmm
     struct PoolFreeNode
     { PoolFreeNode* next; };
 
-    // Forward declaration
-    class MemoryManager;
-
 
     /**
      *  @brief Pool/Chunk memory allocator.
@@ -248,7 +245,7 @@ namespace pmm
         PMM_NO_UNIQUE_ADDR PoolTelemetryType<TelemetryPolicy> _telemetry{ 0 };
         // For freeing the allocators from memory manager
         template <TelPolicy, MemPolicy>
-        friend class MemoryManager;
+        friend class MemoryManager; // NOLINT
 
 
 

@@ -14,6 +14,11 @@
 #include <gtest/gtest.h>
 #include <peregrine/allocators/Arena.h>
 
+/**
+ * @addtogroup T_PMM_Arena
+ * @{
+ */
+
 #ifdef ENABLE_PMM_DEATH_TESTS
 namespace
 {
@@ -212,3 +217,5 @@ TEST_F(UnmanagedArenaDeathTests, ResizeFast_LargerThanArenaSize_TriggersAssertio
 }
 
 #endif
+
+/** @} */
