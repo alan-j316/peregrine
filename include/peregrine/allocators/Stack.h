@@ -351,6 +351,7 @@ namespace pmm
          *
          * @warning In **Release Mode** safety checks for `nullptr`, and 0 sizes are disabled.
          * @warning Use only on latest allocations.
+         * @warning Explicit resize of last allocation is disallowed in multithreaded environments.
          *
          * @param[in] pBuffer Pointer to the memory to resize.
          * @param[in] oldSize The current size of @p oldMemory.
@@ -364,7 +365,7 @@ namespace pmm
          * @relatedalso resizeFast
          */
         [[nodiscard]] void* resizeLast(void* pBuffer, size_t oldSize, size_t newSize)
-            requires(Type == StackPolicy::Loose);
+            requires(Type == StackPolicy::Loose && MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
@@ -376,6 +377,7 @@ namespace pmm
          *
          * @warning In **Release Mode** safety checks for `nullptr`, and 0 sizes are disabled.
          * @warning Use only on latest allocations, otherwise memory corruption can occur.
+         * @warning Explicit resize of last allocation is disallowed in multithreaded environments.
          *
          * @param[in] pBuffer Pointer to the memory to resize.
          * @param[in] oldSize The current size of @p oldMemory.
@@ -389,7 +391,7 @@ namespace pmm
          * @relatedalso resizeFast
          */
         [[nodiscard]] void* resizeLast(void* pBuffer, size_t oldSize, size_t newSize)
-            requires(Type == StackPolicy::Strict);
+            requires(Type == StackPolicy::Strict && MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**

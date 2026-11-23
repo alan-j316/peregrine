@@ -332,7 +332,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
         void* pBuffer, const size_t oldSize, const size_t newSize)
-        requires(Type == StackPolicy::Loose)
+        requires(Type == StackPolicy::Loose && MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         PMM_ASSERT_MSG(
             pBuffer != nullptr,
@@ -370,7 +370,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
         void* pBuffer, const size_t oldSize, const size_t newSize)
-        requires(Type == StackPolicy::Strict)
+        requires(Type == StackPolicy::Strict && MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         PMM_ASSERT_MSG(
             pBuffer != nullptr,
