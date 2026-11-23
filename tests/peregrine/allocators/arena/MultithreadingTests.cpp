@@ -32,7 +32,7 @@ namespace
     class InternallyManagedArena_MTTests: public testing::Test // NOLINT
     {
     public:
-        static constexpr size_t SIZE = 1_MB;
+        static constexpr size_t SIZE = 4_MB;
         pmm::Arena<pmm::MemPolicy::Internal, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
                    pmm::mt::MTPolicy::SpinLock>
             arena{ SIZE };
@@ -41,7 +41,7 @@ namespace
     class ExternallyManagedArena_MTTests: public testing::Test // NOLINT
     {
     public:
-        static constexpr size_t SIZE = 1_MB;
+        static constexpr size_t SIZE = 4_MB;
         uint8_t* mem                 = new uint8_t[SIZE];
         pmm::Arena<pmm::MemPolicy::External, pmm::TelPolicy::Enabled, pmm::SafeModePolicy::Unsafe,
                    pmm::mt::MTPolicy::SpinLock>
@@ -341,137 +341,273 @@ TEST_F(InternallyManagedArena_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptI
 }
 
 
-// TEST_F(InternallyManagedArena_MTTests, ResizeToSmallerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 32;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(InternallyManagedArena_MTTests, ResizeToSameSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, allocSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(InternallyManagedArena_MTTests, ResizeToLargerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 700;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 128;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
+TEST_F(InternallyManagedArena_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedArena_MTTests, Resize_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedArena_MTTests, Resize_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resizeFast(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
 
 TEST_F(InternallyManagedArena_MTTests, MoveCtor_MovesTheAllocator)
 {
@@ -498,6 +634,7 @@ TEST_F(InternallyManagedArena_MTTests, MoveAssignment_MovesTheAllocator)
     const auto allocation = arena2.malloc(950_KB);
     EXPECT_NE(nullptr, allocation);
 }
+
 
 
 /// +-----------------------------------+
@@ -538,6 +675,7 @@ TEST_F(ExternallyManagedArena_MTTests, Malloc_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
+
 
 TEST_F(ExternallyManagedArena_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptInternalState)
 {
@@ -593,6 +731,7 @@ TEST_F(ExternallyManagedArena_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptI
     }
 }
 
+
 TEST_F(ExternallyManagedArena_MTTests, Alloc_CanAllocateConcurrently)
 {
     constexpr size_t numAllocations = 2700;
@@ -626,6 +765,7 @@ TEST_F(ExternallyManagedArena_MTTests, Alloc_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
+
 
 TEST_F(ExternallyManagedArena_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInternalState)
 {
@@ -678,6 +818,7 @@ TEST_F(ExternallyManagedArena_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptIn
     }
 }
 
+
 TEST_F(ExternallyManagedArena_MTTests, AllocV_CanAllocateConcurrently)
 {
     constexpr size_t numAllocations = 1420;
@@ -713,6 +854,7 @@ TEST_F(ExternallyManagedArena_MTTests, AllocV_CanAllocateConcurrently)
     // Ensure that the expected number of allocations match the counter
     EXPECT_EQ(numAllocations * numThreads, counter.load());
 }
+
 
 TEST_F(ExternallyManagedArena_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptInternalState)
 {
@@ -775,137 +917,273 @@ TEST_F(ExternallyManagedArena_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptI
 }
 
 
-// TEST_F(ExternallyManagedArena_MTTests, ResizeToSmallerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 32;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(ExternallyManagedArena_MTTests, ResizeToSameSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, allocSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
-// TEST_F(ExternallyManagedArena_MTTests, ResizeToLargerSize_CanRunConcurrently)
-// {
-//     constexpr size_t numAllocations = 700;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t resizeSize     = 128;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(arena.malloc(allocSize));
-//     }
-//
-//
-//     // Dispatch the job
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back([&, threadIdx = i]() {
-//             const size_t startIdx = threadIdx * numAllocations;
-//             const size_t endIdx   = startIdx + numAllocations;
-//
-//             for (size_t j = startIdx; j < endIdx; ++j)
-//             {
-//                 allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
-//             }
-//         });
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // To ensure all the resizes work, we can make sure that the resized pointer are non-null
-//     for (const auto allocation : allocations)
-//     {
-//         EXPECT_NE(nullptr, allocation);
-//     }
-// }
-//
+TEST_F(ExternallyManagedArena_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedArena_MTTests, Resize_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedArena_MTTests, Resize_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resize(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 32;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resizeFast(allocations[j], allocSize, allocSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
+
+TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToLargerSize_CanRunConcurrently)
+{
+    constexpr size_t numAllocations = 700;
+    constexpr size_t allocSize      = 64;
+    constexpr size_t resizeSize     = 128;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(arena.malloc(allocSize));
+    }
+
+
+    // Dispatch the job
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&, threadIdx = i]() {
+            const size_t startIdx = threadIdx * numAllocations;
+            const size_t endIdx   = startIdx + numAllocations;
+
+            for (size_t j = startIdx; j < endIdx; ++j)
+            {
+                allocations[j] = arena.resizeFast(allocations[j], allocSize, resizeSize);
+            }
+        });
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // To ensure all the resizes work, we can make sure that the resized pointer are non-null
+    for (const auto allocation : allocations)
+    {
+        EXPECT_NE(nullptr, allocation);
+    }
+}
+
 
 TEST_F(ExternallyManagedArena_MTTests, MoveCtor_MovesTheAllocator)
 {

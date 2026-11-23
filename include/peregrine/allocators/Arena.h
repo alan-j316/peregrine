@@ -50,7 +50,6 @@ namespace pmm
               SafeModePolicy SafeMode = SafeModePolicy::Unsafe, mt::MTPolicy MultithreadingPolicy = mt::MTPolicy::NoMT>
     struct Arena
     {
-
         /**
          * @brief Allocate a new physical memory vault from the Operating System.
          *
@@ -329,14 +328,18 @@ namespace pmm
          * @return A pointer to the starting memory address.
          * @return A nullptr if there is space available if Safe Mode is on and build is in *Release Mode*.
          */
-        void* _internalMalloc(size_t size, size_t alignment) noexcept;
+        [[nodiscard]] void* _mallocInternal(size_t size, size_t alignment) noexcept;
+
+
+        [[nodiscard]] void* _resizeInternal(void* pOldMemory, size_t oldSize, size_t newSize,
+                                            size_t alignment = sizeof(void*)) noexcept;
 
 
         // For internal variable access
         friend struct TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>;
         // For freeing the allocators from memory manager
         template <TelPolicy, MemPolicy>
-        friend class MemoryManager;
+        friend class MemoryManager; // NOLINT
 
 #ifdef ENABLE_PMM_TESTS
     // FRIEND TEST macros for verifying internal states

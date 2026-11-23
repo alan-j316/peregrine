@@ -167,11 +167,11 @@ namespace pmm
         if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
             [[maybe_unused]] mt::LockGuard guard(_mutex);
-            return _internalMalloc(size, alignment);
+            return _mallocInternal(size, alignment);
         }
         else
         {
-            return _internalMalloc(size, alignment);
+            return _mallocInternal(size, alignment);
         }
     }
 
@@ -255,6 +255,91 @@ namespace pmm
             return pOldMemory;
         }
 
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _resizeInternal(pOldMemory, oldSize, newSize, alignment);
+        }
+        else
+        {
+            return _resizeInternal(pOldMemory, oldSize, newSize, alignment);
+        }
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeFast(
+        const void* pOldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
+    {
+        PMM_ASSERT_MSG(
+            pOldMemory != nullptr,
+            "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
+        PMM_ASSERT_MSG(oldSize != 0, "Cannot resize 0 bytes of memory.");
+        PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (pOldMemory == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment))
+            {
+                return nullptr;
+            }
+        }
+
+        const auto newPtr = malloc(newSize, alignment);
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (newPtr == nullptr)
+            {
+                return nullptr;
+            }
+        }
+        memmove(newPtr, pOldMemory, oldSize);
+        return newPtr;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE constexpr const ArenaTelemetryType<TelemetryPolicy>& Arena<
+        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getTelemetry() const noexcept
+    { return _telemetry; }
+
+
+    /// +---------------------------------------------------------------------------------------+
+    /// |                                HELPER METHODS                                         |
+    /// +---------------------------------------------------------------------------------------+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mallocInternal(
+        const size_t size, const size_t alignment) noexcept
+    {
+        _alignForward(alignment);
+        PMM_ASSERT_MSG(size > 0 && _arenaSize >= _offset + size, "Arena: Not Enough Memory");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (size == 0 || _offset + size > _arenaSize)
+            {
+                return nullptr;
+            }
+        }
+
+        void* ptr   = &_buffer[_offset];
+        _prevOffset = _offset;
+        _offset += size;
+
+        // Update the telemetry usage
+        _telemetry.logAllocationUsage(size);
+
+        return ptr;
+    }
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+
+
+    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_resizeInternal(
+        void* pOldMemory, const size_t oldSize, const size_t newSize, const size_t alignment) noexcept
+    {
         // Check whether the old memory is the last allocation we made
         const auto allocationAddress    = reinterpret_cast<uintptr_t>(pOldMemory);
         const auto lastAllocatedAddress = reinterpret_cast<uintptr_t>(_buffer) + _prevOffset;
@@ -293,78 +378,9 @@ namespace pmm
             }
         }
 
-        void* newLocation = malloc(newSize, alignment);
+        void* newLocation = _mallocInternal(newSize, alignment);
         memmove(newLocation, pOldMemory, oldSize);
         return newLocation;
-    }
-
-
-    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
-              mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeFast(
-        const void* pOldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
-    {
-        PMM_ASSERT_MSG(
-            pOldMemory != nullptr,
-            "Cannot resize a nullptr. If you want to allocate memory, use alloc<Type>, allocBytes, or allocV instead.");
-        PMM_ASSERT_MSG(oldSize != 0, "Cannot resize 0 bytes of memory.");
-        PMM_ASSERT_MSG(newSize != 0, "Cannot resize to 0 size. Use `free` to deallocate memory.");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            if (pOldMemory == nullptr || oldSize == 0 || newSize == 0 || !std::has_single_bit(alignment))
-            {
-                return nullptr;
-            }
-        }
-
-        const auto newPtr = malloc(newSize, alignment);
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            if (newPtr == nullptr)
-            {
-                return nullptr;
-            }
-        }
-        memmove(newPtr, pOldMemory, oldSize);
-
-        return newPtr;
-    }
-
-
-    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
-              mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr const ArenaTelemetryType<TelemetryPolicy>& Arena<
-        MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::getTelemetry() const noexcept
-    { return _telemetry; }
-
-
-    /// +---------------------------------------------------------------------------------------+
-    /// |                                HELPER METHODS                                         |
-    /// +---------------------------------------------------------------------------------------+
-
-    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
-              mt::MTPolicy MultithreadingPolicy>
-    void* Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_internalMalloc(
-        const size_t size, const size_t alignment) noexcept
-    {
-        _alignForward(alignment);
-        PMM_ASSERT_MSG(size > 0 && _arenaSize >= _offset + size, "Arena: Not Enough Memory");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            if (size == 0 || _offset + size > _arenaSize)
-            {
-                return nullptr;
-            }
-        }
-
-        void* ptr   = &_buffer[_offset];
-        _prevOffset = _offset;
-        _offset += size;
-
-        // Update the telemetry usage
-        _telemetry.logAllocationUsage(size);
-
-        return ptr;
     }
 
 } // namespace pmm
