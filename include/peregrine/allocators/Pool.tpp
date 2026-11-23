@@ -32,7 +32,8 @@ namespace pmm
           _chunkSize{ chuckSize },
           _chunkAlignment{ chunkAlignment },
           _head(nullptr),
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(poolSize, chuckSize, chunkAlignment) }
+          _telemetry{ getTelemetryInstance<TelemetryPolicy>(poolSize, chuckSize, chunkAlignment) },
+          _mutex{}
     {
         const auto baseAddress = reinterpret_cast<uintptr_t>(_buffer);
 
@@ -63,7 +64,8 @@ namespace pmm
           _poolSize{ bufferSize },
           _chunkSize{ chuckSize },
           _chunkAlignment{ chunkAlignment },
-          _telemetry{ getTelemetryInstance<TelemetryPolicy>(bufferSize, chuckSize, chunkAlignment) }
+          _telemetry{ getTelemetryInstance<TelemetryPolicy>(bufferSize, chuckSize, chunkAlignment) },
+          _mutex{}
     {
         const auto baseAddress = reinterpret_cast<uintptr_t>(_buffer);
 
@@ -96,7 +98,8 @@ namespace pmm
           _chunkCount{ pool._chunkCount },
           _head{ std::exchange(pool._head, nullptr) },
           _telemetry{ std::exchange(pool._telemetry,
-                                    getTelemetryInstance<TelemetryPolicy>(_poolSize, _chunkSize, _chunkAlignment)) }
+                                    getTelemetryInstance<TelemetryPolicy>(_poolSize, _chunkSize, _chunkAlignment)) },
+          _mutex{}
     {}
 
 
@@ -125,8 +128,8 @@ namespace pmm
         _initialAlignmentPadding = pool._initialAlignmentPadding;
         _chunkCount              = pool._chunkCount;
         _head                    = std::exchange(pool._head, nullptr);
-        _telemetry               = std::exchange(pool._telemetry,
-                                                 getTelemetryInstance<TelemetryPolicy>(_poolSize, _chunkSize, _chunkAlignment));
+        _telemetry = std::exchange(pool._telemetry,
+                                   getTelemetryInstance<TelemetryPolicy>(_poolSize, _chunkSize, _chunkAlignment));
 
         return *this;
     }
@@ -143,22 +146,15 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc() noexcept
     {
-        // Return the current head's address and move the head forward
-        const auto node = _head;
-
-        PMM_ASSERT_MSG(node != nullptr, "Pool allocator has no free memory");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            if (node == nullptr)
-            {
-                return nullptr;
-            }
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _mallocInternal();
         }
-
-        _telemetry.logAlloc();
-
-        _head = _head->next;
-        return node;
+        else
+        {
+            return _mallocInternal();
+        }
     }
 
 
@@ -253,6 +249,7 @@ namespace pmm
     { memFree(_buffer, _poolSize); }
 
 
+
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr const PoolTelemetryType<TelemetryPolicy>& Pool<
@@ -265,5 +262,34 @@ namespace pmm
     PMM_INLINE constexpr bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode,
                                    MultithreadingPolicy>::isTelemetryEnabled() noexcept
     { return TelemetryPolicy == TelPolicy::Enabled; }
+
+
+
+    /// +---------------------------------------------------------------------------------------+
+    /// |                              INTERNAL HELPERS                                         |
+    /// +---------------------------------------------------------------------------------------+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mallocInternal() noexcept
+    {
+        // Return the current head's address and move the head forward
+        const auto node = _head;
+
+        PMM_ASSERT_MSG(node != nullptr, "Pool allocator has no free memory");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (node == nullptr)
+            {
+                return nullptr;
+            }
+        }
+
+        _telemetry.logAlloc();
+
+        _head = _head->next;
+        return node;
+    }
+
 
 } // namespace pmm

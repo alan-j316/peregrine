@@ -243,9 +243,18 @@ namespace pmm
         size_t _poolSize, _chunkSize, _chunkAlignment, _initialAlignmentPadding, _chunkCount;
         PoolFreeNode* _head;
         PMM_NO_UNIQUE_ADDR PoolTelemetryType<TelemetryPolicy> _telemetry{ 0 };
+        PMM_NO_UNIQUE_ADDR mt::Mutex_t<MultithreadingPolicy> _mutex;
+
         // For freeing the allocators from memory manager
         template <TelPolicy, MemPolicy>
         friend class MemoryManager; // NOLINT
+
+
+        /**
+         * @brief Internal helper for allocating memory chunk from the pool.
+         * @return A pointer to the allocated chunk.
+         */
+        [[nodiscard]] void* _mallocInternal() noexcept;
 
 
 

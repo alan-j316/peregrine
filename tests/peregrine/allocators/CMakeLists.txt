@@ -20,6 +20,7 @@ target_sources(
         pool/AllocatorTests.cpp
         pool/TelemetryIntegrationTests.cpp
         pool/SafePoolTests.cpp
+        pool/MultithreadingTests.cpp
 
         tlsf/HeaderTests.cpp
         tlsf/InternallyManagedTLSFTests.cpp
