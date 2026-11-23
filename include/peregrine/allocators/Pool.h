@@ -190,6 +190,7 @@ namespace pmm
 
         /**
          * @brief Free the entire pool, resetting to a fresh state.
+         * @warning The method is not thread-safe under any thread-safe policy.
          *
          * @relatedalso  free
          * @relatedalso  mfree
@@ -256,6 +257,14 @@ namespace pmm
          */
         [[nodiscard]] void* _mallocInternal() noexcept;
 
+
+        /**
+         * @brief Internal helper for freeing memory from the pool.
+         * @param ptr The base address pointer to the chunk to free.
+         * @return True if the allocation was freed.
+         * @return False otherwise.
+         */
+        bool _mfreeInternal(void* ptr) noexcept;
 
 
 #ifdef ENABLE_PMM_TESTS

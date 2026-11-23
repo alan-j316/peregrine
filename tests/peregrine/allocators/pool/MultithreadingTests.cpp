@@ -244,117 +244,115 @@ TEST_F(InternallyManagedPool_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     }
 }
 
-//
-// TEST_F(InternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalState)
-// {
-//     // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
-//     // and allocate a large block. A corruption of internal state will make it impossible to create a
-//     // near size allocation
-//
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//     std::mutex mutex;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(pool.malloc(allocSize));
-//     }
-//
-//
-//     const auto freeFn = [&] {
-//         for (size_t j = 0; j < numAllocations; ++j)
-//         {
-//             // Pop off the final allocation
-//             // NOTE: Only apply mutex locks to the vector operations
-//             //       else the mfree itself won't be verifiable
-//             mutex.lock();
-//             const auto block = allocations.back();
-//             allocations.pop_back();
-//             mutex.unlock();
-//
-//             // Free the block
-//             pool.mfree(block);
-//         }
-//     };
-//
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back(freeFn);
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // Make a near pool size allocation to ensure that all the blocks are freed
-//     const auto block = pool.malloc(SIZE - 4_KB);
-//
-//     // Ensure that the expected number of allocations match the counter
-//     EXPECT_NE(nullptr, block);
-// }
-//
-// TEST_F(InternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalState)
-// {
-//     // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
-//     // and allocate a large block. A corruption of internal state will make it impossible to create a
-//     // near size allocation
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<std::thread> threads;
-//     std::vector<Vec4*> allocations;
-//
-//     std::mutex mutex;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//                      // Inefficient use of storage as our pool chunk is 1KB.
-// But it can work for tests as the size of Vec4 is not used internally.
-//         allocations.push_back(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f));
-//     }
-//
-//
-//     const auto freeFn = [&] {
-//         for (size_t j = 0; j < numAllocations; ++j)
-//         {
-//             // Pop off the final allocation
-//             // NOTE: Only apply mutex locks to the vector operations
-//             //       else the mfree itself won't be verifiable
-//             mutex.lock();
-//             const auto block = allocations.back();
-//             allocations.pop_back();
-//             mutex.unlock();
-//
-//             // Free the block
-//             pool.free(block);
-//         }
-//     };
-//
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back(freeFn);
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // Make a near pool size allocation to ensure that all the blocks are freed
-//     const auto block = pool.malloc(SIZE - 4_KB);
-//
-//     // Ensure that the expected number of allocations match the counter
-//     EXPECT_NE(nullptr, block);
-// }
+
+TEST_F(InternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(pool.malloc());
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            pool.mfree(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near pool size allocation to ensure that all the blocks are freed
+    const auto block = pool.malloc();
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
+
+TEST_F(InternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<std::thread> threads;
+    std::vector<Vec4*> allocations;
+
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        // Inefficient use of storage as our pool chunk is 1KB.
+        // But it can work for tests as the size of Vec4 is not used internally.
+        allocations.push_back(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            pool.free(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near pool size allocation to ensure that all the blocks are freed
+    const auto block = pool.malloc();
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
 
 
 TEST_F(InternallyManagedPool_MTTests, MoveCtor_MovesTheAllocator)
@@ -568,117 +566,116 @@ TEST_F(ExternallyManagedPool_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
 }
 
 
-// TEST_F(ExternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalState)
-// {
-//     // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
-//     // and allocate a large block. A corruption of internal state will make it impossible to create a
-//     // near size allocation
-//
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t allocSize      = 64;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<void*> allocations;
-//     std::vector<std::thread> threads;
-//     std::mutex mutex;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//         allocations.push_back(pool.malloc(allocSize));
-//     }
-//
-//
-//     const auto freeFn = [&] {
-//         for (size_t j = 0; j < numAllocations; ++j)
-//         {
-//             // Pop off the final allocation
-//             // NOTE: Only apply mutex locks to the vector operations
-//             //       else the mfree itself won't be verifiable
-//             mutex.lock();
-//             const auto block = allocations.back();
-//             allocations.pop_back();
-//             mutex.unlock();
-//
-//             // Free the block
-//             pool.mfree(block);
-//         }
-//     };
-//
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back(freeFn);
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // Make a near pool size allocation to ensure that all the blocks are freed
-//     const auto block = pool.malloc(SIZE - 4_KB);
-//
-//     // Ensure that the expected number of allocations match the counter
-//     EXPECT_NE(nullptr, block);
-// }
-//
-//
-// TEST_F(ExternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalState)
-// {
-//     // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
-//     // and allocate a large block. A corruption of internal state will make it impossible to create a
-//     // near size allocation
-//     constexpr size_t numAllocations = 1420;
-//     constexpr size_t numThreads     = 8;
-//
-//     std::vector<std::thread> threads;
-//     std::vector<Vec4*> allocations;
-//
-//     std::mutex mutex;
-//
-//     // Allocation is single threaded
-//     for (size_t j = 0; j < numAllocations * numThreads; ++j)
-//     {
-//                 // Inefficient use of storage as our pool chunk is 1KB.
-// // But it can work for tests as the size of Vec4 is not used internally.
-//         allocations.push_back(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f));
-//     }
-//
-//
-//     const auto freeFn = [&] {
-//         for (size_t j = 0; j < numAllocations; ++j)
-//         {
-//             // Pop off the final allocation
-//             // NOTE: Only apply mutex locks to the vector operations
-//             //       else the mfree itself won't be verifiable
-//             mutex.lock();
-//             const auto block = allocations.back();
-//             allocations.pop_back();
-//             mutex.unlock();
-//
-//             // Free the block
-//             pool.free(block);
-//         }
-//     };
-//
-//     for (size_t i = 0; i < numThreads; ++i)
-//     {
-//         threads.emplace_back(freeFn);
-//     }
-//
-//     // Join all the threads
-//     for (auto& thread : threads)
-//     {
-//         thread.join();
-//     }
-//
-//     // Make a near pool size allocation to ensure that all the blocks are freed
-//     const auto block = pool.malloc(SIZE - 4_KB);
-//
-//     // Ensure that the expected number of allocations match the counter
-//     EXPECT_NE(nullptr, block);
-// }
+TEST_F(ExternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<void*> allocations;
+    std::vector<std::thread> threads;
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        allocations.push_back(pool.malloc());
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            pool.mfree(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near pool size allocation to ensure that all the blocks are freed
+    const auto block = pool.malloc();
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
+
+
+TEST_F(ExternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalState)
+{
+    // To verify that free doesn't corrupt the internal state we can concurrently free all allocations
+    // and allocate a large block. A corruption of internal state will make it impossible to create a
+    // near size allocation
+    constexpr size_t numAllocations = 1420;
+    constexpr size_t numThreads     = 8;
+
+    std::vector<std::thread> threads;
+    std::vector<Vec4*> allocations;
+
+    std::mutex mutex;
+
+    // Allocation is single threaded
+    for (size_t j = 0; j < numAllocations * numThreads; ++j)
+    {
+        // Inefficient use of storage as our pool chunk is 1KB.
+        // But it can work for tests as the size of Vec4 is not used internally.
+        allocations.push_back(pool.alloc<Vec4>(1.0f, 2.0f, 3.0f, 4.0f));
+    }
+
+
+    const auto freeFn = [&] {
+        for (size_t j = 0; j < numAllocations; ++j)
+        {
+            // Pop off the final allocation
+            // NOTE: Only apply mutex locks to the vector operations
+            //       else the mfree itself won't be verifiable
+            mutex.lock();
+            const auto block = allocations.back();
+            allocations.pop_back();
+            mutex.unlock();
+
+            // Free the block
+            pool.free(block);
+        }
+    };
+
+    for (size_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back(freeFn);
+    }
+
+    // Join all the threads
+    for (auto& thread : threads)
+    {
+        thread.join();
+    }
+
+    // Make a near pool size allocation to ensure that all the blocks are freed
+    const auto block = pool.malloc();
+
+    // Ensure that the expected number of allocations match the counter
+    EXPECT_NE(nullptr, block);
+}
 
 
 TEST_F(ExternallyManagedPool_MTTests, MoveCtor_MovesTheAllocator)

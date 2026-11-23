@@ -377,11 +377,12 @@ namespace pmm
 
 
         /// @brief Invalidates and resets all allocations made by TLSF.
+        /// @warning The method is not thread-safe under any thread-safe policy
         constexpr void clear() noexcept;
 
 
         /// @brief Get the telemetry instance associated with this allocator.
-        /// @note When TelPolicy is set to disabled this will return a DummyTelemetry
+        /// @note When TelPolicy is disabled this will return a DummyTelemetry
         ///       which will not yield any useful information.
         [[nodiscard]] constexpr const TLSFTelemetry_t<TelemetryPolicy>& getTelemetry() const noexcept
         { return _telemetry; }

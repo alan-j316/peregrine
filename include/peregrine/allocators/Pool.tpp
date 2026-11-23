@@ -182,24 +182,16 @@ namespace pmm
     PMM_INLINE bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(void* ptr) noexcept
     {
         PMM_ASSERT_MSG(ptr != nullptr, "Cannot free a nullptr");
-        [[maybe_unused]] const auto minFreeAddr = _buffer + _initialAlignmentPadding;
-        [[maybe_unused]] const auto maxFreeAddr = _buffer + _poolSize - _initialAlignmentPadding - _chunkSize;
-        PMM_ASSERT_MSG(ptr >= minFreeAddr && ptr <= maxFreeAddr, "Out of bounds free");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
-        {
-            // Validate if the free is possible
-            if (ptr == nullptr || ptr < minFreeAddr || ptr > maxFreeAddr ||
-                (reinterpret_cast<uintptr_t>(ptr) & (_chunkSize - 1)) != 0)
-            {
-                return false;
-            }
-        }
 
-        _telemetry.logFree();
-        const auto freeNode = static_cast<PoolFreeNode*>(ptr);
-        freeNode->next      = _head;
-        _head               = freeNode;
-        return true;
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
+        {
+            [[maybe_unused]] mt::LockGuard guard(_mutex);
+            return _mfreeInternal(ptr);
+        }
+        else
+        {
+            return _mfreeInternal(ptr);
+        }
     }
 
 
@@ -289,6 +281,32 @@ namespace pmm
 
         _head = _head->next;
         return node;
+    }
+
+
+    template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE bool Pool<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mfreeInternal(
+        void* ptr) noexcept
+    {
+        [[maybe_unused]] const auto minFreeAddr = _buffer + _initialAlignmentPadding;
+        [[maybe_unused]] const auto maxFreeAddr = _buffer + _poolSize - _initialAlignmentPadding - _chunkSize;
+        PMM_ASSERT_MSG(ptr >= minFreeAddr && ptr <= maxFreeAddr, "Out of bounds free");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            // Validate if the free is possible
+            if (ptr == nullptr || ptr < minFreeAddr || ptr > maxFreeAddr ||
+                (reinterpret_cast<uintptr_t>(ptr) & (_chunkSize - 1)) != 0)
+            {
+                return false;
+            }
+        }
+
+        _telemetry.logFree();
+        const auto freeNode = static_cast<PoolFreeNode*>(ptr);
+        freeNode->next      = _head;
+        _head               = freeNode;
+        return true;
     }
 
 
