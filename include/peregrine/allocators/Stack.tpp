@@ -26,24 +26,26 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Stack(
-        const std::size_t stackSize) noexcept
+        const size_t stackSize) noexcept
         requires(MemoryPolicy == MemPolicy::Internal)
         : _buffer{ static_cast<uint8_t*>(memAlloc(stackSize)) },
           _stackSize{ stackSize },
           _prevOffset{},
-          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(stackSize) }
+          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(stackSize) },
+          _mutex{}
     { PMM_ASSERT_MSG(stackSize > 0, "Cannot allocate a zero size stack"); }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE constexpr Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::Stack(
-        void* buffer, const std::size_t bufferSize) noexcept
+        void* buffer, const size_t bufferSize) noexcept
         requires(MemoryPolicy == MemPolicy::External)
         : _buffer{ static_cast<uint8_t*>(buffer) },
           _stackSize{ bufferSize },
           _prevOffset{},
-          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(bufferSize) }
+          _telemetry{ getStackTelemetryInstance<TelemetryPolicy>(bufferSize) },
+          _mutex{}
     {
         PMM_ASSERT_MSG(bufferSize > 0, "Cannot allocate a zero size stack");
         PMM_ASSERT_MSG(buffer != nullptr, "Stack backing buffer must not be a nullptr");
@@ -57,7 +59,8 @@ namespace pmm
         : _buffer{ std::exchange(stack._buffer, nullptr) },
           _stackSize{ stack._stackSize },
           _offset{ stack._offset },
-          _telemetry{ std::exchange(stack._telemetry, getStackTelemetryInstance<TelemetryPolicy>(_stackSize)) }
+          _telemetry{ std::exchange(stack._telemetry, getStackTelemetryInstance<TelemetryPolicy>(_stackSize)) },
+          _mutex{}
     {
         if constexpr ((Type == StackPolicy::Strict))
         {
@@ -101,22 +104,22 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr std::size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::size()
+    PMM_INLINE constexpr size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::size()
         const noexcept
     { return _stackSize; }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr std::size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode,
-                                           MultithreadingPolicy>::freeSize() const noexcept
+    PMM_INLINE constexpr size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeSize()
+        const noexcept
     { return _stackSize - _offset; }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr std::size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode,
-                                           MultithreadingPolicy>::usedSize() const noexcept
+    PMM_INLINE constexpr size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::usedSize()
+        const noexcept
     { return _offset; }
 
 
@@ -145,46 +148,27 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
-        const std::size_t size, const std::size_t alignment) noexcept
+        const size_t size, const size_t alignment) noexcept
         requires(Type == StackPolicy::Loose)
     {
         PMM_ASSERT_MSG(std::has_single_bit(alignment), "Alignment must be a power of 2");
 
-        const auto padding = _calcAlignment(alignment);
-        PMM_ASSERT_MSG(_offset + size + padding <= _stackSize, "Stack capacity exceeded. Cannot assign memory!");
-        // NOTE: This assertion is redundant since we are using size_t and it's impossible to pad that amount of memory
-        // realistically
-        PMM_ASSERT_MSG(padding <= std::numeric_limits<decltype(LooseStackHeader::padding)>::max(),
-                       "Alignment exceeded maximum permissible size of padding.");
-        if constexpr (SafeMode == SafeModePolicy::Safe)
+        if constexpr (MultithreadingPolicy == mt::MTPolicy::SpinLock)
         {
-            if (!std::has_single_bit(alignment) || _offset + size + padding > _stackSize)
-            {
-                return nullptr;
-            }
+            [[maybe_unused]] const mt::LockGuard guard(_mutex);
+            return _mallocInternal(size, alignment);
         }
-
-        // Move the offset to aligned address
-        _offset += padding;
-
-        // Store the header behind the allocated address
-        const auto currentAddress = _buffer + _offset;
-        auto* header              = reinterpret_cast<LooseStackHeader*>(currentAddress - sizeof(LooseStackHeader));
-        header->padding           = padding;
-
-        _offset += size;
-        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        else
         {
-            _telemetry.incStackUsage(size, padding);
+            return _mallocInternal(size, alignment);
         }
-        return currentAddress;
     }
 
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
-        const std::size_t size, const std::size_t alignment) noexcept
+        const size_t size, const size_t alignment) noexcept
         requires(Type == StackPolicy::Strict)
     {
         PMM_ASSERT_MSG(std::has_single_bit(alignment), "Alignment must be a power of 2");
@@ -246,7 +230,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     template <typename T>
     PMM_INLINE std::span<T> Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocV(
-        std::size_t count) noexcept
+        size_t count) noexcept
     {
         PMM_ASSERT_MSG(count > 0, "[Stack]: Cannot allocate an array of size 0");
         if constexpr (SafeMode == SafeModePolicy::Safe)
@@ -263,7 +247,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
-        void* oldMemory, const std::size_t oldSize, const std::size_t newSize, const std::size_t alignment)
+        void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
         requires(Type == StackPolicy::Loose)
     {
         PMM_ASSERT_MSG(
@@ -301,7 +285,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resize(
-        void* oldMemory, const std::size_t oldSize, const std::size_t newSize, const std::size_t alignment)
+        void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
         requires(Type == StackPolicy::Strict)
     {
         PMM_ASSERT_MSG(
@@ -324,7 +308,7 @@ namespace pmm
         // If the current allocation requires a resize to a smaller buffer
         // Since current offset retrieve the top of the start address exclusive of header size
         // We need to account for that.
-        const std::size_t isLatestAllocation = _prevOffset == currentOffset - sizeof(StrictStackHeader);
+        const size_t isLatestAllocation = _prevOffset == currentOffset - sizeof(StrictStackHeader);
         if (oldSize >= newSize)
         {
             // Move the offset by the difference
@@ -372,7 +356,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeFast(
-        const void* oldMemory, const std::size_t oldSize, const std::size_t newSize, const std::size_t alignment)
+        const void* oldMemory, const size_t oldSize, const size_t newSize, const size_t alignment)
     {
         PMM_ASSERT_MSG(
             oldMemory != nullptr,
@@ -403,7 +387,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
-        void* oldMemory, const std::size_t oldSize, const std::size_t newSize)
+        void* oldMemory, const size_t oldSize, const size_t newSize)
         requires(Type == StackPolicy::Loose)
     {
         PMM_ASSERT_MSG(
@@ -441,7 +425,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::resizeLast(
-        void* oldMemory, const std::size_t oldSize, const std::size_t newSize)
+        void* oldMemory, const size_t oldSize, const size_t newSize)
         requires(Type == StackPolicy::Strict)
     {
         PMM_ASSERT_MSG(
@@ -614,7 +598,6 @@ namespace pmm
     { memFree(_buffer, _stackSize); }
 
 
-
     /**************************************
      *                                    *
      *         PRIVATE HELPERS            *
@@ -623,8 +606,8 @@ namespace pmm
 
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
-    PMM_INLINE constexpr std::size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode,
-                                           MultithreadingPolicy>::_calcAlignment(const std::size_t alignment) noexcept
+    PMM_INLINE constexpr size_t Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode,
+                                      MultithreadingPolicy>::_calcAlignment(const size_t alignment) noexcept
     {
         const auto baseAddress    = reinterpret_cast<uintptr_t>(_buffer);
         const auto currentAddress = baseAddress + _offset;
@@ -652,11 +635,48 @@ namespace pmm
             // Like for 8 bytes, we need to round up if storage is less than 8, i.e, 1-7 bytes
             // If the factor is multiple of alignment say, requiredStorage = n * alignment, we can just add it to the
             // padding
-            const auto roundingFactor = static_cast<std::size_t>((requiredStorage & (alignment - 1)) != 0);
+            const auto roundingFactor = static_cast<size_t>((requiredStorage & (alignment - 1)) != 0);
             requiredPadding += alignment * (roundingFactor + requiredStorage / alignment);
         }
         return requiredPadding;
     }
+
+
+    template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
+              mt::MTPolicy MultithreadingPolicy>
+    PMM_INLINE void* Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::_mallocInternal(
+        const size_t size, const size_t alignment) noexcept
+    {
+        const auto padding = _calcAlignment(alignment);
+        PMM_ASSERT_MSG(_offset + size + padding <= _stackSize, "Stack capacity exceeded. Cannot assign memory!");
+        // NOTE: This assertion is redundant since we are using size_t and it's impossible to pad that amount of memory
+        // realistically
+        PMM_ASSERT_MSG(padding <= std::numeric_limits<decltype(LooseStackHeader::padding)>::max(),
+                       "Alignment exceeded maximum permissible size of padding.");
+        if constexpr (SafeMode == SafeModePolicy::Safe)
+        {
+            if (!std::has_single_bit(alignment) || _offset + size + padding > _stackSize)
+            {
+                return nullptr;
+            }
+        }
+
+        // Move the offset to aligned address
+        _offset += padding;
+
+        // Store the header behind the allocated address
+        const auto currentAddress = _buffer + _offset;
+        auto* header              = reinterpret_cast<LooseStackHeader*>(currentAddress - sizeof(LooseStackHeader));
+        header->padding           = padding;
+
+        _offset += size;
+        if constexpr (TelemetryPolicy == TelPolicy::Enabled)
+        {
+            _telemetry.incStackUsage(size, padding);
+        }
+        return currentAddress;
+    }
+
 
 
 } // namespace pmm

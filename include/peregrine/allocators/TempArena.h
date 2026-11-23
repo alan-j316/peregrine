@@ -45,7 +45,7 @@ namespace pmm
     struct [[nodiscard]] TempArena
     {
         Arena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>* targetArena;
-        std::size_t prevOffset, currentOffset;
+        size_t prevOffset, currentOffset;
 
         /**
          * @brief Create a temporary snapshot of the @p arena.
@@ -65,7 +65,7 @@ namespace pmm
         /**
          * @copydoc pmm::Arena::malloc(size_t, size_t)
          */
-        [[nodiscard]] void* malloc(std::size_t bytes, std::size_t alignment = sizeof(void*)) const noexcept;
+        [[nodiscard]] void* malloc(size_t bytes, size_t alignment = sizeof(void*)) const noexcept;
 
 
         /**
@@ -79,7 +79,7 @@ namespace pmm
          *  @copydoc pmm::Arena::allocV(size_t)
          */
         template <typename T>
-        [[nodiscard]] constexpr std::span<T> allocV(std::size_t count) noexcept;
+        [[nodiscard]] constexpr std::span<T> allocV(size_t count) noexcept;
     };
 
     /** @} */

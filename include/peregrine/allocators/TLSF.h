@@ -274,7 +274,7 @@ namespace pmm
          * @tparam T    The type of object to allocate.
          * @tparam Args The type of arguments to instantiate the object.
          *
-         * @param[in] args      The arguments to instantiate the object.
+         * @param[in] args The arguments to instantiate the object.
          *
          * @return A reference to the allocated memory.
          *
@@ -304,7 +304,7 @@ namespace pmm
          * @relatedalso alloc
          */
         template <typename T>
-        [[nodiscard]] std::span<T> allocV(std::size_t count) noexcept;
+        [[nodiscard]] std::span<T> allocV(size_t count) noexcept;
 
 
         /**

@@ -30,29 +30,27 @@ namespace pmm
      * @brief Header for storing *minimal* information about a stack entry.
      *
      * @details Minimizes footprint only allocating space for padding.
-     *          Uses std::size_t on the premise that default alignment is 8-bytes(enough padding to hold the header)
+     *          Uses size_t on the premise that default alignment is 8-bytes(enough padding to hold the header)
      *          on a 64-bit system and SIMD uses at least 16-byte padding(SSE).
      *
      * @relatedalso StrictStackHeader
      */
     struct LooseStackHeader
-    {
-        std::size_t padding;
-    };
+    { size_t padding; };
 
 
     /**
      * @brief Header for storing information about a stack entry.
      *
-     * @details
-     * Prioritizes stack behavior over memory footprint, consuming around 16-bytes(on a 64-bit system) per allocation.
+     * @details Prioritizes stack behavior over memory footprint,
+     *          consuming around 16-bytes(on a 64-bit system) per allocation.
      *
      * @relatedalso LooseStackHeader
      */
     struct StrictStackHeader
     {
-        std::size_t prevOffset{}; /// Offset of previous allocated block.
-        std::size_t padding{};    /// Target allocation's block size.
+        size_t prevOffset{}; /// Offset of previous allocated block.
+        size_t padding{};    /// Target allocation's block size.
     };
 
 
@@ -91,7 +89,7 @@ namespace pmm
          *
          * @warning This allocator is Linear and is NOT thread-safe by default.
          */
-        [[nodiscard]] explicit constexpr Stack(std::size_t stackSize) noexcept
+        [[nodiscard]] explicit constexpr Stack(size_t stackSize) noexcept
             requires(MemoryPolicy == MemPolicy::Internal);
 
 
@@ -106,7 +104,7 @@ namespace pmm
          *
          * @warning This allocator is Linear and is NOT thread-safe by default.
          */
-        [[nodiscard]] explicit constexpr Stack(void* buffer, std::size_t bufferSize) noexcept
+        [[nodiscard]] explicit constexpr Stack(void* buffer, size_t bufferSize) noexcept
             requires(MemoryPolicy == MemPolicy::External);
 
 
@@ -148,21 +146,21 @@ namespace pmm
          * @brief Get the total capacity in bytes of the stack.
          * @return The total capacity of the stack.
          */
-        [[nodiscard]] constexpr std::size_t size() const noexcept;
+        [[nodiscard]] constexpr size_t size() const noexcept;
 
 
         /**
          * @brief Get the free capacity in bytes of the stack.
          * @return The free capacity of the stack in bytes.
          */
-        [[nodiscard]] constexpr std::size_t freeSize() const noexcept;
+        [[nodiscard]] constexpr size_t freeSize() const noexcept;
 
 
         /**
          * @brief Get the used capacity in bytes of the stack.
          * @return The used capacity of the stack in bytes.
          */
-        [[nodiscard]] constexpr std::size_t usedSize() const noexcept;
+        [[nodiscard]] constexpr size_t usedSize() const noexcept;
 
 
         /**
@@ -196,7 +194,7 @@ namespace pmm
          * @relatedalso alloc
          * @relatedalso allocV
          */
-        [[nodiscard]] void* malloc(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
+        [[nodiscard]] void* malloc(size_t size, size_t alignment = sizeof(void*)) noexcept
             requires(Type == StackPolicy::Loose);
 
 
@@ -217,7 +215,7 @@ namespace pmm
          * @relatedalso alloc
          * @relatedalso allocV
          */
-        [[nodiscard]] void* malloc(std::size_t size, std::size_t alignment = sizeof(void*)) noexcept
+        [[nodiscard]] void* malloc(size_t size, size_t alignment = sizeof(void*)) noexcept
             requires(Type == StackPolicy::Strict);
 
 
@@ -260,7 +258,7 @@ namespace pmm
          * @relatedalso alloc
          */
         template <typename T>
-        [[nodiscard]] std::span<T> allocV(std::size_t count) noexcept;
+        [[nodiscard]] std::span<T> allocV(size_t count) noexcept;
 
 
         /**
@@ -286,8 +284,7 @@ namespace pmm
          * @relatedalso resizeFast
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resize(void* oldMemory, std::size_t oldSize, std::size_t newSize,
-                                   std::size_t alignment = sizeof(void*))
+        [[nodiscard]] void* resize(void* oldMemory, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
             requires(Type == StackPolicy::Loose);
 
 
@@ -314,8 +311,7 @@ namespace pmm
          * @relatedalso resizeFast
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resize(void* oldMemory, std::size_t oldSize, std::size_t newSize,
-                                   std::size_t alignment = sizeof(void*))
+        [[nodiscard]] void* resize(void* oldMemory, size_t oldSize, size_t newSize, size_t alignment = sizeof(void*))
             requires(Type == StackPolicy::Strict);
 
 
@@ -343,8 +339,8 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeLast
          */
-        [[nodiscard]] void* resizeFast(const void* oldMemory, std::size_t oldSize, std::size_t newSize,
-                                       std::size_t alignment = sizeof(void*));
+        [[nodiscard]] void* resizeFast(const void* oldMemory, size_t oldSize, size_t newSize,
+                                       size_t alignment = sizeof(void*));
 
 
         /**
@@ -367,7 +363,7 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeFast
          */
-        [[nodiscard]] void* resizeLast(void* oldMemory, std::size_t oldSize, std::size_t newSize)
+        [[nodiscard]] void* resizeLast(void* oldMemory, size_t oldSize, size_t newSize)
             requires(Type == StackPolicy::Loose);
 
 
@@ -392,7 +388,7 @@ namespace pmm
          * @relatedalso resize
          * @relatedalso resizeFast
          */
-        [[nodiscard]] void* resizeLast(void* oldMemory, std::size_t oldSize, std::size_t newSize)
+        [[nodiscard]] void* resizeLast(void* oldMemory, size_t oldSize, size_t newSize)
             requires(Type == StackPolicy::Strict);
 
 
@@ -533,21 +529,32 @@ namespace pmm
          *
          * @return The padding required for alignment.
          */
-        constexpr std::size_t _calcAlignment(std::size_t alignment) noexcept;
+        constexpr size_t _calcAlignment(size_t alignment) noexcept;
 
 
         /// Custom Types
-        using PreviousOffsetType = std::conditional_t<Type == StackPolicy::Strict, std::size_t, EmptyMember>;
+        using PreviousOffsetType = std::conditional_t<Type == StackPolicy::Strict, size_t, EmptyMember>;
 
         /// Member Variables
         uint8_t* _buffer;
-        std::size_t _stackSize, _offset{ 0 };
+        size_t _stackSize, _offset{ 0 };
         PMM_NO_UNIQUE_ADDR PreviousOffsetType _prevOffset;
         PMM_NO_UNIQUE_ADDR StackTelemetryType<TelemetryPolicy> _telemetry;
-        
+        PMM_NO_UNIQUE_ADDR mt::Mutex_t<MultithreadingPolicy> _mutex;
+
         // For freeing the allocators from memory manager
         template <TelPolicy, MemPolicy>
-        friend class MemoryManager;
+        friend class MemoryManager; // NOLINT
+
+
+        /**
+         * @brief Internal helper for allocating memory from the stack.
+         * @param size      The size of allocation in bytes.
+         * @param alignment The alignment of the allocation.
+         * @return A pointer to the base address of the allocated memory.
+         * @return Nullptr if allocation failed in *Release Mode* with SafeMode turned on.
+         */
+        void* _mallocInternal(size_t size, size_t alignment) noexcept;
 
 
 

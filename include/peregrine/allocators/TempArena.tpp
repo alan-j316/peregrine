@@ -44,7 +44,7 @@ namespace pmm
     template <MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void* TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::malloc(
-        const std::size_t bytes, const std::size_t alignment) const noexcept
+        const size_t bytes, const size_t alignment) const noexcept
     { return targetArena->malloc(bytes, alignment); }
 
 
@@ -60,7 +60,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     template <typename T>
     PMM_INLINE constexpr std::span<T> TempArena<MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::allocV(
-        const std::size_t count) noexcept
+        const size_t count) noexcept
     { return targetArena->template allocV<T>(count); }
 
 
