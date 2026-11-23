@@ -469,7 +469,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(
         void* ptr) noexcept
-        requires(Type == StackPolicy::Loose)
+        requires(Type == StackPolicy::Loose && MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         PMM_ASSERT_MSG(ptr != nullptr, "Cannot free a nullptr");
         PMM_ASSERT_MSG(ptr >= _buffer + sizeof(LooseStackHeader) && ptr <= _buffer + _offset, "Out-of-bounds free!");
@@ -504,7 +504,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::mfree(
         void* ptr) noexcept
-        requires(Type == StackPolicy::Strict)
+        requires(Type == StackPolicy::Strict && MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         PMM_ASSERT_MSG(ptr != nullptr, "Cannot free a nullptr");
         PMM_ASSERT_MSG(ptr >= _buffer + sizeof(StrictStackHeader) && ptr <= _buffer + _offset, "Out-of-bounds free!");
@@ -543,6 +543,7 @@ namespace pmm
               mt::MTPolicy MultithreadingPolicy>
     template <typename T>
     PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::free(T* ptr) noexcept
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         if constexpr (!std::is_trivially_destructible_v<T>)
         {
@@ -557,6 +558,7 @@ namespace pmm
     template <typename T>
     PMM_INLINE bool Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::freeV(
         std::span<T> vector) noexcept
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         if constexpr (!std::is_trivially_destructible_v<T>)
         {
@@ -572,6 +574,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::clear()
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     {
         _offset = 0;
         if constexpr (Type == StackPolicy::Strict)
@@ -588,6 +591,7 @@ namespace pmm
     template <StackPolicy Type, MemPolicy MemoryPolicy, TelPolicy TelemetryPolicy, SafeModePolicy SafeMode,
               mt::MTPolicy MultithreadingPolicy>
     PMM_INLINE void Stack<Type, MemoryPolicy, TelemetryPolicy, SafeMode, MultithreadingPolicy>::zeroOut() const noexcept
+        requires(MultithreadingPolicy == mt::MTPolicy::NoMT)
     { std::memset(_buffer, 0, _stackSize); }
 
 
@@ -676,7 +680,6 @@ namespace pmm
         }
         return currentAddress;
     }
-
 
 
 } // namespace pmm

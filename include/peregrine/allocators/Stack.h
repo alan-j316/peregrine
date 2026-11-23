@@ -399,6 +399,7 @@ namespace pmm
          *       respectively, as they will call the class destructor for non-trivial types.
          *
          * @warning Does not check for invalid states including out-of-bounds and `nullptr` free in *Release Mode*.
+         * @warning Freeing from the stack is disallowed in multithreaded environments.
          *
          * @param[in] ptr The pointer to free upto.
          *
@@ -412,7 +413,7 @@ namespace pmm
          * @relatedalso clear
          */
         bool mfree(void* ptr) noexcept
-            requires(Type == StackPolicy::Loose);
+            requires(Type == StackPolicy::Loose && MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
@@ -422,6 +423,7 @@ namespace pmm
          *       respectively, as they will call the class destructor for non-trivial types.
          *
          * @warning Does not check for invalid states including out-of-bounds and `nullptr` free in *Release Mode*.
+         * @warning Freeing from the stack is disallowed in multithreaded environments.
          *
          * @param[in] ptr The pointer to free upto.
          *
@@ -435,13 +437,14 @@ namespace pmm
          * @relatedalso clear
          */
         bool mfree(void* ptr) noexcept
-            requires(Type == StackPolicy::Strict);
+            requires(Type == StackPolicy::Strict && MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
          * @brief Safely free memory allocated with @ref alloc<T>.
          *
          * @note Destructor is called for non-trivially destructible types.
+         * @warning Freeing from the stack is disallowed in multithreaded environments.
          *
          * @tparam T  The data type of the memory pointer.
          *
@@ -455,13 +458,15 @@ namespace pmm
          * @relatedalso clear
          */
         template <typename T>
-        bool free(T* ptr) noexcept;
+        bool free(T* ptr) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
          * @brief Safely free memory allocated with @ref allocV<T>.
          *
          * @note Destructor is called for non-trivially destructible types.
+         * @warning Freeing from the stack is disallowed in multithreaded environments.
          *
          * @tparam T  The data type of the memory pointer.
          *
@@ -475,16 +480,20 @@ namespace pmm
          * @relatedalso clear
          */
         template <typename T>
-        bool freeV(std::span<T> vector) noexcept;
+        bool freeV(std::span<T> vector) noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
          * @brief Free the entire stack, resetting to a fresh state.
          *
+         * @warning Clearing is disallowed in multithreaded environments.
+         *
          * @relatedalso  free
          * @relatedalso  mfree
          */
-        void clear();
+        void clear()
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
@@ -492,8 +501,10 @@ namespace pmm
          *
          * @warning This will completely overwrite the stack entire buffer with zeroes. Only call this method if you
          *          want a zero-ed out stack after clearing.
+         * @warning Zeroing out from the stack is disallowed in multithreaded environments.
          */
-        void zeroOut() const noexcept;
+        void zeroOut() const noexcept
+            requires(MultithreadingPolicy == mt::MTPolicy::NoMT);
 
 
         /**
@@ -555,7 +566,6 @@ namespace pmm
          * @return Nullptr if allocation failed in *Release Mode* with SafeMode turned on.
          */
         void* _mallocInternal(size_t size, size_t alignment) noexcept;
-
 
 
 #ifdef ENABLE_PMM_TESTS
