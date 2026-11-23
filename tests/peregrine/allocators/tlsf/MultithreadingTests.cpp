@@ -71,6 +71,8 @@ TEST_F(InternallyManagedTLSF_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -111,6 +113,8 @@ TEST_F(InternallyManagedTLSF_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -159,6 +163,8 @@ TEST_F(InternallyManagedTLSF_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -193,6 +199,8 @@ TEST_F(InternallyManagedTLSF_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -246,6 +254,8 @@ TEST_F(InternallyManagedTLSF_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -282,6 +292,8 @@ TEST_F(InternallyManagedTLSF_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -346,6 +358,8 @@ TEST_F(InternallyManagedTLSF_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalS
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::mutex mutex;
 
     // Allocation is single threaded
@@ -398,6 +412,8 @@ TEST_F(InternallyManagedTLSF_MTTests, Free_ConcurrentFreesDoNotCorruptInternalSt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
 
     std::mutex mutex;
@@ -454,6 +470,8 @@ TEST_F(InternallyManagedTLSF_MTTests, FreeV_ConcurrentFreesDoNotCorruptInternalS
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     std::mutex mutex;
@@ -507,6 +525,8 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -550,6 +570,8 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -594,6 +616,8 @@ TEST_F(InternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -667,6 +691,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -707,6 +733,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -755,6 +783,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -789,6 +819,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -842,6 +874,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -878,6 +912,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -942,6 +978,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalS
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::mutex mutex;
 
     // Allocation is single threaded
@@ -994,6 +1032,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, Free_ConcurrentFreesDoNotCorruptInternalSt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
 
     std::mutex mutex;
@@ -1050,6 +1090,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, FreeV_ConcurrentFreesDoNotCorruptInternalS
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     std::mutex mutex;
@@ -1103,6 +1145,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, ResizeToSmallerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1146,6 +1190,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, ResizeToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1190,6 +1236,8 @@ TEST_F(ExternallyManagedTLSF_MTTests, ResizeToLargerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)

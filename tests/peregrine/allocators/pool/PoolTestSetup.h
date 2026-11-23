@@ -59,6 +59,7 @@ struct UnmanagedPoolAllocatorTests: public testing::Test
         *os << "Managed Pool Allocator (Pool Size: " << param.bufferSize << ", Alignment: " << param.alignment
             << ", Chunk Size: " << param.chunkSize << ", Buffer: " << reinterpret_cast<uintptr_t>(param.buffer) << ")";
     }
+
 protected:
     void TearDown() override { delete[] buffer; }
 };

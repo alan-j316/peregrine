@@ -72,6 +72,8 @@ TEST_F(InternallyManagedArena_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -113,6 +115,8 @@ TEST_F(InternallyManagedArena_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptI
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -162,6 +166,8 @@ TEST_F(InternallyManagedArena_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -197,6 +203,8 @@ TEST_F(InternallyManagedArena_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -251,6 +259,8 @@ TEST_F(InternallyManagedArena_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -288,6 +298,8 @@ TEST_F(InternallyManagedArena_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptI
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -350,6 +362,8 @@ TEST_F(InternallyManagedArena_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -394,6 +408,8 @@ TEST_F(InternallyManagedArena_MTTests, Resize_ToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -439,6 +455,8 @@ TEST_F(InternallyManagedArena_MTTests, Resize_ToLargerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -484,6 +502,8 @@ TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrent
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -528,6 +548,8 @@ TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -573,6 +595,8 @@ TEST_F(InternallyManagedArena_MTTests, ResizeFast_ToLargerSize_CanRunConcurrentl
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -648,6 +672,8 @@ TEST_F(ExternallyManagedArena_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -689,6 +715,8 @@ TEST_F(ExternallyManagedArena_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptI
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -738,6 +766,8 @@ TEST_F(ExternallyManagedArena_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -773,6 +803,8 @@ TEST_F(ExternallyManagedArena_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -827,6 +859,8 @@ TEST_F(ExternallyManagedArena_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -864,6 +898,8 @@ TEST_F(ExternallyManagedArena_MTTests, AllocV_ConcurrentAllocationsDoNotCorruptI
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -926,6 +962,8 @@ TEST_F(ExternallyManagedArena_MTTests, Resize_ToSmallerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -970,6 +1008,8 @@ TEST_F(ExternallyManagedArena_MTTests, Resize_ToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1015,6 +1055,8 @@ TEST_F(ExternallyManagedArena_MTTests, Resize_ToLargerSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1060,6 +1102,8 @@ TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToSmallerSize_CanRunConcurrent
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1104,6 +1148,8 @@ TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToSameSize_CanRunConcurrently)
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1149,6 +1195,8 @@ TEST_F(ExternallyManagedArena_MTTests, ResizeFast_ToLargerSize_CanRunConcurrentl
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)

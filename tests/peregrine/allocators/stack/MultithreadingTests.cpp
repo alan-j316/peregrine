@@ -98,6 +98,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -139,6 +140,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Malloc_ConcurrentAllocationsDoNotCo
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -188,6 +190,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -223,6 +226,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Alloc_ConcurrentAllocationsDoNotCor
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -277,6 +281,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -314,6 +319,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, AllocV_ConcurrentAllocationsDoNotCo
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -376,6 +382,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToSmallerSize_CanRunConcurre
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -419,6 +426,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToSameSize_CanRunConcurrentl
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -464,6 +472,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, Resize_ToLargerSize_CanRunConcurren
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -509,6 +518,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToSmallerSize_CanRunConc
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -553,6 +563,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToSameSize_CanRunConcurr
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -598,6 +609,7 @@ TEST_F(InternallyManagedStrictStack_MTTests, ResizeFast_ToLargerSize_CanRunConcu
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -672,6 +684,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -712,6 +725,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Malloc_ConcurrentAllocationsDoNotCo
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -760,6 +774,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -794,6 +809,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Alloc_ConcurrentAllocationsDoNotCor
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -847,6 +863,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, AllocV_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -883,6 +900,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, AllocV_ConcurrentAllocationsDoNotCo
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<std::span<SpanType>> allocations;
     std::vector<std::array<SpanType, spanCount>> spans;
     pmm::mt::SpinLock mutex;
@@ -945,6 +963,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToSmallerSize_CanRunConcurre
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -988,6 +1007,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToSameSize_CanRunConcurrentl
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1032,6 +1052,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, Resize_ToLargerSize_CanRunConcurren
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1077,6 +1098,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToSmallerSize_CanRunConc
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1121,6 +1143,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToSameSize_CanRunConcurr
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)
@@ -1166,6 +1189,7 @@ TEST_F(ExternallyManagedStrictStack_MTTests, ResizeFast_ToLargerSize_CanRunConcu
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
 
     // Allocation is single threaded
     for (size_t j = 0; j < numAllocations * numThreads; ++j)

@@ -52,7 +52,9 @@ TEST(PeregrineMultithreadingTests, SpinLockKeepsMutualExclusivity)
     const size_t numThreads = std::thread::hardware_concurrency() == 0 ? 4 : std::thread::hardware_concurrency();
     const size_t numIterationsPerThread = numTotalIterations / numThreads;
     pmm::mt::SpinLock mutex;
-    std::vector<std::thread> threads{};
+    std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     size_t runningCounter = 0; // Shared resource
 
     // Helper function for incrementing the running counter for each thread
@@ -113,7 +115,9 @@ TEST(PeregrineMultithreadingTests, LockGuardWithSpinLockKeepsMutualExclusivity)
     const size_t numThreads = std::thread::hardware_concurrency() == 0 ? 4 : std::thread::hardware_concurrency();
     const size_t numIterationsPerThread = numTotalIterations / numThreads;
     pmm::mt::SpinLock mutex;
-    std::vector<std::thread> threads{};
+    std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     size_t runningCounter = 0; // Shared resource
 
     // Helper function for incrementing the running counter for each thread

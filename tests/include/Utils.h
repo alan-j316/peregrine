@@ -17,7 +17,7 @@ struct alignas(16) Vec4
         : x(static_cast<float>(v0)), y(static_cast<float>(v1)), z(static_cast<float>(v2)), w(static_cast<float>(v3))
     {}
 
-    
+
     void set(const float v0, const float v1, const float v2, const float v3)
     {
         this->x = v0;

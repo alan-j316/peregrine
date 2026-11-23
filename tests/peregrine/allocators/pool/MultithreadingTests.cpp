@@ -72,6 +72,7 @@ TEST_F(InternallyManagedPool_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -111,6 +112,8 @@ TEST_F(InternallyManagedPool_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -160,6 +163,8 @@ TEST_F(InternallyManagedPool_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -197,6 +202,8 @@ TEST_F(InternallyManagedPool_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -255,6 +262,8 @@ TEST_F(InternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalS
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::mutex mutex;
 
     // Allocation is single threaded
@@ -307,6 +316,8 @@ TEST_F(InternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalSt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
 
     std::mutex mutex;
@@ -393,6 +404,8 @@ TEST_F(ExternallyManagedPool_MTTests, Malloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -432,6 +445,8 @@ TEST_F(ExternallyManagedPool_MTTests, Malloc_ConcurrentAllocationsDoNotCorruptIn
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int*> allocations;
     std::vector<int> ids;
     pmm::mt::SpinLock mutex;
@@ -481,6 +496,8 @@ TEST_F(ExternallyManagedPool_MTTests, Alloc_CanAllocateConcurrently)
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<int> threadIds;
     std::atomic_int counter;
 
@@ -518,6 +535,8 @@ TEST_F(ExternallyManagedPool_MTTests, Alloc_ConcurrentAllocationsDoNotCorruptInt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
     std::vector<Vec4> vecs;
     pmm::mt::SpinLock mutex;
@@ -577,6 +596,8 @@ TEST_F(ExternallyManagedPool_MTTests, MFree_ConcurrentFreesDoNotCorruptInternalS
 
     std::vector<void*> allocations;
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::mutex mutex;
 
     // Allocation is single threaded
@@ -630,6 +651,8 @@ TEST_F(ExternallyManagedPool_MTTests, Free_ConcurrentFreesDoNotCorruptInternalSt
     constexpr size_t numThreads     = 8;
 
     std::vector<std::thread> threads;
+    threads.reserve(numThreads);
+
     std::vector<Vec4*> allocations;
 
     std::mutex mutex;

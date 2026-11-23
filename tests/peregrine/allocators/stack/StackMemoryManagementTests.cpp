@@ -27,12 +27,16 @@ namespace
          * Stack, we can check if it is trivially destructible to ensure memory is freed in the stack in unmanaged mode
          *        and opposite otherwise.
          */
-        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>> == true);
-        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>> == true);
+        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::External>> ==
+                      true);
+        static_assert(
+            std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::External>> == true);
 
         /// @test Verify that manged stack frees buffer it allocates.
-        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal>> == false);
-        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal>> == false);
+        static_assert(std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Loose, pmm::MemPolicy::Internal>> ==
+                      false);
+        static_assert(
+            std::is_trivially_destructible_v<pmm::Stack<pmm::StackPolicy::Strict, pmm::MemPolicy::Internal>> == false);
     } // namespace static_tests
 
 } // namespace
