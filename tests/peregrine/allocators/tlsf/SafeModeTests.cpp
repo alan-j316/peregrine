@@ -29,11 +29,8 @@ namespace
     class InternallyManagedSafeTLSFTests: public testing::Test
     {
     public:
-        static constexpr size_t tlsfSize{ 2_MB };
-        pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe> tlsf{ tlsfSize };
-        using Header = pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe>::Header;
-        using Offset_t =
-            pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe>::HeaderOffset_t;
+        static constexpr size_t TLSF_SIZE{ 2_MB };
+        pmm::TLSF<pmm::MemPolicy::Internal, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe> tlsf{ TLSF_SIZE };
     };
 
 
@@ -43,13 +40,10 @@ namespace
     class ExternallyManagedSafeTLSFTests: public testing::Test
     {
     public:
-        static constexpr size_t tlsfSize{ 2_MB };
-        uint8_t* buffer = new uint8_t[tlsfSize]();
+        static constexpr size_t TLSF_SIZE{ 2_MB };
+        uint8_t* buffer = new uint8_t[TLSF_SIZE]();
         pmm::TLSF<pmm::MemPolicy::External, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe> tlsf{ buffer,
-                                                                                                       tlsfSize };
-        using Header = pmm::TLSF<pmm::MemPolicy::External, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe>::Header;
-        using Offset_t =
-            pmm::TLSF<pmm::MemPolicy::External, pmm::TelPolicy::Disabled, pmm::SafeModePolicy::Safe>::HeaderOffset_t;
+                                                                                                       TLSF_SIZE };
 
     protected:
         ~ExternallyManagedSafeTLSFTests() override { delete[] buffer; }
@@ -68,17 +62,17 @@ namespace
 TEST_F(InternallyManagedSafeTLSFTests, MAlloc_ZeroSizeReturnsNullptrInSafeMode) { EXPECT_EQ(nullptr, tlsf.malloc(0)); }
 
 TEST_F(InternallyManagedSafeTLSFTests, MAlloc_NearTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize - 1)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE - 1)); }
 
 TEST_F(InternallyManagedSafeTLSFTests, MAlloc_EqualToTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE)); }
 
 TEST_F(InternallyManagedSafeTLSFTests, MAlloc_GreaterThanTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize + 1)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE + 1)); }
 
 TEST_F(InternallyManagedSafeTLSFTests, Malloc_OutofMemoryAllocation_ReturnsNullptrInSafeMode)
 {
-    static_cast<void>(tlsf.malloc(tlsfSize - 128));
+    static_cast<void>(tlsf.malloc(TLSF_SIZE - 128));
     EXPECT_EQ(nullptr, tlsf.malloc(1_KB));
 }
 
@@ -219,17 +213,17 @@ TEST_F(InternallyManagedSafeTLSFTests, AllocV_OutofMemoryDueToFragmentation_Retu
 TEST_F(ExternallyManagedSafeTLSFTests, MAlloc_ZeroSizeReturnsNullptrInSafeMode) { EXPECT_EQ(nullptr, tlsf.malloc(0)); }
 
 TEST_F(ExternallyManagedSafeTLSFTests, MAlloc_NearTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize - 1)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE - 1)); }
 
 TEST_F(ExternallyManagedSafeTLSFTests, MAlloc_EqualToTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE)); }
 
 TEST_F(ExternallyManagedSafeTLSFTests, MAlloc_GreaterThanTLSFSizeReturnsNullptrInSafeMode)
-{ EXPECT_EQ(nullptr, tlsf.malloc(tlsfSize + 1)); }
+{ EXPECT_EQ(nullptr, tlsf.malloc(TLSF_SIZE + 1)); }
 
 TEST_F(ExternallyManagedSafeTLSFTests, Malloc_OutofMemoryAllocation_ReturnsNullptrInSafeMode)
 {
-    static_cast<void>(tlsf.malloc(tlsfSize - 128));
+    static_cast<void>(tlsf.malloc(TLSF_SIZE - 128));
     EXPECT_EQ(nullptr, tlsf.malloc(1_KB));
 }
 

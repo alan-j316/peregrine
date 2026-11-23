@@ -25,9 +25,11 @@ namespace pmm
      * @brief Free list node for pool allocator.
      */
     struct PoolFreeNode
-    {
-        PoolFreeNode* next;
-    };
+    { PoolFreeNode* next; };
+
+    // Forward declaration
+    class MemoryManager;
+
 
     /**
      *  @brief Pool/Chunk memory allocator.

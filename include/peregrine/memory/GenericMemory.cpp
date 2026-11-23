@@ -3,7 +3,7 @@
  * @author Alan Abraham P Kochumon
  * @date Created on: August 3, 2026
  *
- * @brief Platform agnostic implementation of memory managemenet functions defined in Memory.h.
+ * @brief Platform-agnostic implementation of memory managemenet functions defined in Memory.h.
  *        It is recommended to use platform specific variants whenever possible.
  *
  * @copyright Copyright (c) 2026 Alan Abraham P Kochumon
