@@ -80,10 +80,10 @@ Allocators can be instantiated with `<Allocator><MemPolicy, TelPolicy, SafeModeP
 specialized
 aliases:
 
-- Local<Allocator>: Single-threaded / thread-local allocator.
-- SafeLocal<Allocator>: Thread-local allocator with extra nullptr safety checks.
-- MT<Allocator>: Thread-safe allocator.
-- SafeMT<Allocator>: Thread-safe allocator with extra safety checks.
+- `Local<Allocator>`: Single-threaded / thread-local allocator.
+- `SafeLocal<Allocator>`: Thread-local allocator with extra nullptr safety checks.
+- `MT<Allocator>`: Thread-safe allocator.
+- `SafeMT<Allocator>`: Thread-safe allocator with extra safety checks.
 
 These specializations are available for all four supported allocators and can be used as-is or by providing an external
 buffer.
@@ -116,10 +116,10 @@ auto matrix2 = stack.alloc<Mat4>(1.0f); // Typed allocation.
 
 // Free
 stack.mfree(matrix); // Pointer free
-stack.free(matrix2); // Free for instantiated classes, will call the destructor for non-trival types.
+stack.free(matrix2); // Free for instantiated classes, will call the destructor for non-trivial types.
 
 ///----------------- INDIVIDUAL ALLOCATORS ---------------------
-pmm::MTPool transformPool(1_MB, 64, 1); // Byte aligned pool. Must specfiy the alignment.
+pmm::MTPool transformPool(1_MB, 64, 1); // Byte aligned pool. Must specify the alignment.
 auto actorTransform = transformPool.alloc<TransformComponent>(...);
 /// ...CODE...
 transformPool.free(actorTransform);
